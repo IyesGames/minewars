@@ -68,6 +68,10 @@ The regions are determined as follows (at map generation time):
    - all tiles in a cluster are given to the region that would have the majority of the cluster if the tiles were land
  - Any disputed tiles are given to the city with the larger region (to increase the power imbalance)
 
+The power imbalance is beneficial to gameplay, because it gives every city
+unique gameplay characteristics and implications. When owning multiple cities,
+it will affect how players plan their road networks and defenses.
+
 ## Starting Cities
 
 The **starting cities** at the beginning of the game are chosen, so that
