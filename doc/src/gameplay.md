@@ -116,10 +116,11 @@ Resources given by each tile owned:
 
 The cost of everything is determined using a multiplier applied to a **Base
 Unit**; this helps negate the unpredictability of the random procedural world
-generation.
+generation. This is calculated once at the start of the session, based on the
+generated map, and remains fixed throughout the game.
 
-The **Base Unit** is representative of how powerful cities can get in a given
-game session, and is calculated as follows:
+The **Base Unit** is roughly representative of how powerful cities could
+get in a given game session, and is calculated as follows:
 
  1. The maximum accessible resources of any given city are calculated as the sum of its maximum **local resources** and maximum **import resources** (assuming road connections to all neighbors).
  2. Take the highest value of any city on the map
