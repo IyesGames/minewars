@@ -115,4 +115,6 @@ Some players may prefer to play against strangers. They may prefer online matchm
 
 Some players may prefer to play with a semi-restricted number of people on a community server.
 
-To cover the widest possible audience, the game should strive to offer all of these server/session kinds.
+The above is just a list of possibilities. It is not necessarily a development
+goal to support all of these multiplayer modes, but it's important to point
+out that it would increase the playerbase/audiences.
