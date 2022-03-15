@@ -1,3 +1,7 @@
+use iyesengine::prelude::*;
+
 fn main() {
-    println!("Hello, world!");
+    App::new()
+        .add_plugin(IyesEverything)
+        .run();
 }
