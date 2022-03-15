@@ -45,7 +45,8 @@ be located next to **mountains** or **water**.
 There will always be more cities than the number of players in the session,
 meaning that at least some cities start neutral.
 
-The location of cities is unknown until discovered, the player has to explore to find them.
+The location of cities, and a visualization of the extends of their regions, is
+always visible to all players, even behind fog of war.
 
 ## Regions
 
@@ -71,14 +72,6 @@ The regions are determined as follows (at map generation time):
 The power imbalance is beneficial to gameplay, because it gives every city
 unique gameplay characteristics and implications. When owning multiple cities,
 it will affect how players plan their road networks and defenses.
-
-## Starting Cities
-
-The **starting cities** at the beginning of the game are chosen, so that
-they are among the most powerful cities on the map (calculated as the sum
-of **local resources** and **import resources**).
-
-(sort by city power and randomly assign the best N cities to players)
 
 ## Production
 
@@ -356,7 +349,9 @@ Explosions are caused when a player tries to **capture a land tile that is
 mined** (awarding the player a **stun**), or intentionally by [**activating
 mines**](#offense).
 
-## Losing Condition
+## Game Over Condition
+
+### Lose
 
 If a player loses the last city they own, they are out of the game.
 
@@ -366,6 +361,55 @@ Their inventory contents are randomly scattered across all neutral territory on 
 
 They may continue to spectate the game.
 
-## Winning Condition
+### Win
 
 If a player is the last one standing, they are the winner of the game.
+
+## Starting Cities
+
+Given the random nature of the map, it is important that players are not left
+feeling like they (or another player) got an unfair spawn location.
+
+Because of this, we need a solution to give players some agency over the
+randomness, and where they start.
+
+Current proposal: **pick and ban stage**.
+
+### Picks and Bans
+
+At the start of the session, before the game begins, there is a pick-and-ban stage.
+
+Players are shown an overview of the map and all the city locations.
+
+**Note**: in practice, this design described below means that players may
+choose to completely abstain from participating in the picks/bans.
+
+#### First stage: **bans**.
+
+Players are given **15** seconds to place a **vote** for **up to 3** locations.
+
+The **2** highest-voted locations are **banned**. Nobody will spawn there.
+
+Cities with zero votes will never be banned, meaning that if nobody places
+any votes, or if all players have only voted for the same one city, there
+may be fewer (or no) banned cities.
+
+If a player does nothing during this stage, they just do not contribute
+any votes. If all players do nothing, no cities get banned.
+
+#### Second stage: **picks**.
+
+Players are given **30** seconds to express any preferences for their spawn
+location.
+
+Locations may be **ranked** by the player in order of preference. Any
+unselected locations are implicitly added to the end of the preference list,
+after the locations that the player explicitly ranked, sorted in order of
+decreasing *region power*.
+
+Every player's spawn location will be chosen so that as many players as
+possible get their higher-ranked preferences. Ties will be broken with a
+random choice.
+
+If a player does nothing during this stage, their order of preference is
+implicitly assumed to be the cities sorted by decreasing region power.
