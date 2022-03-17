@@ -92,13 +92,14 @@ v  ^
 
 ## Gameplay Messages
 
-At any time during the game, after the initialization sequence, the client
-may receive game updates from the server. Each game update is a single
-data payload to be delivered atomically, on any QUIC stream.
+Updates for the player are encoded as a raw uncompressed block of data
+consisting of any number of **messages** concatenated together. Each message
+is a variable-length byte sequence.
 
-The update payload is a raw uncompressed block of data consisting of any
-number of **messages** concatenated together. Each message is a variable-length
-byte sequence.
+Each message is at least one byte long. The type of the message is determined
+by magic bits in that first byte (similar to opcodes in CPU instruction set
+encodings). The first byte may also have bit-fields embedding data into it,
+for some message types.
 
 ### Opcode Summary
 
