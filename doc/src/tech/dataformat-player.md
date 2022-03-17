@@ -238,7 +238,6 @@ Used in the follwing situations:
    - (sent after an Ownership Update giving us ownership over the tiles)
  - The player has had their mines captured by another player
    - (sent after an Ownership Update giving another player ownership over tiles that used to be ours)
- - In the spectator view, for all these situations (spectator has no inventory)
 
 Note that this message is sensitive to ordering; its semantics may depend
 on a previous Ownership Update message sent during the same game update.

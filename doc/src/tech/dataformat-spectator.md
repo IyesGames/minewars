@@ -121,6 +121,26 @@ messages](./dataformat-player.md#gameplay-messages) for that view.
 The total length of the data payload is the sum of the lengths of each view's
 data, as given in the Heterogenous Frame Header described above.
 
+## The Global Spectator View
+
+The global spectator view behaves somewhat differently from the player views.
+
+ - No fog of war must be displayed
+ - Digits are to be calculated by the client, from known mine locations
+
+To accommodate this, there are some special provisions in the spectator
+stream format, that differ from the player stream.
+
+The initialization sequence encodes mine positions inside the map data.
+
+The global spectator view is controlled using the same update message format
+as player views, but some message types are used differently:
+ - "Digit Update" is not to be used; ignore if encountered
+ - "Capture + Digits" is to be interpreted as an "Ownership Change" with the PlayerId derived from the stream it occurs in.
+   - Must never be encoded in Homogenous Frames with more than one PlayerId in the participation mask
+ - "Road Update" is only used for acking pending roads
+   - Actual conversion of tiles to road kind is done on "City Production"
+
 ## Compression Dictionary
 
 A special dictionary is prepared to help improve compression of the update
