@@ -28,6 +28,8 @@ When a connected player is successfully authenticated and ready to begin
 the game, it will receive in **initialization sequence**, which includes
 metadata about the game session, and the map data.
 
+### Header
+
 It begins with a header:
  - `u8`: flags
  - `u8`: protocol version (must be `0x01`)
@@ -35,6 +37,8 @@ It begins with a header:
  - `u8`: map size (radius)
  - `u8`: number of players
  - `u8`: number of cities/regions
+ - `u16`: length of compressed map data in bytes
+ - `u16`: length of uncompressed map data in bytes
 
 The `flags` field is encoded as follows:
 |Bits      |Meaning                     |
@@ -42,23 +46,28 @@ The `flags` field is encoded as follows:
 |`---x----`|Are player names anonymized?|
 |`xxx-xxxx`|(reserved bits)             |
 
+### Data Payload
+
+#### Player Names
+
 If the anonymous flag is `0`, then follow the display names of each player,
 encoded as: `u8` length in bytes, followed by UTF-8 encoded data. If the
 anonymous flag is `1`, this is skipped.
 
+#### City Locations
+
 Then follows the list of city coordinates. Region mappings/associations are
 not stored; they must be calculated/derived.
 
-Then follows the map data. It is stored as:
- - `u16`: length of compressed data in bytes
- - `u16`: length of uncompressed data in bytes
- - followed by the data block
+#### Map Data
+
+Then follows the map data.
 
 If compressed length < uncompressed length, the data is LZ4 compressed.
 
 If compressed length == uncompressed length, the data is raw/uncompressed.
 
-The contents of the data block have a special compact bit-stream encoding:
+The map is encoded with a compact bit-stream encoding:
 
  - `00`: water tile
  - `01`: land with an initial mine on it (only used for spectator/replays)
@@ -67,7 +76,19 @@ The contents of the data block have a special compact bit-stream encoding:
 
 The tiles are encoded in concentric-ring order, starting from the center of
 the map. The map data ends when all rings up until the map radius specified in
-the header, have been encoded. Any final incomplete byte is padded with `0`s.
+the header have been encoded. Any final incomplete byte is padded with `0`s.
+
+Each ring starts from the lowest (Y,X) coordinate and follows the +X direction first:
+
+Square example (imagine the same for the hexagon equivalent):
+```
+v<<<
+v  ^
+v  ^
+0>>^
+```
+
+(`0` is the starting position, assuming +X points right and +Y points up)
 
 ## Gameplay Messages
 
