@@ -140,12 +140,11 @@ The frame samples are as follows:
    - Recover:
      - `00000001` `11111111` `10001ppp`
    - Stun:
-     - `00000011` `11111111` `10000ppp` + `u16` encoding the base stun duration in game ticks
- - For every City ID and Player ID in the game, in sorted order:
-   - City Resources message and Ownership message for a single Fertile Land tile:
-     - `00000101` `1mmmmmm1` `0110cccc` `00000001` `00000001` `1ppp0000`
-   - City Resources message and Ownership message for a single Land tile:
-     - `00000101` `1mmmmmm1` `0110cccc` `00000001` `00000000` `1ppp0000`
+     - `00000011` `11111111` `10000ppp`
+   - Capture single tile with digit `1`:
+     - `00000100` `1mmmmmm1` `11110000` `00010000`
+   - Capture single tile without digit:
+     - `00000011` `1mmmmmm1` `1ppp0000`
 
 All permutations of a given sample pattern are to be concatenated, before
 moving onto the next pattern.

@@ -145,7 +145,7 @@ unused, reserved for future use.
 |`1000-111`| --                |
 |`10000---`| Stun              |
 |`10001---`| Recover           |
-|`1111----`| --                |
+|`1111----`| Capture + Digits  |
 |`1-------`| Ownership Update  |
 
 ### Messages Documentation
@@ -326,6 +326,36 @@ Followed by the coordinates of the tiles.
 
 The PlayerId must not be `000` or `111`.
 
+#### Capture + Digits
+
+This is a more-efficient combined encoding to be used for when the player is
+capturing land tiles. It can be used instead of separate "Ownership Change"
+and "Digit Change" messages.
+
+The specified tiles are now owned by the player (to whom this is addressed),
+and the specified digits are to be shown on them.
+
+Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`1111----`| (opcode)       |
+|`----xxxx`| Tile Count - 1 |
+
+Followed by the digit for each tile, two digits packed into one byte (note
+big endian):
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`-xxx----`| digit N        |
+|`-----xxx`| digit N+1      |
+
+(this encoding allows them to be easily read when inspecting a hex dump)
+
+For an odd number of tiles, the final digit is to be encoded as zero.
+
+Followed by the coordinates of the tiles.
+
 #### Stun (Timeout)
 
 Specified player has been stunned and is waiting for the specified timeout.
@@ -339,7 +369,7 @@ Encoding:
 
 Followed by `u16` specifying the cooldown duration in game ticks.
 
-PlayerId must be non-zero.
+The PlayerId must not be `000` or `111`.
 
 #### Recover (end of stun)
 
