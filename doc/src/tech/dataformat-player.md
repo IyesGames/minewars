@@ -46,6 +46,29 @@ The `flags` field is encoded as follows:
 |`---x----`|Are player names anonymized?|
 |`xxx-xxxx`|(reserved bits)             |
 
+#### Game Parameters
+
+Then follow the parameters used for the game rules, in this game.
+
+ - `u8`: per-city Base Resources
+ - `u8`: Land resources
+ - `u8`: Fertile Land resources
+ - `u8`: Mountain resources
+ - `u8`: (Radii1)
+ - `u16`: production cost of a Road
+ - `u16`: production cost of a Mine
+ - `u16`: production cost of a Decoy
+
+The resources of each tile kind are packed as two 4-bit fields `eeeellll`
+for the export and local resources respectively.
+
+`Radii1` is encoded as follows:
+
+|Bits      |Meaning                                         |
+|----------|------------------------------------------------|
+|`xx------`| How many tiles from water is fertile land?     |
+|`--xxx---`| How many tiles player territory is fog of war? |
+
 ### Data Payload
 
 #### Player Names
@@ -106,24 +129,24 @@ for some message types.
 Quick table summarizing the opcodes of all the message types. A few are left
 unused, reserved for future use.
 
-|Bits      |Message Kind          |
-|----------|----------------------|
-|`00000111`| Mine Activation      |
-|`00000---`| Digit Update         |
-|`00001000`| --                   |
-|`00001111`| --                   |
-|`00001---`| Player Eliminated    |
-|`0001----`| Road Update          |
-|`001-----`| Explosion            |
-|`010-----`| Defield              |
-|`0110----`| City Resources State |
-|`0111----`| City Production State|
-|`1000-000`| Place                |
-|`1000-111`| --                   |
-|`10000---`| Stun                 |
-|`10001---`| Recover              |
-|`1111----`| --                   |
-|`1-------`| Ownership Update     |
+|Bits      |Message Kind       |
+|----------|-------------------|
+|`00000111`| Mine Activation   |
+|`00000---`| Digit Update      |
+|`00001000`| --                |
+|`00001111`| --                |
+|`00001---`| Player Eliminated |
+|`0001----`| Road Update       |
+|`001-----`| Explosion         |
+|`010-----`| Defield           |
+|`0110----`| --                |
+|`0111----`| City Production   |
+|`1000-000`| Place             |
+|`1000-111`| --                |
+|`10000---`| Stun              |
+|`10001---`| Recover           |
+|`1111----`| --                |
+|`1-------`| Ownership Update  |
 
 ### Messages Documentation
 
@@ -232,21 +255,6 @@ The kind is `0` for mine and `1` for decoy.
 
 Followed by the coordinates of the tiles.
 
-#### City Resources State
-
-Used to inform about a city gaining/losing resource points.
-
-Encoding:
-
-|Bits      |Meaning         |
-|----------|----------------|
-|`0110----`| (opcode)       |
-|`----xxxx`| City ID        |
-
-Followed by:
- - `i8`: change in local resources
- - `i8`: change in export resources
-
 #### City Production State
 
 Used when a city has finished the production of an item and begun the production of another one.
@@ -344,4 +352,4 @@ Encoding:
 |`10001---`| (opcode)       |
 |`-----xxx`| PlayerId       |
 
-PlayerId must be non-zero.
+The PlayerId must not be `000` or `111`.
