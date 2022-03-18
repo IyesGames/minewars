@@ -37,14 +37,14 @@ It begins with a header:
  - `u8`: map size (radius)
  - `u8`: number of players
  - `u8`: number of cities/regions
+ - `u16`: length of player names data (0 for an anonymized stream)
  - `u16`: length of compressed map data in bytes
  - `u16`: length of uncompressed map data in bytes
 
 The `flags` field is encoded as follows:
 |Bits      |Meaning                     |
 |----------|----------------------------|
-|`---x----`|Are player names anonymized?|
-|`xxx-xxxx`|(reserved bits)             |
+|`xxxxxxxx`|(reserved bits)             |
 
 #### Game Parameters
 
@@ -54,7 +54,7 @@ Then follow the parameters used for the game rules, in this game.
  - `u8`: Land resources
  - `u8`: Fertile Land resources
  - `u8`: Mountain resources
- - `u8`: (Radii1)
+ - `u16`: (Radii)
  - `u16`: production cost of a Road
  - `u16`: production cost of a Mine
  - `u16`: production cost of a Decoy
@@ -62,20 +62,19 @@ Then follow the parameters used for the game rules, in this game.
 The resources of each tile kind are packed as two 4-bit fields `eeeellll`
 for the export and local resources respectively.
 
-`Radii1` is encoded as follows:
+`Radii` is encoded as follows:
 
 |Bits      |Meaning                                         |
 |----------|------------------------------------------------|
-|`xx------`| How many tiles from water is fertile land?     |
-|`--xxx---`| How many tiles player territory is fog of war? |
+|`-----xxx`| How many tiles player territory is fog of war? |
+|`---xx---`| How many tiles from water is fertile land?     |
 
 ### Data Payload
 
 #### Player Names
 
-If the anonymous flag is `0`, then follow the display names of each player,
-encoded as: `u8` length in bytes, followed by UTF-8 encoded data. If the
-anonymous flag is `1`, this is skipped.
+If the file is not anonymized, then follow the display names of each player,
+encoded as: `u8` length in bytes, followed by UTF-8 encoded data.
 
 #### City Locations
 

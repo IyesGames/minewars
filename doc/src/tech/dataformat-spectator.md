@@ -100,8 +100,9 @@ for each participating stream is included in the frame.
 
 Heterogenous frames have the following structure:
  - `u16`: tick delta (ticks since the previous frame in the stream)
+ - `u8`: length of the global spectator view portion of the data payload (0 if not included in frame)
  - `u8`: participation mask
- - `[u8]`: lengths of each view's portion of the data payload (as many as specified in the participation mask)
+ - `[u8]`: lengths of each player view's portion of the data payload (as many as specified in the participation mask)
  - [ ... data payload ... ]
 
 The participation mask is as follows:
