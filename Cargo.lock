@@ -2022,8 +2022,12 @@ version = "0.1.0"
 name = "mw_dataformat"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "lz4_flex",
  "mw_common",
+ "seahash",
+ "thiserror",
+ "zerocopy",
 ]
 
 [[package]]
@@ -2557,9 +2561,9 @@ checksum = "9145ac0af1d93c638c98c40cf7d25665f427b2a44ad0a99b1dccf3e2f25bb987"
 
 [[package]]
 name = "quote"
-version = "1.0.15"
+version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "864d3e96a899863136fc6e99f3d7cae289dafe43bf2c5ac19b70df7210c0a145"
+checksum = "b4af2ec4714533fcdf07e886f17025ace8b997b9ce51204ee69b6da831c3da57"
 dependencies = [
  "proc-macro2",
 ]
@@ -2764,6 +2768,12 @@ name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
+
+[[package]]
+name = "seahash"
+version = "4.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
 name = "semver"
@@ -3000,6 +3010,18 @@ checksum = "ea297be220d52398dcc07ce15a209fce436d361735ac1db700cab3b6cdfb9f54"
 dependencies = [
  "proc-macro2",
  "quote",
+ "unicode-xid",
+]
+
+[[package]]
+name = "synstructure"
+version = "0.12.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f36bdaa60a83aca3921b5259d5400cbf5e90fc51931376a9bd4a0eb79aa7210f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
  "unicode-xid",
 ]
 
@@ -3559,3 +3581,24 @@ name = "xml-rs"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
+
+[[package]]
+name = "zerocopy"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "332f188cc1bcf1fe1064b8c58d150f497e697f49774aa846f2dc949d9a25f236"
+dependencies = [
+ "byteorder",
+ "zerocopy-derive",
+]
+
+[[package]]
+name = "zerocopy-derive"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0fbc82b82efe24da867ee52e015e58178684bd9dd64c34e66bdf21da2582a9f"
+dependencies = [
+ "proc-macro2",
+ "syn",
+ "synstructure",
+]
