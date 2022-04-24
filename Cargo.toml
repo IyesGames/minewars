@@ -26,9 +26,16 @@ features = [
     "tilemap",
 ]
 
+[dependencies.tokio]
+version = "1.17.0"
+features = [
+    "sync",
+]
+
 [dependencies]
 mw_common = { path = "lib/mw_common" }
 mw_dataformat = { path = "lib/mw_dataformat" }
+anyhow = "1.0.57"
 
 [dependencies.mw_proprietary]
 path = "../minewars-proprietary/client"
