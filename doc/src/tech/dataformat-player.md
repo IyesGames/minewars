@@ -44,7 +44,9 @@ It begins with a header:
 The `flags` field is encoded as follows:
 |Bits      |Meaning                     |
 |----------|----------------------------|
-|`xxxxxxxx`|(reserved bits)             |
+|`----0---`| Game uses a hexagonal grid |
+|`----1---`| Game uses a square grid    |
+|`xxxx-xxx`|(reserved bits)             |
 
 #### Game Parameters
 
