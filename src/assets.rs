@@ -213,13 +213,13 @@ fn splash_init_iyes(
         transform: Transform::from_xyz(0.0, 75.0, 0.0),
         ..Default::default()
     }).insert(SplashCleanup)
-    .insert(SplashFade::new(0.0, 1.0, 1.25));
+    .insert(SplashFade::new(0.0, 0.0, 1.25, 1.5));
     commands.spawn_bundle(SpriteBundle {
         texture: splashes.logo_iyestext.clone(),
         transform: Transform::from_xyz(0.0, -175.0, 0.0),
         ..Default::default()
     }).insert(SplashCleanup)
-    .insert(SplashFade::new(1.0, 0.25, 1.5));
+    .insert(SplashFade::new(0.25, 0.75, 0.25, 1.75));
 }
 
 fn splash_init_bevy(
@@ -234,19 +234,21 @@ fn splash_init_bevy(
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..Default::default()
     }).insert(SplashCleanup)
-    .insert(SplashFade::new(0.5, 1.0, 1.5));
+    .insert(SplashFade::new(0.0, 0.5, 1.0, 1.5));
 }
 
 #[derive(Component)]
 struct SplashFade {
+    timer_wait: Timer,
     timer_intro: Timer,
     timer_on: Timer,
     timer_fade: Timer,
 }
 
 impl SplashFade {
-    fn new(intro: f32, on: f32, fade: f32) -> Self {
+    fn new(wait: f32, intro: f32, on: f32, fade: f32) -> Self {
         Self {
+            timer_wait: Timer::from_seconds(wait, false),
             timer_intro: Timer::from_seconds(intro, false),
             timer_on: Timer::from_seconds(on, false),
             timer_fade: Timer::from_seconds(fade, false),
@@ -264,19 +266,24 @@ fn splash_fade(
     let mut count = 0;
     for (mut sprite, mut fade) in q.iter_mut() {
         count += 1;
-        if fade.timer_intro.duration().as_secs_f32() > 0.0 && !fade.timer_intro.finished() {
+        if fade.timer_wait.duration().as_secs_f32() > 0.0 && !fade.timer_wait.finished() {
+            fade.timer_wait.tick(t.delta());
+            all_finished = false;
+            sprite.color.set_a(0.0);
+        } else if fade.timer_intro.duration().as_secs_f32() > 0.0 && !fade.timer_intro.finished() {
+            fade.timer_intro.tick(t.delta());
             all_finished = false;
             let remain = fade.timer_intro.percent();
             sprite.color.set_a(remain);
-            fade.timer_intro.tick(t.delta());
         } else if !fade.timer_on.finished() {
-            all_finished = false;
             fade.timer_on.tick(t.delta());
+            all_finished = false;
+            sprite.color.set_a(1.0);
         } else if !fade.timer_fade.finished() {
+            fade.timer_fade.tick(t.delta());
             all_finished = false;
             let remain = fade.timer_fade.percent_left();
             sprite.color.set_a(remain);
-            fade.timer_fade.tick(t.delta());
         }
     }
     if all_finished && count > 0 {
