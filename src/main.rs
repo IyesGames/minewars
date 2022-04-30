@@ -2,14 +2,18 @@ mod prelude {
     pub use iyesengine::prelude::*;
     pub use anyhow::{Context, Result as AnyResult, Error as AnyError};
     pub use bevy::utils::{HashMap, HashSet};
+    pub use crate::PROPRIETARY;
 }
 
 use crate::prelude::*;
 
-use bevy::window::PresentMode;
+use bevy::window::{PresentMode, WindowResizeConstraints};
+use bevy::log::LogSettings;
 
 mod assets;
 mod ui;
+
+pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 enum AppGlobalState {
@@ -28,9 +32,22 @@ fn main() {
     let mut app = App::new();
 
     app
+        .insert_resource(LogSettings {
+            filter: "warn,minewars=debug".into(),
+            level: bevy::log::Level::DEBUG,
+        })
         .insert_resource(WindowDescriptor {
             title: "MineWars™ PRE-ALPHA".into(),
             present_mode: PresentMode::Fifo,
+            resizable: true,
+            width: 800.0,
+            height: 600.0,
+            resize_constraints: WindowResizeConstraints {
+                min_width: 800.0,
+                min_height: 600.0,
+                max_width: f32::INFINITY,
+                max_height: f32::INFINITY,
+            },
             ..Default::default()
         })
         .insert_resource(ClearColor(Color::BLACK))
@@ -38,6 +55,7 @@ fn main() {
         .add_loopless_state(AppGlobalState::AssetsLoading)
         .add_plugin(crate::ui::UiPlugin)
         .add_plugin(crate::assets::AssetsPlugin)
+        .add_plugin(crate::ui::mainmenu::MainMenuPlugin)
         .add_system(debug_current_state)
         ;
 

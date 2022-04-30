@@ -43,19 +43,23 @@ impl Plugin for AssetsPlugin {
 }
 
 pub struct UiAssets {
-    font_regular: Handle<Font>,
-    font_bold: Handle<Font>,
-    font_light: Handle<Font>,
+    pub font_regular: Handle<Font>,
+    pub font_bold: Handle<Font>,
+    pub font_light: Handle<Font>,
 }
 
 pub struct Splashes {
-    logo_iyeshead: Handle<Image>,
-    logo_iyestext: Handle<Image>,
-    logo_bevy: Handle<Image>,
+    pub logo_iyeshead: Handle<Image>,
+    pub logo_iyestext: Handle<Image>,
+    pub logo_bevy: Handle<Image>,
+}
+
+pub struct TitleLogo {
+    pub image: Handle<Image>,
 }
 
 pub struct TileAssets {
-    tiles: Handle<Image>,
+    pub tiles: Handle<Image>,
 }
 
 fn load_assets(
@@ -79,17 +83,25 @@ fn load_assets(
 
     // SPLASH LOGOS
 
-    let logo_iyeshead: Handle<Image> = ass.load("logo_iyeshead.png");
+    let logo_iyeshead = ass.load("logo_iyeshead.png");
     ast.add(&logo_iyeshead);
-    let logo_iyestext: Handle<Image> = ass.load("logo_iyestext.png");
+    let logo_iyestext = ass.load("logo_iyestext.png");
     ast.add(&logo_iyeshead);
-    let logo_bevy: Handle<Image> = ass.load("logo_bevy.png");
+    let logo_bevy = ass.load("logo_bevy.png");
     ast.add(&logo_bevy);
 
     commands.insert_resource(Splashes {
         logo_bevy,
         logo_iyeshead,
         logo_iyestext,
+    });
+
+    // TITLE
+    let logo_title = ass.load("logo_minewars.png");
+    ast.add(&logo_title);
+
+    commands.insert_resource(TitleLogo {
+        image: logo_title,
     });
 
     // TILESET
