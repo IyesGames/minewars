@@ -25,17 +25,15 @@ open-source codebase that others can learn and benefit from.
 I intend to open-source all the Bevy-centric parts of the code, but I want
 to keep some key components of the game proprietary.
 
-When you build this repo with default cargo features, you will get a
-fully-functional MineWars **viewer**, capable of:
+The intention is: when you build this repo with default cargo features,
+you should get a fully-functional MineWars **viewer**, capable of:
  - Playing back replay files
  - Spectating live games
 
-Note that this effectively includes all the Bevy code of the game (BTW, the
-game server is actually not implemented using Bevy), and most of the technology
-that people in the Bevy community have wanted to learn from my project.
-
-UI, rendering, input, etc … are all included. So is some of the networking
-(for spectating).
+Note that this effectively includes almost all the Bevy code of the game,
+and most of the technology that people in the Bevy community have wanted to
+learn from my project. UI, rendering, input, etc … are all included. So
+is some of the networking (for spectating).
 
 However, the open-source build does *not* provide the following features:
  - Hosting games (no server, LAN, or Playground modes)
