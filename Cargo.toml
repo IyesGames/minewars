@@ -16,6 +16,12 @@ members = ["lib/*"]
 proprietary = [
     "mw_proprietary",
 ]
+dev = [
+    "iyesengine/dev",
+]
+release = [
+    "iyesengine/release",
+]
 
 [dependencies.iyesengine]
 git = "https://github.com/IyesGames/iyesengine"

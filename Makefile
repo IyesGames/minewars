@@ -1,13 +1,13 @@
 default: run
 
 c:
-	cargo check --features proprietary,iyesengine/dev,iyesengine/dynamic
+	cargo check --features proprietary,dev
 
 debug:
-	cargo build --features proprietary,iyesengine/dev,iyesengine/dynamic
+	cargo build --features proprietary,dev
 
 run:
-	cargo run --features proprietary,iyesengine/dev,iyesengine/dynamic
+	cargo run --features proprietary,dev,iyesengine/dynamic
 
 release:
-	cargo build --release --features proprietary,iyesengine/release
+	cargo build --release --features proprietary,release
