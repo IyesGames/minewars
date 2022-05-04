@@ -110,7 +110,7 @@ mod tileid {
     }
 
     impl CoordTileids for Sq {
-        const TILE_OFFSET: Vec2 = TILESZ;
+        const TILE_OFFSET: Vec2 = const_vec2!([224.0, 224.0]);
         const TILEID_LAND: usize = 0o11;
         const TILEID_CURSOR: usize = 0o10;
         const TILEID_ROADS: &'static [usize] = &[0o70, 0o71, 0o72, 0o73];

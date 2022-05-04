@@ -6,7 +6,7 @@
    version="1.1"
    id="svg8"
    inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
-   sodipodi:docname="tiles2.svg"
+   sodipodi:docname="tiles.svg"
    inkscape:export-filename="/home/iyes/dev/iyesgames/minewars/assets/tiles-5.png"
    inkscape:export-xdpi="19.200001"
    inkscape:export-ydpi="19.200001"
@@ -325,7 +325,7 @@
      inkscape:guide-bbox="true"
      units="px"
      inkscape:pagecheckerboard="true"
-     inkscape:window-width="1276"
+     inkscape:window-width="2556"
      inkscape:window-height="1390"
      inkscape:window-x="0"
      inkscape:window-y="0"
@@ -414,9 +414,9 @@
        sodipodi:r2="13.949041"
        sodipodi:arg1="-0.78539816"
        sodipodi:arg2="0"
-       inkscape:rounded="0.125"
+       inkscape:rounded="0.0625"
        inkscape:randomized="0"
-       d="m -131.00785,72.317979 c 2.46586,2.465865 2.46586,25.432219 0,27.898081 -2.46587,2.46587 -25.43222,2.46587 -27.89809,0 -2.46586,-2.465862 -2.46586,-25.432216 0,-27.898081 2.46587,-2.465866 25.43222,-2.465866 27.89809,0 z"
+       d="m -131.00785,72.317979 c 1.23293,1.232933 1.23293,26.665152 0,27.898081 -1.23293,1.23294 -26.66515,1.23294 -27.89809,0 -1.23293,-1.232929 -1.23293,-26.665148 0,-27.898081 1.23294,-1.232933 26.66516,-1.232933 27.89809,0 z"
        transform="matrix(1.0549564,0,0,1.0549564,212.92287,-31.007949)" />
     <path
        sodipodi:type="star"
@@ -988,9 +988,9 @@
        sodipodi:r2="13.949041"
        sodipodi:arg1="-0.78539816"
        sodipodi:arg2="0"
-       inkscape:rounded="0.125"
+       inkscape:rounded="0.0625"
        inkscape:randomized="0"
-       d="m -131.00785,72.317979 c 2.46586,2.465865 2.46586,25.432219 0,27.898081 -2.46587,2.46587 -25.43222,2.46587 -27.89809,0 -2.46586,-2.465862 -2.46586,-25.432216 0,-27.898081 2.46587,-2.465866 25.43222,-2.465866 27.89809,0 z"
+       d="m -131.00785,72.317979 c 1.23293,1.232933 1.23293,26.665152 0,27.898081 -1.23293,1.23294 -26.66515,1.23294 -27.89809,0 -1.23293,-1.232929 -1.23293,-26.665148 0,-27.898081 1.23294,-1.232933 26.66516,-1.232933 27.89809,0 z"
        transform="matrix(1.0549564,0,0,1.0549564,172.92287,-31.007949)" />
     <path
        style="fill:none;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
