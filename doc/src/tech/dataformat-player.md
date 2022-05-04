@@ -157,6 +157,11 @@ Here is the complete list of game update messages and their encodings:
 
 A tile is now known to have an activated mine on it.
 
+Assembly:
+```
+ACT y,x
+```
+
 Encoding:
 
 |Bits      |Meaning         |
@@ -168,6 +173,11 @@ Followed by the coordinate of the tile.
 #### Digit Update
 
 Update the value of the Minesweeper digit at a specific (single) tile.
+
+Assembly:
+```
+DIG d/y,x
+```
 
 Encoding:
 
@@ -183,6 +193,11 @@ Digit value bitfield must never be `111`.
 #### Player Eliminated
 
 It's game over for the specified player.
+
+Assembly:
+```
+RIP p
+```
 
 Encoding:
 
@@ -201,6 +216,11 @@ on the specified tiles.
 If issued on foreign territory: reveal that these tiles actually have roads
 built on them (convert tile kind to road).
 
+Assembly:
+```
+ROAD y,x ...
+```
+
 Encoding:
 
 |Bits      |Meaning         |
@@ -213,6 +233,11 @@ Followed by the coordinates of the tiles.
 #### Explosion
 
 Mines or decoys have been destroyed at the specified tiles.
+
+Assembly:
+```
+EXP [MD] y,x ...
+```
 
 Encoding:
 
@@ -243,6 +268,11 @@ Used in the follwing situations:
 Note that this message is sensitive to ordering; its semantics may depend
 on a previous Ownership Update message sent during the same game update.
 
+Assembly:
+```
+REM [MD] y,x ...
+```
+
 Encoding:
 
 |Bits      |Meaning         |
@@ -261,6 +291,11 @@ Used when a city has finished the production of an item and begun the production
 
 Also if the active production item has been changed without completing the previous one.
 
+Assembly:
+```
+PROD old new
+```
+
 Encoding:
 
 |Bits      |Meaning         |
@@ -277,12 +312,12 @@ Followed by another byte:
 
 The Item IDs are:
 
-|Bits  |Meaning         |
-|------|----------------|
-|`0000`| Mine           |
-|`0001`| Decoy          |
-|`0010`| Road           |
-|`1111`| *(cancel)*     |
+|Bits  |Meaning         |Assembly   |
+|------|----------------|-----------|
+|`0000`| Mine           |`MINE`     |
+|`0001`| Decoy          |`DECOY`    |
+|`0010`| Road           |`ROAD/y,x` |
+|`1111`| *(cancel)*     |`X`        |
 
 All other values are reserved.
 
@@ -299,6 +334,11 @@ If the Started Item is Road, append coordinates.
 
 Used when a player has placed a mine/decoy on a tile. Assumed to be removed from inventory.
 
+Assembly:
+```
+PLC [MD] y,x
+```
+
 Encoding:
 
 |Bits      |Meaning         |
@@ -313,6 +353,11 @@ Followed by tile coordinate.
 #### Ownership Update
 
 Multiple tiles are now known to be owned by the specified player id.
+
+Assembly:
+```
+OWN p y,x ...
+```
 
 Encoding:
 
@@ -334,6 +379,11 @@ and "Digit Change" messages.
 
 The specified tiles are now owned by the player (to whom this is addressed),
 and the specified digits are to be shown on them.
+
+Assembly:
+```
+OWND d/y,x
+```
 
 Encoding:
 
@@ -360,6 +410,11 @@ Followed by the coordinates of the tiles.
 
 Specified player has been stunned and is waiting for the specified timeout.
 
+Assembly:
+```
+SLEEP p time
+```
+
 Encoding:
 
 |Bits      |Meaning         |
@@ -374,6 +429,11 @@ The PlayerId must not be `000` or `111`.
 #### Recover (end of stun)
 
 Specified player's stun has ended.
+
+Assembly:
+```
+WAKE p
+```
 
 Encoding:
 
