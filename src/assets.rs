@@ -1,9 +1,12 @@
 use crate::prelude::*;
+use bevy::math::const_vec2;
 
 use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
 
 use crate::AppGlobalState;
+
+pub const TILESZ: Vec2 = const_vec2!([256.0, 256.0]);
 
 pub struct AssetsPlugin;
 
@@ -60,12 +63,14 @@ pub struct TitleLogo {
 
 pub struct TileAssets {
     pub tiles: Handle<Image>,
+    pub atlas: Handle<TextureAtlas>,
 }
 
 fn load_assets(
     mut commands: Commands,
     ass: Res<AssetServer>,
     mut ast: ResMut<AssetsLoading>,
+    mut atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     // UI FONT
     let font_regular = ass.load("Sansation-Regular.ttf");
@@ -109,8 +114,17 @@ fn load_assets(
     let tiles: Handle<Image> = ass.load("tiles.ktx2");
     ast.add(&tiles);
 
+    let atlas = TextureAtlas::from_grid(
+        tiles.clone(),
+        TILESZ,
+        8, 8,
+    );
+
+    let atlas = atlases.add(atlas);
+
     commands.insert_resource(TileAssets {
         tiles,
+        atlas,
     });
 }
 

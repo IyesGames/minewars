@@ -11,6 +11,8 @@ use bevy::window::{PresentMode, WindowResizeConstraints};
 use bevy::log::LogSettings;
 
 mod assets;
+mod camera;
+mod map;
 mod ui;
 
 pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
@@ -44,6 +46,7 @@ enum GameMode {
     /// Tutorial
     Tutorial,
     #[cfg(feature = "dev")]
+    /// Developer Mode
     Dev,
 }
 
@@ -92,12 +95,19 @@ fn main() {
         })
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugin(IyesEverything)
+        // FIXME: for testing
+        .insert_resource(crate::map::MapDescriptor {
+            size: 5,
+            topology: mw_common::grid::Topology::Hex,
+        })
         .add_loopless_state(StreamSource::Disconnected)
         .add_loopless_state(GameMode::None)
         .add_loopless_state(AppGlobalState::AssetsLoading)
         .add_plugin(crate::ui::UiPlugin)
         .add_plugin(crate::assets::AssetsPlugin)
         .add_plugin(crate::ui::mainmenu::MainMenuPlugin)
+        .add_plugin(crate::camera::CameraPlugin)
+        .add_plugin(crate::map::MapPlugin)
         .add_system(debug_current_state)
         ;
 

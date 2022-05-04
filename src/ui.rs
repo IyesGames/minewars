@@ -12,11 +12,14 @@ impl Plugin for UiPlugin {
         app.add_startup_system(iyes_bevy_util::ui::init_camera);
         app.add_system(butt_interact_visual);
         app.add_system(butts::exitapp.run_if(on_butt_interact::<butts::ExitApp>));
+        #[cfg(feature = "dev")]
+        app.add_system(butts::play_dev.run_if(on_butt_interact::<butts::PlayDev>));
     }
 }
 
 mod butts {
     use crate::prelude::*;
+    use crate::{AppGlobalState, GameMode, StreamSource};
     use bevy::app::AppExit;
 
     #[derive(Component, Default)]
@@ -24,6 +27,17 @@ mod butts {
 
     pub fn exitapp(mut ev: EventWriter<AppExit>) {
         ev.send(AppExit);
+    }
+
+    #[cfg(feature = "dev")]
+    #[derive(Component, Default)]
+    pub struct PlayDev;
+
+    #[cfg(feature = "dev")]
+    pub fn play_dev(mut commands: Commands) {
+        commands.insert_resource(NextState(AppGlobalState::InGame));
+        commands.insert_resource(NextState(GameMode::Dev));
+        commands.insert_resource(NextState(StreamSource::Local));
     }
 }
 

@@ -9,7 +9,7 @@ pub struct MainMenuPlugin;
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_enter_system(AppGlobalState::MainMenu, setup);
-        app.add_exit_system(AppGlobalState::MainMenu, despawn_with::<MainMenuCleanup>);
+        app.add_exit_system(AppGlobalState::MainMenu, despawn_with_recursive::<MainMenuCleanup>);
     }
 }
 
@@ -126,7 +126,7 @@ fn setup(
 
     #[cfg(feature = "dev")]
     {
-        let butt_dev = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "(dev/debug mode)", true);
+        let butt_dev = ui::spawn_button::<ui::butts::PlayDev>(&mut commands, &*uiassets, "(dev/debug mode)", true);
         commands.entity(row1).push_children(&[butt_dev]);
     }
 }
