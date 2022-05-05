@@ -1,10 +1,12 @@
-use crate::assets::TileAssets;
 use crate::prelude::*;
-use crate::AppGlobalState;
+
 use mw_common::grid::map::CompactMapCoordExt;
 use mw_common::{RoadState, MineKind};
 use mw_common::plid::PlayerId;
 use mw_common::grid::*;
+
+use crate::assets::TileAssets;
+use crate::AppGlobalState;
 
 use self::tileid::CoordTileids;
 
@@ -71,6 +73,7 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     commands: &mut Commands,
     descriptor: &MapDescriptor,
     tiles: &TileAssets,
+    // data: &MapDataInit,
 ) {
     for c in C::iter_coords(descriptor.size) {
         let pos = c.translation() * C::TILE_OFFSET;
@@ -92,8 +95,6 @@ mod tileid {
     use crate::prelude::*;
     use bevy::math::const_vec2;
     use mw_common::grid::*;
-
-    use crate::assets::TILESZ;
 
     pub trait CoordTileids: Coord {
         const TILE_OFFSET: Vec2;

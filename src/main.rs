@@ -2,6 +2,7 @@ mod prelude {
     pub use iyesengine::prelude::*;
     pub use anyhow::{Context, Result as AnyResult, Error as AnyError};
     pub use bevy::utils::{HashMap, HashSet};
+    pub use std::time::{Duration, Instant};
     pub use crate::PROPRIETARY;
 }
 
@@ -97,7 +98,7 @@ fn main() {
         .add_plugin(IyesEverything)
         // FIXME: for testing
         .insert_resource(crate::map::MapDescriptor {
-            size: 5,
+            size: 48,
             topology: mw_common::grid::Topology::Hex,
         })
         .add_loopless_state(StreamSource::Disconnected)
