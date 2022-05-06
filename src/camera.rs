@@ -2,6 +2,7 @@ use crate::assets::TileAssets;
 use crate::map::MaxViewBounds;
 use crate::prelude::*;
 use bevy::input::mouse::{MouseWheel, MouseScrollUnit, MouseMotion};
+use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::FilterMode;
 use bevy_tweening::*;
 use bevy_tweening::lens::*;
@@ -12,6 +13,9 @@ pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
+        app.insert_resource(WorldCursor(Vec2::ZERO));
+        app.insert_resource(WorldCursorPrev(Vec2::ZERO));
+        app.add_system_to_stage(CoreStage::PreUpdate, world_cursor_system);
         app.add_enter_system(AppGlobalState::InGame, setup_camera);
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<CameraCleanup>);
         app.add_exit_system(AppGlobalState::AssetsLoading, setup_tile_sampler);
@@ -106,12 +110,50 @@ fn camera_control_zoom_mousewheel(
                 end: Vec3::splat(ZOOM_LEVELS[level.0].exp2()),
             }
         )));
+    }
+}
 
-        // commands.entity(e).insert(xf_cur.ease_to(
-        //     xf_tgt.0,
-        //     EaseFunction::QuadraticOut,
-        //     EasingType::Once { duration },
-        // ));
+pub struct WorldCursor(pub Vec2);
+pub struct WorldCursorPrev(pub Vec2);
+
+fn world_cursor_system(
+    mut crs: ResMut<WorldCursor>,
+    mut crs_old: ResMut<WorldCursorPrev>,
+    // need to get window dimensions
+    wnds: Res<Windows>,
+    // query to get camera transform
+    q_camera: Query<(&Camera, &GlobalTransform), With<GameCamera>>
+) {
+    // get the camera info and transform
+    // assuming there is exactly one main camera entity, so query::single() is OK
+    if let Ok((camera, camera_transform)) = q_camera.get_single() {
+        // get the window that the camera is displaying to (or the primary window)
+        let wnd = if let RenderTarget::Window(id) = camera.target {
+            wnds.get(id).unwrap()
+        } else {
+            wnds.get_primary().unwrap()
+        };
+
+        // check if the cursor is inside the window and get its position
+        if let Some(screen_pos) = wnd.cursor_position() {
+            // get the size of the window
+            let window_size = Vec2::new(wnd.width() as f32, wnd.height() as f32);
+
+            // convert screen position [0..resolution] to ndc [-1..1] (gpu coordinates)
+            let ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
+
+            // matrix for undoing the projection and camera transform
+            let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix.inverse();
+
+            // use it to convert ndc to world-space coordinates
+            let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
+
+            // reduce it to a 2D value
+            let world_pos: Vec2 = world_pos.truncate();
+
+            crs_old.0 = crs.0;
+            crs.0 = world_pos;
+        }
     }
 }
 
