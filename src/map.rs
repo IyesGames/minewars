@@ -25,6 +25,8 @@ impl Plugin for MapPlugin {
     }
 }
 
+pub struct MaxViewBounds(pub f32);
+
 #[derive(Component)]
 struct MapCleanup;
 
@@ -75,6 +77,7 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     tiles: &TileAssets,
     // data: &MapDataInit,
 ) {
+    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * descriptor.size as f32));
     for c in C::iter_coords(descriptor.size) {
         let pos = c.translation() * C::TILE_OFFSET;
         commands.spawn_bundle(SpriteSheetBundle {

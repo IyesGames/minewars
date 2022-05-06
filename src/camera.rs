@@ -1,4 +1,5 @@
 use crate::assets::TileAssets;
+use crate::map::MaxViewBounds;
 use crate::prelude::*;
 use bevy::input::mouse::{MouseWheel, MouseScrollUnit, MouseMotion};
 use bevy::render::render_resource::FilterMode;
@@ -118,6 +119,7 @@ fn camera_control_pan_mousedrag(
     btn: Res<Input<MouseButton>>,
     mut motion: EventReader<MouseMotion>,
     mut q_camera: Query<(&mut Transform, &ZoomLevel), With<GameCamera>>,
+    bounds: Option<Res<MaxViewBounds>>,
 ) {
     if btn.pressed(MouseButton::Right) {
         let mut delta = Vec2::ZERO;
@@ -130,6 +132,16 @@ fn camera_control_pan_mousedrag(
             let (mut cam, _) = q_camera.single_mut();
             cam.translation.x -= delta.x * cam.scale.x;
             cam.translation.y += delta.y * cam.scale.y;
+
+            if let Some(bounds) = bounds {
+                let mut cam_xy = cam.translation.truncate();
+                let r = cam_xy.length();
+                if r > bounds.0 {
+                    cam_xy = cam_xy.normalize() * bounds.0;
+                    cam.translation.x = cam_xy.x;
+                    cam.translation.y = cam_xy.y;
+                }
+            }
         }
     }
     if btn.just_released(MouseButton::Right) {
