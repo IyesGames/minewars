@@ -1,6 +1,6 @@
 use crate::assets::TileAssets;
 use crate::prelude::*;
-use bevy::input::mouse::{MouseWheel, MouseScrollUnit};
+use bevy::input::mouse::{MouseWheel, MouseScrollUnit, MouseMotion};
 use bevy::render::render_resource::FilterMode;
 use bevy_tweening::*;
 use bevy_tweening::lens::*;
@@ -14,11 +14,14 @@ impl Plugin for CameraPlugin {
         app.add_enter_system(AppGlobalState::InGame, setup_camera);
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<CameraCleanup>);
         app.add_exit_system(AppGlobalState::AssetsLoading, setup_tile_sampler);
-        app.add_system_set(
-            ConditionSet::new()
+        app.add_system(
+            camera_control_zoom_mousewheel
                 .run_in_state(AppGlobalState::InGame)
-                .with_system(camera_control_zoom_mousewheel)
-                .into()
+        );
+        app.add_system(
+            camera_control_pan_mousedrag
+                .run_in_state(AppGlobalState::InGame)
+                .after(camera_control_zoom_mousewheel)
         );
     }
 }
@@ -111,3 +114,37 @@ fn camera_control_zoom_mousewheel(
     }
 }
 
+fn camera_control_pan_mousedrag(
+    btn: Res<Input<MouseButton>>,
+    mut motion: EventReader<MouseMotion>,
+    mut q_camera: Query<(&mut Transform, &ZoomLevel), With<GameCamera>>,
+) {
+    if btn.pressed(MouseButton::Right) {
+        let mut delta = Vec2::ZERO;
+
+        for ev in motion.iter() {
+            delta += ev.delta;
+        }
+
+        if delta != Vec2::ZERO {
+            let (mut cam, _) = q_camera.single_mut();
+            cam.translation.x -= delta.x * cam.scale.x;
+            cam.translation.y += delta.y * cam.scale.y;
+        }
+    }
+    if btn.just_released(MouseButton::Right) {
+        let (mut xf_cam, level) = q_camera.single_mut();
+        // round camera translation to a full pixel at our current zoom level
+        // (so rendering looks nice)
+        xf_cam.translation.x = round_at_zoomlevel(level.0, xf_cam.translation.x);
+        xf_cam.translation.y = round_at_zoomlevel(level.0, xf_cam.translation.y);
+    }
+}
+
+fn round_at_zoomlevel(level: usize, x: f32) -> f32 {
+    let levelscale = ZOOM_LEVELS[level].exp2();
+    // round to zoom level scale
+    let rounded = (x / levelscale).round() * levelscale;
+    // round to whole pixel
+    rounded.round()
+}
