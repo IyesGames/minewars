@@ -59,3 +59,70 @@ build_targets = [
 ]
 min_sdk_version = 16
 target_sdk_version = 29
+
+[patch.crates-io]
+bevy = { path = "./deps/bevy" }
+bevy_app = { path = "./deps/bevy/crates/bevy_app" }
+bevy_asset = { path = "./deps/bevy/crates/bevy_asset" }
+bevy_core = { path = "./deps/bevy/crates/bevy_core" }
+bevy_core_pipeline = { path = "./deps/bevy/crates/bevy_core_pipeline" }
+bevy_crevice = { path = "./deps/bevy/crates/bevy_crevice" }
+bevy_derive = { path = "./deps/bevy/crates/bevy_derive" }
+bevy_diagnostic = { path = "./deps/bevy/crates/bevy_diagnostic" }
+bevy_ecs = { path = "./deps/bevy/crates/bevy_ecs" }
+bevy_hierarchy = { path = "./deps/bevy/crates/bevy_hierarchy" }
+bevy_input = { path = "./deps/bevy/crates/bevy_input" }
+bevy_log = { path = "./deps/bevy/crates/bevy_log" }
+bevy_math = { path = "./deps/bevy/crates/bevy_math" }
+bevy_pbr = { path = "./deps/bevy/crates/bevy_pbr" }
+bevy_reflect = { path = "./deps/bevy/crates/bevy_reflect" }
+bevy_render = { path = "./deps/bevy/crates/bevy_render" }
+bevy_scene = { path = "./deps/bevy/crates/bevy_scene" }
+bevy_sprite = { path = "./deps/bevy/crates/bevy_sprite" }
+bevy_tasks = { path = "./deps/bevy/crates/bevy_tasks" }
+bevy_utils = { path = "./deps/bevy/crates/bevy_utils" }
+bevy_window = { path = "./deps/bevy/crates/bevy_window" }
+
+iyes_loopless = { path = "./deps/iyes_loopless" }
+iyes_progress = { path = "./deps/iyes_progress" }
+
+benimator = { path = "./deps/benimator" }
+bevy_asset_ron = { path = "./deps/bevy_asset_ron" }
+bevy_asset_loader = { path = "./deps/bevy_asset_loader/bevy_asset_loader" }
+bevy_prototype_debug_lines = { path = "./deps/bevy_debug_lines" }
+bevy_ecs_tilemap = { path = "./deps/bevy_ecs_tilemap" }
+bevy_kira_audio = { path = "./deps/bevy_kira_audio" }
+bevy_tweening = { path = "./deps/bevy_tweening" }
+
+[patch."https://github.com/IyesGames/iyesengine"]
+iyesengine = { path = "./deps/iyesengine" }
+
+[patch."https://github.com/IyesGames/iyes_bevy_util"]
+iyes_bevy_util = { path = "../iyes_bevy_util" }
+
+[patch."https://github.com/IyesGames/iyes_loopless"]
+iyes_loopless = { path = "./deps/iyes_loopless" }
+
+[patch."https://github.com/IyesGames/iyes_progress"]
+iyes_progress = { path = "./deps/iyes_progress" }
+
+[patch."https://github.com/IyesGames/bevy_asset_loader"]
+bevy_asset_loader = { path = "./deps/bevy_asset_loader/bevy_asset_loader" }
+
+[patch."https://github.com/IyesGames/benimator"]
+benimator = { path = "./deps/benimator" }
+
+[patch."https://github.com/IyesGames/bevy_asset_ron"]
+bevy_asset_ron = { path = "./deps/bevy_asset_ron" }
+
+[patch."https://github.com/IyesGames/bevy_debug_lines"]
+bevy_prototype_debug_lines = { path = "./deps/bevy_debug_lines" }
+
+[patch."https://github.com/IyesGames/bevy_ecs_tilemap"]
+bevy_ecs_tilemap = { path = "./deps/bevy_ecs_tilemap" }
+
+[patch."https://github.com/IyesGames/bevy_kira_audio"]
+bevy_kira_audio = { path = "./deps/bevy_kira_audio" }
+
+[patch."https://github.com/IyesGames/bevy_tweening"]
+bevy_tweening = { path = "./deps/bevy_tweening" }

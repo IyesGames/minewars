@@ -1,0 +1,36 @@
+[submodule "deps/iyesengine"]
+	path = deps/iyesengine
+	url = https://github.com/IyesGames/iyesengine
+[submodule "deps/bevy"]
+	path = deps/bevy
+	url = https://github.com/IyesGames/bevy
+[submodule "deps/iyes_bevy_util"]
+	path = deps/iyes_bevy_util
+	url = https://github.com/IyesGames/iyes_bevy_util
+[submodule "deps/iyes_loopless"]
+	path = deps/iyes_loopless
+	url = https://github.com/IyesGames/iyes_loopless
+[submodule "deps/iyes_progress"]
+	path = deps/iyes_progress
+	url = https://github.com/IyesGames/iyes_progress
+[submodule "deps/bevy_asset_ron"]
+	path = deps/bevy_asset_ron
+	url = https://github.com/IyesGames/bevy_asset_ron
+[submodule "deps/bevy_asset_loader"]
+	path = deps/bevy_asset_loader
+	url = https://github.com/IyesGames/bevy_asset_loader
+[submodule "deps/bevy_debug_lines"]
+	path = deps/bevy_debug_lines
+	url = https://github.com/IyesGames/bevy_debug_lines
+[submodule "deps/bevy_ecs_tilemap"]
+	path = deps/bevy_ecs_tilemap
+	url = https://github.com/IyesGames/bevy_ecs_tilemap
+[submodule "deps/bevy_kira_audio"]
+	path = deps/bevy_kira_audio
+	url = https://github.com/IyesGames/bevy_kira_audio
+[submodule "deps/bevy_tweening"]
+	path = deps/bevy_tweening
+	url = https://github.com/IyesGames/bevy_tweening
+[submodule "deps/benimator"]
+	path = deps/benimator
+	url = https://github.com/IyesGames/benimator
