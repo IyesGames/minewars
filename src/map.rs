@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 use mw_common::grid::map::CompactMapCoordExt;
-use mw_common::{RoadState, MineKind};
+use mw_common::game::{ProdState, MineKind, MapDataInit, TileKind};
 use mw_common::plid::PlayerId;
 use mw_common::grid::*;
 
@@ -46,12 +46,12 @@ pub enum MapEventKind {
         kind: Option<MineKind>,
     },
     Road {
-        state: Option<RoadState>,
+        state: Option<ProdState>,
     },
     Explosion {
         kind: MineKind,
     },
-    ActiveMine,
+    MineActive,
 }
 
 pub struct MapEvent {
@@ -63,23 +63,35 @@ fn setup_map(
     mut commands: Commands,
     descriptor: Res<MapDescriptor>,
     tiles: Res<TileAssets>,
+    data_hex: Option<Res<MapDataInit<Hex>>>,
+    data_sq: Option<Res<MapDataInit<Sq>>>,
 ) {
     match descriptor.topology {
-        Topology::Hex => setup_map_topology::<Hex>(&mut commands, &*descriptor, &*tiles),
-        Topology::Sq => setup_map_topology::<Sq>(&mut commands, &*descriptor, &*tiles),
+        Topology::Hex => setup_map_topology::<Hex>(
+            &mut commands, &*tiles, &*data_hex.expect("Expected Hex map data")
+        ),
+        Topology::Sq => setup_map_topology::<Sq>(
+            &mut commands, &*tiles, &*data_sq.expect("Expected Sq map data")
+        ),
         _ => unimplemented!(),
     }
 }
 
 fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     commands: &mut Commands,
-    descriptor: &MapDescriptor,
     tiles: &TileAssets,
-    // data: &MapDataInit,
+    data: &MapDataInit<C>,
 ) {
-    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * descriptor.size as f32));
-    for c in C::iter_coords(descriptor.size) {
-        let pos = c.translation() * C::TILE_OFFSET;
+    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * data.tiles.size() as f32));
+    for (c, init) in data.tiles.iter() {
+        let pos = translation_c(c);
+        let (base_index, decal_index) = match init.kind {
+            TileKind::Water => (tileid::GEO_WATER, None),
+            TileKind::Regular => (C::TILEID_LAND, None),
+            TileKind::Fertile => (C::TILEID_LAND, Some(tileid::GEO_FERTILE)),
+            TileKind::Mountain => (C::TILEID_LAND, Some(tileid::GEO_MOUNTAIN)),
+            TileKind::Road => (C::TILEID_LAND, None), // road decals handled by separate system
+        };
         commands.spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
                 index: C::TILEID_LAND,
@@ -89,6 +101,18 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
             transform: Transform::from_translation(pos.extend(0.0)),
             ..Default::default()
         }).insert(MapCleanup);
+    }
+}
+
+fn translation_c<C: CoordTileids>(c: C) -> Vec2 {
+    c.translation() * C::TILE_OFFSET
+}
+
+fn translation_pos(topology: Topology, pos: Pos) -> Vec2 {
+    match topology {
+        Topology::Hex => translation_c(Hex(pos.0, pos.1)),
+        Topology::Sq => translation_c(Sq(pos.0, pos.1)),
+        _ => unimplemented!(),
     }
 }
 

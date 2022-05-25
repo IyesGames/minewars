@@ -1,3 +1,11 @@
+//! Player IDs
+//!
+//! This module contains the types used for tracking all the different views
+//! of a multiplayer game. [`PlayerId`] represents one "view" of the game:
+//! either the global spectator view, or the view of a specific player.
+//! [`Plids`] and [`PlidsBig`] represent a set of views. Useful, for example,
+//! when a message from the server should be sent to multiple players.
+
 use std::num::NonZeroU8;
 use std::ops::{Add, AddAssign, Sub, SubAssign, Not};
 
@@ -72,8 +80,10 @@ pub trait PlidMask:
     }
 }
 
+/// Regular mask: can support a game with up to 7 players
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Plids(u8);
+/// Big mask: can support huge game modes like battle-royale with up to 127 players
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct PlidsBig(u128);
 
