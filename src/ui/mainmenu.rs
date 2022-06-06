@@ -1,3 +1,5 @@
+use crate::GameMode;
+use crate::StreamSource;
 use crate::prelude::*;
 
 use crate::AppGlobalState;
@@ -107,15 +109,51 @@ fn setup(
         ..Default::default()
     }).id();
 
-    let butt_playonline = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Play ONLINE!", PROPRIETARY);
-    let butt_playlan = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Play (LAN)", PROPRIETARY);
-    let butt_playtutorial = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Tutorial", PROPRIETARY);
-    let butt_playoffline = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Offline Practice", PROPRIETARY);
-    let butt_watchlive = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Watch Live Game", true);
-    let butt_watchreplay = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Watch Saved Replay", true);
-    let butt_settings = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Settings", true);
-    let butt_credits = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Credits", true);
-    let butt_exit = ui::spawn_button::<ui::butts::ExitApp>(&mut commands, &*uiassets, "Exit Game", true);
+    let butt_playonline = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::EnterGameMode { mode: GameMode::Multiplayer, source: StreamSource::Disconnected },
+        "Play ONLINE!", PROPRIETARY
+    );
+    let butt_playlan = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::EnterGameMode { mode: GameMode::Multiplayer, source: StreamSource::Host },
+        "Play (LAN)", PROPRIETARY
+    );
+    let butt_playtutorial = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::EnterGameMode { mode: GameMode::Tutorial, source: StreamSource::Local },
+        "Tutorial", PROPRIETARY
+    );
+    let butt_playoffline = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::EnterGameMode { mode: GameMode::Singleplayer, source: StreamSource::Local },
+        "Singleplayer Minesweeper", true
+    );
+    let butt_watchlive = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::EnterGameMode { mode: GameMode::Spectator, source: StreamSource::Disconnected },
+        "Watch Live Game", true
+    );
+    let butt_watchreplay = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::EnterGameMode { mode: GameMode::Spectator, source: StreamSource::File },
+        "Watch Saved Replay", true
+    );
+    let butt_settings = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::SettingsMenu,
+        "Settings", true
+    );
+    let butt_credits = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::ShowCredits,
+        "Credits", true
+    );
+    let butt_exit = ui::spawn_button(
+        &mut commands, &*uiassets,
+        ui::butts::ExitApp,
+        "Exit Game", true
+    );
 
     commands.entity(row1).push_children(&[butt_playonline, butt_playlan]);
     commands.entity(row2).push_children(&[butt_playtutorial, butt_playoffline]);
@@ -126,7 +164,11 @@ fn setup(
 
     #[cfg(feature = "dev")]
     {
-        let butt_dev = ui::spawn_button::<ui::butts::PlayDev>(&mut commands, &*uiassets, "(dev/debug mode)", true);
+        let butt_dev = ui::spawn_button(
+            &mut commands, &*uiassets,
+            ui::butts::EnterGameMode { mode: GameMode::Dev, source: StreamSource::Local },
+            "(dev/debug mode)", true
+        );
         commands.entity(row1).push_children(&[butt_dev]);
     }
 }

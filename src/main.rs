@@ -20,7 +20,7 @@ pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 /// State type: If we are in-game, where is the gameplay data coming from?
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-enum StreamSource {
+pub enum StreamSource {
     /// No active data source
     Disconnected,
     /// Network server
@@ -35,7 +35,7 @@ enum StreamSource {
 
 /// State type: If we are in-game, which mode are we in?
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-enum GameMode {
+pub enum GameMode {
     /// Not in game
     None,
     /// Playing multiplayer
@@ -44,6 +44,8 @@ enum GameMode {
     /// Watching (replays or live)
     /// (see also [`StreamSource`])
     Spectator,
+    /// Singleplayer Minesweeper (classic) mode
+    Singleplayer,
     /// Tutorial
     Tutorial,
     #[cfg(feature = "dev")]
@@ -53,7 +55,7 @@ enum GameMode {
 
 /// State type: Which "screen" is the app in?
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-enum AppGlobalState {
+pub enum AppGlobalState {
     /// Initial loading screen at startup
     AssetsLoading,
     /// Splash with the IyesGames logo
@@ -62,6 +64,12 @@ enum AppGlobalState {
     SplashBevy,
     /// Main Menu
     MainMenu,
+    /// Menu/UI for entering into a given game mode
+    /// (see also [`GameMode`])
+    GameLobby,
+    /// The loading screen before gameplay starts
+    /// (see also [`GameMode`])
+    GameLoading,
     /// Gameplay
     /// (see also [`GameMode`])
     InGame,

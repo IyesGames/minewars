@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use iyes_bevy_util::ui::{on_butt_interact, UiInactive};
+use iyes_bevy_util::ui::{butt_handler, UiInactive};
 
 use crate::assets::UiAssets;
 
@@ -11,9 +11,9 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(iyes_bevy_util::ui::init_camera);
         app.add_system(butt_interact_visual);
-        app.add_system(butts::exitapp.run_if(on_butt_interact::<butts::ExitApp>));
-        #[cfg(feature = "dev")]
-        app.add_system(butts::play_dev.run_if(on_butt_interact::<butts::PlayDev>));
+        // app.add_system(butts::exitapp.run_if(on_butt_interact::<butts::ExitApp>));
+        app.add_system(butt_handler(butts::exitapp));
+        app.add_system(butt_handler(butts::enter_game_mode));
     }
 }
 
@@ -22,28 +22,44 @@ mod butts {
     use crate::{AppGlobalState, GameMode, StreamSource};
     use bevy::app::AppExit;
 
-    #[derive(Component, Default)]
+    #[derive(Component, Default, Clone)]
     pub struct ExitApp;
 
-    pub fn exitapp(mut ev: EventWriter<AppExit>) {
+    pub fn exitapp(_: In<ExitApp>, mut ev: EventWriter<AppExit>) {
         ev.send(AppExit);
     }
 
-    #[cfg(feature = "dev")]
-    #[derive(Component, Default)]
-    pub struct PlayDev;
+    #[derive(Component, Clone)]
+    pub struct EnterGameMode {
+        pub mode: GameMode,
+        pub source: StreamSource,
+    }
 
-    #[cfg(feature = "dev")]
-    pub fn play_dev(mut commands: Commands) {
-        commands.insert_resource(NextState(AppGlobalState::InGame));
-        commands.insert_resource(NextState(GameMode::Dev));
-        commands.insert_resource(NextState(StreamSource::Local));
+    pub fn enter_game_mode(In(butt): In<EnterGameMode>, mut commands: Commands) {
+        commands.insert_resource(NextState(AppGlobalState::GameLobby));
+        commands.insert_resource(NextState(butt.mode));
+        commands.insert_resource(NextState(butt.source));
+    }
+
+    #[derive(Component, Clone)]
+    pub struct ShowCredits;
+
+    pub fn show_credits(In(butt): In<ShowCredits>, mut commands: Commands) {
+        unimplemented!()
+    }
+
+    #[derive(Component, Clone)]
+    pub struct SettingsMenu;
+
+    pub fn settings_menu(In(butt): In<ShowCredits>, mut commands: Commands) {
+        unimplemented!()
     }
 }
 
-fn spawn_button<B: Component + Default>(
+fn spawn_button<B: Component + Clone>(
     commands: &mut Commands,
     uiassets: &UiAssets,
+    btn: B,
     text: &'static str,
     enabled: bool,
 ) -> Entity {
@@ -71,7 +87,7 @@ fn spawn_button<B: Component + Default>(
             ..Default::default()
         },
         ..Default::default()
-    }).insert(B::default()).id();
+    }).insert(btn).id();
 
     let text = commands.spawn_bundle(TextBundle {
         text: Text::with_section(
