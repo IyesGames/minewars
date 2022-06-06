@@ -4,7 +4,9 @@
 
 use enum_map::{Enum, EnumMap};
 use crate::grid::map::{CompactMapCoordExt, MapData};
-use crate::{algo, HashMap};
+use crate::HashMap;
+
+pub mod map;
 
 pub type Res = u32;
 pub type CitId = u8;
