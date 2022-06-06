@@ -1,7 +1,7 @@
 mod prelude {
     pub use iyesengine::prelude::*;
     pub use anyhow::{Context, Result as AnyResult, Error as AnyError};
-    pub use bevy::utils::{HashMap, HashSet};
+    pub use mw_common::{HashMap, HashSet};
     pub use std::time::{Duration, Instant};
     pub use crate::PROPRIETARY;
 }
