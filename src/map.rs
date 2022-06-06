@@ -82,8 +82,8 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     tiles: &TileAssets,
     data: &MapDataInit<C>,
 ) {
-    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * data.tiles.size() as f32));
-    for (c, init) in data.tiles.iter() {
+    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * data.map.size() as f32));
+    for (c, init) in data.map.iter() {
         let pos = translation_c(c);
         let (base_index, decal_index) = match init.kind {
             TileKind::Water => (tileid::GEO_WATER, None),

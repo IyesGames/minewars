@@ -3,9 +3,11 @@
 //! Types to represent game data, functions to process it, …
 
 use enum_map::{Enum, EnumMap};
-use crate::grid::{map::CompactMapCoordExt, MapData};
+use crate::grid::map::{CompactMapCoordExt, MapData};
+use crate::{algo, HashMap};
 
 pub type Res = u32;
+pub type CitId = u8;
 
 /// Different variants of mines
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,13 +89,18 @@ pub struct GameParams {
 ///
 /// This is to be converted into a more complete "tile state"
 /// struct on the client or server side, as appropriate.
+#[derive(Debug, Clone)]
 pub struct MapTileInit {
     pub kind: TileKind,
     pub mine: Option<MineKind>,
+    pub region: CitId,
     pub cit: bool,
+    /// Used as a temporary flag by algorithms, do not preserve
+    pub mark: bool,
 }
 
 pub struct MapDataInit<C: CompactMapCoordExt> {
-    pub tiles: MapData<C, MapTileInit>,
+    pub map: MapData<C, MapTileInit>,
     pub cits: Vec<C>,
+    pub mines: HashMap<C, MineKind>,
 }
