@@ -1,3 +1,6 @@
 /target
 /doc/book
 Cargo.lock
+/proprietary
+/old*
+minewars.exe

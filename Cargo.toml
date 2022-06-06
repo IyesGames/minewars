@@ -44,7 +44,7 @@ mw_dataformat = { path = "lib/mw_dataformat" }
 anyhow = "1.0.57"
 
 [dependencies.mw_proprietary]
-path = "../minewars-proprietary/client"
+path = "./proprietary/client"
 optional = true
 
 [package.metadata.android]
@@ -98,7 +98,7 @@ bevy_tweening = { path = "./deps/bevy_tweening" }
 iyesengine = { path = "./deps/iyesengine" }
 
 [patch."https://github.com/IyesGames/iyes_bevy_util"]
-iyes_bevy_util = { path = "../iyes_bevy_util" }
+iyes_bevy_util = { path = "./deps/iyes_bevy_util" }
 
 [patch."https://github.com/IyesGames/iyes_loopless"]
 iyes_loopless = { path = "./deps/iyes_loopless" }
