@@ -7,7 +7,7 @@
 use std::time::Instant;
 
 use crate::grid::Pos;
-use crate::plid::{Plids, PlayerId};
+use crate::plid::{PlayerId, PlidMask};
 use crate::game::{MineKind, ProdState, ProdItem, InventoryItem};
 
 /// Abstract interface through which the Game communicates with the Host
@@ -16,13 +16,13 @@ use crate::game::{MineKind, ProdState, ProdItem, InventoryItem};
 /// a networked MineWars session (the proprietary "tokio host") or an
 /// offline/debug session in Bevy ("bevy host"). Each one should
 /// implement this trait using its respective timers, events, etc.
-pub trait Host {
+pub trait Host<G: Game>: Sized {
     /// Notify the Host about something that happened in the game world
-    fn msg(&mut self, plids: Plids, event: GameEvent);
+    fn msg(&mut self, plids: G::Plids, event: G::OutEvent);
     /// Request an action to occur at a specific future time
-    fn sched<G: Game>(&mut self, time: Instant, event: G::SchedEvent);
+    fn sched(&mut self, time: Instant, event: G::SchedEvent);
     /// Cancel scheduled events equal to the value given
-    fn desched_all<G: Game>(&mut self, event: G::SchedEvent);
+    fn desched_all(&mut self, event: G::SchedEvent);
 }
 
 /// Abstract interface through which the Host communicates with the Game
@@ -31,26 +31,36 @@ pub trait Host {
 /// For example:
 /// the multiplayer MineWars game (proprietary)
 /// or the simplified singleplayer minesweeper mode (open-source).
-pub trait Game {
+pub trait Game: Sized {
+    /// The type used to select sets of players in the session.
+    type Plids: PlidMask;
+
+    /// Anything that happened that needs to be communicated to a player
+    ///
+    /// When the Host calls either `Game::input_action` or `Game::unsched`
+    /// to drive the Game, it can call `Host::msg` to send output events.
+    /// They will be broadcast to all player ids selected with `Plids`.
+    type OutEvent;
+
     /// For things that need to be triggered on a timeout
     ///
     /// Game code calls `Host::sched`, passing a value and time instant.
     /// The host code should store the value along with a timer.
     /// When the time instant has passed, host code calls `Game::unsched`,
     /// passing the value that was stored back to the game code.
-    type SchedEvent: Copy + Eq;
+    type SchedEvent;
 
     /// For things that are triggered by player input
     ///
     /// Host code should call `Game::input_action`, passing an appropriate
     /// value, whenever the player wishes to perform an action in the game.
-    type InputAction: Copy + Eq;
+    type InputAction;
 
     /// Trigger a timer-driven event in the game
-    fn unsched(&mut self, event: Self::SchedEvent);
+    fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent);
 
     /// Process a player input
-    fn input_action(&mut self, action: Self::InputAction);
+    fn input_action<H: Host<Self>>(&mut self, host: &mut H, action: Self::InputAction);
 }
 
 /// Game Outputs: combined enum for all protocol messages
