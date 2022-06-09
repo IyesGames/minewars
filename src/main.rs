@@ -1,6 +1,7 @@
 mod prelude {
     pub use iyesengine::prelude::*;
     pub use anyhow::{Context, Result as AnyResult, Error as AnyError};
+    pub use rand::prelude::*;
     pub use mw_common::{HashMap, HashSet};
     pub use mw_common::app::*;
     pub use std::time::{Duration, Instant};
@@ -62,6 +63,7 @@ fn main() {
         .add_plugin(crate::ui::mainmenu::MainMenuPlugin)
         .add_plugin(crate::camera::CameraPlugin)
         .add_plugin(crate::map::MapPlugin)
+        .add_plugin(crate::game::GamePlugin)
         .add_system(debug_current_state)
         ;
 

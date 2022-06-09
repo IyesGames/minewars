@@ -42,6 +42,7 @@ features = [
 mw_common = { path = "lib/mw_common" }
 mw_dataformat = { path = "lib/mw_dataformat" }
 anyhow = "1.0.57"
+rand = "0.8.5"
 
 [dependencies.mw_proprietary]
 path = "./proprietary/client"
