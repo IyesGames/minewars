@@ -31,7 +31,7 @@ fn main() {
 
     app
         .insert_resource(LogSettings {
-            filter: "warn,minewars=debug".into(),
+            filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=debug".into(),
             level: bevy::log::Level::DEBUG,
         })
         .insert_resource(WindowDescriptor {
@@ -79,6 +79,6 @@ fn debug_current_state(
     src: Res<CurrentState<StreamSource>>,
 ) {
     if app.is_changed() || mode.is_changed() || src.is_changed() {
-        debug!("State: {:?} / {:?} / {:?}!", app, mode, src);
+        debug!("State: {:?} / {:?} / {:?}!", app.0, mode.0, src.0);
     }
 }
