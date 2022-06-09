@@ -3,6 +3,7 @@
 //! Types to represent game data, functions to process it, …
 
 use enum_map::{Enum, EnumMap};
+use crate::grid::Topology;
 use crate::grid::map::{CompactMapCoordExt, MapData};
 use crate::HashMap;
 
@@ -105,4 +106,10 @@ pub struct MapDataInit<C: CompactMapCoordExt> {
     pub map: MapData<C, MapTileInit>,
     pub cits: Vec<C>,
     pub mines: HashMap<C, MineKind>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MapDescriptor {
+    pub size: u8,
+    pub topology: Topology,
 }

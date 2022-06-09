@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 use mw_common::grid::map::CompactMapCoordExt;
-use mw_common::game::{ProdState, MineKind, MapDataInit, TileKind};
+use mw_common::game::{ProdState, MineKind, MapDataInit, TileKind, MapDescriptor};
 use mw_common::plid::PlayerId;
 use mw_common::grid::*;
 
@@ -29,11 +29,6 @@ pub struct MaxViewBounds(pub f32);
 
 #[derive(Component)]
 struct MapCleanup;
-
-pub struct MapDescriptor {
-    pub size: u8,
-    pub topology: Topology,
-}
 
 pub enum MapEventKind {
     Owner {

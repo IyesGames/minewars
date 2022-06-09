@@ -1,11 +1,9 @@
-use enum_map::{Enum, EnumMap};
-use grid::{map::CompactMapCoordExt, MapData};
-
 pub mod plid;
 pub mod grid;
 pub mod proto;
 pub mod game;
 pub mod algo;
+pub mod app;
 
 /// Performant HashMap using AHash algorithm (not cryptographically secure)
 pub type HashMap<K, V> = hashbrown::HashMap<K, V>;
