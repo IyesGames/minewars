@@ -346,6 +346,22 @@ impl CompactMapCoordExt for Hex {
         // arithmetic sequence sum = total # of cells
         (12 + (r as usize - 1) * 6) * r as usize / 2 + 1
     }
+    fn xmin(r: u8, y: i8) -> i8 {
+        let r = r as i8;
+        if y < 0 {
+            -r - y
+        } else {
+            -r
+        }
+    }
+    fn xmax(r: u8, y: i8) -> i8 {
+        let r = r as i8;
+        if y < 0 {
+            r
+        } else {
+            r - y
+        }
+    }
     fn index(r: u8, c: Self) -> usize {
         // PERF: this is a very naive and suboptimal implementation
         // (and likely to be a perf hotspot)
@@ -355,11 +371,12 @@ impl CompactMapCoordExt for Hex {
 
         let row0 = Hex::map_area(r) as isize / 2 - r as isize;
 
+        let xmin = Self::xmin(r, c.1) as isize;
+        let xmax = Self::xmax(r, c.1) as isize;
+
         let r = r as isize;
 
         if y < 0 {
-            let xmin = -r - y;
-            let xmax = r;
             assert!(x >= xmin);
             assert!(x <= xmax);
 
@@ -372,8 +389,6 @@ impl CompactMapCoordExt for Hex {
 
             i as usize
         } else {
-            let xmin = -r;
-            let xmax = r - y;
             assert!(x >= xmin);
             assert!(x <= xmax);
 

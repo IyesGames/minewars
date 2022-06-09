@@ -11,6 +11,8 @@ pub trait CompactMapCoordExt: Coord {
     fn map_area(r: u8) -> usize;
     fn row_len(r: u8, y: i8) -> usize;
     fn aa_indent(y: i8) -> usize;
+    fn xmin(r: u8, y: i8) -> i8;
+    fn xmax(r: u8, y: i8) -> i8;
     fn index(r: u8, c: Self) -> usize;
     fn iter_coords(r: u8) -> Self::IterCoords;
 }

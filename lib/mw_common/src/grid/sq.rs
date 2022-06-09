@@ -312,6 +312,12 @@ impl CompactMapCoordExt for Sq {
         let r2 = r * 2 + 1;
         r2 * r2
     }
+    fn xmin(r: u8, _y: i8) -> i8 {
+        -(r as i8)
+    }
+    fn xmax(r: u8, _y: i8) -> i8 {
+        r as i8
+    }
     fn index(r: u8, c: Self) -> usize {
         assert!(r <= 127);
         let r = r as i8;

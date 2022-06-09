@@ -313,6 +313,12 @@ impl CompactMapCoordExt for Sqr {
         let r = r as usize;
         r * r * 2 + (r * 2 + 1)
     }
+    fn xmin(r: u8, _y: i8) -> i8 {
+        -(r as i8)
+    }
+    fn xmax(r: u8, _y: i8) -> i8 {
+        r as i8
+    }
     fn index(r: u8, c: Self) -> usize {
         let r = r as usize;
         let x = c.0 as isize;
