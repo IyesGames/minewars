@@ -89,13 +89,24 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
         };
         commands.spawn_bundle(SpriteSheetBundle {
             sprite: TextureAtlasSprite {
-                index: C::TILEID_LAND,
+                index: base_index,
                 ..Default::default()
             },
             texture_atlas: tiles.atlas.clone(),
             transform: Transform::from_translation(pos.extend(0.0)),
             ..Default::default()
         }).insert(MapCleanup);
+        if let Some(decal_index) = decal_index {
+            commands.spawn_bundle(SpriteSheetBundle {
+                sprite: TextureAtlasSprite {
+                    index: decal_index,
+                    ..Default::default()
+                },
+                texture_atlas: tiles.atlas.clone(),
+                transform: Transform::from_translation(pos.extend(1.0)),
+                ..Default::default()
+            }).insert(MapCleanup);
+        }
     }
 }
 
@@ -147,7 +158,7 @@ mod tileid {
 
     pub const GEO_WATER: usize = 0o20;
     pub const GEO_FERTILE: usize = 0o21;
-    pub const GEO_MOUNTAIN: usize = 0o20;
+    pub const GEO_MOUNTAIN: usize = 0o22;
 
     pub const LANDMARK_CITY: usize = 0o40;
     pub const LANDMARK_TOWER: usize = 0o41;
