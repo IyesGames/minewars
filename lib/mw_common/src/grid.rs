@@ -18,6 +18,7 @@
 
 use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Neg};
 use std::fmt::Debug;
+use std::hash::Hash;
 
 pub mod sq;
 pub mod sqr;
@@ -31,6 +32,7 @@ pub use hex::Hex;
 pub use pos::Pos;
 pub use map::MapData;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Topology {
     Hex,
     Sq,
@@ -39,7 +41,7 @@ pub enum Topology {
 
 /// Common interface for working with square or hex coordinates
 pub trait Coord:
-    Debug + Copy + Eq + Default
+    Debug + Copy + Eq + Hash + Default
     + Into<(i8, i8)> + Into<(u8, u8)>
     + From<pos::Pos> + Into<pos::Pos>
     + Into<glam::IVec2> + Into<glam::UVec2>
