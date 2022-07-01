@@ -9,7 +9,7 @@ use crate::HashMap;
 
 pub mod map;
 
-pub type Res = u32;
+pub type ResPt = u32;
 pub type CitId = u8;
 
 /// Different variants of mines
@@ -76,12 +76,12 @@ impl TileKind {
 
 /// The game rules / balancing table
 pub struct GameParams {
-    pub res_base: Res,
-    pub res_local: EnumMap<TileKind, Res>,
-    pub res_export: EnumMap<TileKind, Res>,
+    pub res_base: ResPt,
+    pub res_local: EnumMap<TileKind, ResPt>,
+    pub res_export: EnumMap<TileKind, ResPt>,
     pub radius_vis: u8,
     pub radius_fertile: u8,
-    pub costs: EnumMap<ProdItem, Res>,
+    pub costs: EnumMap<ProdItem, ResPt>,
 }
 
 /// The per-tile data used for initializing a map

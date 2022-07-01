@@ -31,6 +31,7 @@ pub use sqr::Sqr;
 pub use hex::Hex;
 pub use pos::Pos;
 pub use map::MapData;
+pub use self::map::CompactMapCoordExt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Topology {
@@ -41,7 +42,7 @@ pub enum Topology {
 
 /// Common interface for working with square or hex coordinates
 pub trait Coord:
-    Debug + Copy + Eq + Hash + Default
+    Debug + Copy + Eq + Hash + Default + Send + Sync + 'static
     + Into<(i8, i8)> + Into<(u8, u8)>
     + From<pos::Pos> + Into<pos::Pos>
     + Into<glam::IVec2> + Into<glam::UVec2>

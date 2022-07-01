@@ -10,3 +10,16 @@ derive_more = "0.99.17"
 enum-map = "2.2.0"
 glam = "0.20.5"
 hashbrown = "0.12.1"
+
+[dependencies.iyesengine]
+optional = true
+git = "https://github.com/IyesGames/iyesengine"
+features = [
+    "2d",
+    "bevy-ui",
+    "audio",
+    "tilemap",
+]
+
+[features]
+bevy = ["iyesengine"]

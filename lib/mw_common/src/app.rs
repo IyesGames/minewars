@@ -1,5 +1,10 @@
 //! Stuff for the Bevy client app, that also needs to be accessible from the proprietary plugin.
 
+use iyesengine::prelude::*;
+
+use crate::game::TileKind;
+use crate::plid::PlayerId;
+
 /// State type: If we are in-game, where is the gameplay data coming from?
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum StreamSource {
@@ -55,3 +60,10 @@ pub enum AppGlobalState {
     /// (see also [`GameMode`])
     InGame,
 }
+
+impl Component for TileKind {
+    type Storage = bevy::ecs::component::TableStorage;
+}
+
+/// The PlayerId that the user is playing as
+pub struct ActivePlid(pub PlayerId);

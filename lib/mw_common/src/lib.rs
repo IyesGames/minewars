@@ -3,6 +3,7 @@ pub mod grid;
 pub mod proto;
 pub mod game;
 pub mod algo;
+#[cfg(feature = "bevy")]
 pub mod app;
 
 /// Performant HashMap using AHash algorithm (not cryptographically secure)
