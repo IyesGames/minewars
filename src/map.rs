@@ -10,6 +10,11 @@ use crate::AppGlobalState;
 
 use self::tileid::CoordTileids;
 
+#[cfg(feature = "gfx_sprites")]
+mod gfx_sprites;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(SystemLabel)]
 pub enum MapLabels {
     /// Anything that sends MapEvents should come before this
     ApplyEvents,
@@ -20,8 +25,16 @@ pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<MapEvent>();
-        app.add_enter_system(AppGlobalState::InGame, setup_map);
+        app.add_system(
+            setup_map
+                .track_progress()
+                .run_in_state(AppGlobalState::GameLoading)
+        );
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<MapCleanup>);
+        #[cfg(feature = "dev")]
+        app.add_system(debug_mapevents.label(MapLabels::ApplyEvents));
+        #[cfg(feature = "gfx_sprites")]
+        app.add_plugin(gfx_sprites::MapGfxSpritesPlugin);
     }
 }
 
@@ -30,6 +43,7 @@ pub struct MaxViewBounds(pub f32);
 #[derive(Component)]
 struct MapCleanup;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MapEventKind {
     Owner {
         plid: PlayerId,
@@ -49,80 +63,125 @@ pub enum MapEventKind {
     MineActive,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MapEvent {
-    c: Pos,
-    kind: MapEventKind,
+    /// coordinate to update
+    pub c: Pos,
+    /// which view in a multi-view setup is the event for
+    pub plid: PlayerId,
+    /// the event
+    pub kind: MapEventKind,
+}
+
+fn debug_mapevents(
+    mut er_map: EventReader<MapEvent>,
+) {
+    for ev in er_map.iter() {
+        debug!("{:?}", ev);
+    }
 }
 
 fn setup_map(
     mut commands: Commands,
-    descriptor: Res<MapDescriptor>,
-    tiles: Res<TileAssets>,
+    descriptor: Option<Res<MapDescriptor>>,
     data_hex: Option<Res<MapDataInit<Hex>>>,
     data_sq: Option<Res<MapDataInit<Sq>>>,
-) {
+    mut done: Local<bool>,
+) -> Progress {
+    let descriptor = if let Some(descriptor) = descriptor {
+        // reset for new game
+        if descriptor.is_changed() {
+            *done = false;
+        }
+
+        descriptor
+    } else {
+        return false.into();
+    };
+
+    if *done {
+        return true.into();
+    }
+
     match descriptor.topology {
-        Topology::Hex => setup_map_topology::<Hex>(
-            &mut commands, &*tiles, &*data_hex.expect("Expected Hex map data")
-        ),
-        Topology::Sq => setup_map_topology::<Sq>(
-            &mut commands, &*tiles, &*data_sq.expect("Expected Sq map data")
-        ),
+        Topology::Hex => {
+            let data = if let Some(data) = data_hex {
+                data
+            } else {
+                return false.into();
+            };
+            setup_map_topology::<Hex>(&mut commands, &*data);
+        }
+        Topology::Sq => {
+            let data = if let Some(data) = data_sq {
+                data
+            } else {
+                return false.into();
+            };
+            setup_map_topology::<Sq>(&mut commands, &*data);
+        }
         _ => unimplemented!(),
     }
+    *done = true;
+    debug!("Setup tile entities for map: {:?}", descriptor);
+
+    true.into()
+}
+
+struct TileEntityIndex<C: CompactMapCoordExt>(MapData<C, Entity>);
+
+struct PlidView {
+}
+
+/// Per-tile component: the map coordinates
+#[derive(Debug, Clone, Copy, Component)]
+struct TileCoord(Pos);
+/// Per-tile component: the minesweeper digit
+#[derive(Debug, Clone, Copy, Component)]
+struct TileDigit(u8);
+/// Per-tile component: the PlayerId of the owner
+#[derive(Debug, Clone, Copy, Component)]
+struct TileOwner(PlayerId);
+/// Per-tile component: visibility (fog of war) state
+#[derive(Debug, Clone, Copy, Component)]
+struct TileVisible(bool);
+
+#[derive(Bundle)]
+struct TileBundle {
+    kind: TileKind,
+    coord: TileCoord,
+    digit: TileDigit,
+    owner: TileOwner,
+    vis: TileVisible,
 }
 
 fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     commands: &mut Commands,
-    tiles: &TileAssets,
     data: &MapDataInit<C>,
 ) {
+    let mut tile_index = TileEntityIndex::<C>(MapData::new(data.map.size(), Entity::from_raw(0)));
+
     commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * data.map.size() as f32));
     for (c, init) in data.map.iter() {
-        let pos = translation_c(c);
-        let (base_index, decal_index) = match init.kind {
-            TileKind::Water => (tileid::GEO_WATER, None),
-            TileKind::Regular => (C::TILEID_LAND, None),
-            TileKind::Fertile => (C::TILEID_LAND, Some(tileid::GEO_FERTILE)),
-            TileKind::Mountain => (C::TILEID_LAND, Some(tileid::GEO_MOUNTAIN)),
-            TileKind::Road => (C::TILEID_LAND, None), // road decals handled by separate system
-        };
-        commands.spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                index: base_index,
-                ..Default::default()
-            },
-            texture_atlas: tiles.atlas.clone(),
-            transform: Transform::from_translation(pos.extend(0.0)),
-            ..Default::default()
-        }).insert(MapCleanup);
-        if let Some(decal_index) = decal_index {
-            commands.spawn_bundle(SpriteSheetBundle {
-                sprite: TextureAtlasSprite {
-                    index: decal_index,
-                    ..Default::default()
-                },
-                texture_atlas: tiles.atlas.clone(),
-                transform: Transform::from_translation(pos.extend(1.0)),
-                ..Default::default()
-            }).insert(MapCleanup);
-        }
+        let tile_e = commands.spawn_bundle(
+            TileBundle {
+                kind: init.kind,
+                coord: TileCoord(c.into()),
+                digit: TileDigit(0),
+                owner: TileOwner(PlayerId::Spectator),
+                vis: TileVisible(false),
+            })
+            .insert(MapCleanup).id();
+
+        tile_index.0[c] = tile_e;
     }
+
+    commands.insert_resource(tile_index);
+
+    commands.remove_resource::<MapDataInit<C>>();
 }
 
-fn translation_c<C: CoordTileids>(c: C) -> Vec2 {
-    c.translation() * C::TILE_OFFSET
-}
-
-fn translation_pos(topology: Topology, pos: Pos) -> Vec2 {
-    match topology {
-        Topology::Hex => translation_c(Hex(pos.0, pos.1)),
-        Topology::Sq => translation_c(Sq(pos.0, pos.1)),
-        _ => unimplemented!(),
-    }
-}
-
-mod tileid {
+pub mod tileid {
     #![allow(dead_code)]
 
     use crate::prelude::*;

@@ -1,0 +1,191 @@
+use mw_common::game::{MapDescriptor, TileKind};
+use mw_common::grid::*;
+
+use crate::prelude::*;
+
+use crate::assets::TileAssets;
+use crate::camera::GridCursor;
+use crate::settings::PlayerPaletteSettings;
+
+use super::{MapCleanup, TileCoord};
+use super::tileid::{self, CoordTileids};
+
+#[derive(Component)]
+struct CursorSprite;
+
+/// Reference to a sprite entity displaying a "decal", if any
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileDecalSprite(Entity);
+/// Reference to a sprite entity displaying the minesweeper digit, if any
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileDigitSprite(Entity);
+/// Reference to a sprite entity displaying a mine, if any
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileMineSprite(Entity);
+
+pub struct MapGfxSpritesPlugin;
+
+impl Plugin for MapGfxSpritesPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_enter_system(AppGlobalState::InGame, setup_cursor);
+        app.add_system(
+            setup_tiles
+                .track_progress()
+                .run_in_state(AppGlobalState::GameLoading)
+        );
+        app.add_system(
+            cursor_sprite
+                .run_in_state(AppGlobalState::InGame)
+                .after("cursor")
+        );
+        app.add_system_set(ConditionSet::new()
+            .run_in_state(AppGlobalState::InGame)
+            .with_system(tile_decals)
+            .with_system(cursor_sprite)
+            .into()
+        );
+    }
+}
+
+fn setup_tiles(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+    descriptor: Option<Res<MapDescriptor>>,
+    settings_colors: Res<PlayerPaletteSettings>,
+    q_tile: Query<(Entity, &TileKind, &TileCoord)>,
+    mut done: Local<bool>,
+) -> Progress {
+    let descriptor = if let Some(descriptor) = descriptor {
+        // reset for new game
+        if descriptor.is_changed() {
+            *done = false;
+        }
+
+        descriptor
+    } else {
+        return false.into();
+    };
+
+    if *done {
+        return true.into();
+    }
+
+    let mut done_now = false;
+    for (e, kind, pos) in q_tile.iter() {
+        let index = match (descriptor.topology, kind) {
+            (_, TileKind::Water) => tileid::GEO_WATER,
+            (Topology::Hex, _) => Hex::TILEID_LAND,
+            (Topology::Sq | Topology::Sqr, _) => Sq::TILEID_LAND,
+        };
+        let xy = translation_pos(descriptor.topology, pos.0);
+        commands.entity(e).insert_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                index,
+                color: settings_colors.visible[0],
+                ..Default::default()
+            },
+            texture_atlas: tiles.atlas.clone(),
+            transform: Transform::from_translation(xy.extend(0.0)),
+            ..Default::default()
+        });
+        *done = true;
+        done_now = true;
+    }
+
+    if done_now {
+        debug!("Setup grid tiles rendering using Bevy Sprites!");
+    }
+
+    (*done).into()
+}
+
+fn tile_decals(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+    q_tile: Query<(Entity, &TileKind, &Transform, Option<&TileDecalSprite>), Changed<TileKind>>,
+) {
+    for (e, kind, xf, spr_decal) in q_tile.iter() {
+        let mut xyz = xf.translation;
+        xyz.z += 1.0;
+
+        // remove the old decal
+        if let Some(spr_decal) = spr_decal {
+            commands.entity(spr_decal.0).despawn();
+            commands.entity(e).remove::<TileDecalSprite>();
+        }
+
+        let index = match kind {
+            TileKind::Water | TileKind::Regular => {
+                continue;
+            }
+            TileKind::Fertile => {
+                tileid::GEO_FERTILE
+            }
+            TileKind::Mountain => {
+                tileid::GEO_MOUNTAIN
+            }
+            TileKind::Road => {
+                todo!()
+            }
+        };
+
+        let e_decal = commands.spawn_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                index,
+                ..Default::default()
+            },
+            texture_atlas: tiles.atlas.clone(),
+            transform: xf.clone(),
+            ..Default::default()
+        }).id();
+        commands.entity(e).insert(TileDecalSprite(e_decal));
+    }
+}
+
+fn setup_cursor(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+    descriptor: Res<MapDescriptor>,
+) {
+    let index = match descriptor.topology {
+        Topology::Hex => Hex::TILEID_CURSOR,
+        Topology::Sq => Sq::TILEID_CURSOR,
+        Topology::Sqr => Sq::TILEID_CURSOR,
+    };
+
+    commands.spawn_bundle(SpriteSheetBundle {
+        sprite: TextureAtlasSprite {
+            index,
+            ..Default::default()
+        },
+        texture_atlas: tiles.atlas.clone(),
+        transform: Transform::from_xyz(0.0, 0.0, 10.0),
+        ..Default::default()
+    })
+        .insert(CursorSprite)
+        .insert(MapCleanup);
+}
+
+fn cursor_sprite(
+    mut q: Query<&mut Transform, With<CursorSprite>>,
+    crs: Res<GridCursor>,
+    descriptor: Res<MapDescriptor>,
+) {
+    let mut xf = q.single_mut();
+    xf.translation = translation_pos(descriptor.topology, crs.0).extend(10.0);
+}
+
+fn translation_c<C: CoordTileids>(c: C) -> Vec2 {
+    c.translation() * C::TILE_OFFSET
+}
+
+fn translation_pos(topology: Topology, pos: Pos) -> Vec2 {
+    match topology {
+        Topology::Hex => translation_c(Hex(pos.0, pos.1)),
+        Topology::Sq => translation_c(Sq(pos.0, pos.1)),
+        _ => unimplemented!(),
+    }
+}

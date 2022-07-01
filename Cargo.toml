@@ -13,6 +13,7 @@ members = ["lib/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+default = ["gfx_sprites"]
 proprietary = [
     "mw_proprietary",
 ]
@@ -21,6 +22,8 @@ dev = [
 ]
 release = [
     "iyesengine/release",
+]
+gfx_sprites = [
 ]
 
 [dependencies.iyesengine]
