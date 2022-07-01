@@ -1,11 +1,14 @@
 use crate::assets::TileAssets;
 use crate::map::MaxViewBounds;
+use crate::map::tileid::CoordTileids;
 use crate::prelude::*;
 use bevy::input::mouse::{MouseWheel, MouseScrollUnit, MouseMotion};
 use bevy::render::camera::RenderTarget;
 use bevy::render::render_resource::FilterMode;
 use bevy_tweening::*;
 use bevy_tweening::lens::*;
+use mw_common::game::MapDescriptor;
+use mw_common::grid::{Pos, Topology, Hex, Sq, Sqr, Coord};
 
 use crate::AppGlobalState;
 
@@ -15,6 +18,7 @@ impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(WorldCursor(Vec2::ZERO));
         app.insert_resource(WorldCursorPrev(Vec2::ZERO));
+        app.insert_resource(GridCursor(Pos(0, 0)));
         app.add_system_to_stage(CoreStage::PreUpdate, world_cursor_system);
         app.add_enter_system(AppGlobalState::InGame, setup_camera);
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<CameraCleanup>);
@@ -22,11 +26,17 @@ impl Plugin for CameraPlugin {
         app.add_system(
             camera_control_zoom_mousewheel
                 .run_in_state(AppGlobalState::InGame)
+                .label("zoom")
         );
         app.add_system(
             camera_control_pan_mousedrag
                 .run_in_state(AppGlobalState::InGame)
-                .after(camera_control_zoom_mousewheel)
+                .after("zoom")
+        );
+        app.add_system(
+            grid_cursor
+                .run_in_state(AppGlobalState::InGame)
+                .label("cursor")
         );
     }
 }
@@ -115,6 +125,7 @@ fn camera_control_zoom_mousewheel(
 
 pub struct WorldCursor(pub Vec2);
 pub struct WorldCursorPrev(pub Vec2);
+pub struct GridCursor(pub Pos);
 
 fn world_cursor_system(
     mut crs: ResMut<WorldCursor>,
@@ -155,6 +166,32 @@ fn world_cursor_system(
             crs.0 = world_pos;
         }
     }
+}
+
+fn grid_cursor(
+    crs_in: Res<WorldCursor>,
+    mut crs_out: ResMut<GridCursor>,
+    mapdesc: Res<MapDescriptor>,
+) {
+    crs_out.0 = match mapdesc.topology {
+        Topology::Hex => {
+            let tdim = Hex::TILE_OFFSET;
+            // PERF: fugly
+            let conv = bevy_math::Mat2::from_cols_array(
+                &[tdim.x, 0.0, tdim.x * 0.5, tdim.y * 0.75]
+            ).inverse();
+            let grid = conv * crs_in.0;
+            Hex::from_f32_clamped(grid.into()).into()
+        }
+        Topology::Sq => {
+            let adj = crs_in.0 / Sq::TILE_OFFSET;
+            Sq::from_f32_clamped(adj.into()).into()
+        }
+        Topology::Sqr => {
+            let adj = crs_in.0 / Sq::TILE_OFFSET;
+            Sqr::from_f32_clamped(adj.into()).into()
+        }
+    };
 }
 
 fn camera_control_pan_mousedrag(
