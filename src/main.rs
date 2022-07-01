@@ -18,6 +18,7 @@ mod camera;
 mod game;
 mod map;
 mod ui;
+mod settings;
 
 pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
@@ -58,6 +59,7 @@ fn main() {
         .add_loopless_state(StreamSource::Disconnected)
         .add_loopless_state(GameMode::None)
         .add_loopless_state(AppGlobalState::AssetsLoading)
+        .add_plugin(crate::settings::SettingsPlugin)
         .add_plugin(crate::ui::UiPlugin)
         .add_plugin(crate::assets::AssetsPlugin)
         .add_plugin(crate::ui::mainmenu::MainMenuPlugin)
