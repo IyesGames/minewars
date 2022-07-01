@@ -28,6 +28,8 @@ impl Coord for Hex {
     const N1: usize = 6;
     const N2: usize = 6;
 
+    const TOPOLOGY: super::Topology = super::Topology::Hex;
+
     type IterN0 = IterNeigh;
     type IterN1 = IterNeigh;
     type IterN2 = IterDiag;

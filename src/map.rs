@@ -1,11 +1,10 @@
 use crate::prelude::*;
 
 use mw_common::grid::map::CompactMapCoordExt;
-use mw_common::game::{ProdState, MineKind, MapDataInit, TileKind, MapDescriptor};
+use mw_common::game::{ProdState, MineKind, MapDataInitAny, TileKind, MapDescriptor};
 use mw_common::plid::PlayerId;
 use mw_common::grid::*;
 
-use crate::assets::TileAssets;
 use crate::AppGlobalState;
 
 use self::tileid::CoordTileids;
@@ -84,8 +83,7 @@ fn debug_mapevents(
 fn setup_map(
     mut commands: Commands,
     descriptor: Option<Res<MapDescriptor>>,
-    data_hex: Option<Res<MapDataInit<Hex>>>,
-    data_sq: Option<Res<MapDataInit<Sq>>>,
+    data: Option<Res<MapDataInitAny>>,
     mut done: Local<bool>,
 ) -> Progress {
     let descriptor = if let Some(descriptor) = descriptor {
@@ -103,35 +101,21 @@ fn setup_map(
         return true.into();
     }
 
-    match descriptor.topology {
-        Topology::Hex => {
-            let data = if let Some(data) = data_hex {
-                data
-            } else {
-                return false.into();
-            };
-            setup_map_topology::<Hex>(&mut commands, &*data);
+    if let Some(data) = data {
+        match data.map.topology() {
+            Topology::Hex => setup_map_topology::<Hex>(&mut commands, &*data),
+            Topology::Sq => setup_map_topology::<Sq>(&mut commands, &*data),
+            _ => unimplemented!()
         }
-        Topology::Sq => {
-            let data = if let Some(data) = data_sq {
-                data
-            } else {
-                return false.into();
-            };
-            setup_map_topology::<Sq>(&mut commands, &*data);
-        }
-        _ => unimplemented!(),
+
+        *done = true;
+        debug!("Setup tile entities for map: {:?}", descriptor);
     }
-    *done = true;
-    debug!("Setup tile entities for map: {:?}", descriptor);
 
     true.into()
 }
 
-struct TileEntityIndex<C: CompactMapCoordExt>(MapData<C, Entity>);
-
-struct PlidView {
-}
+struct TileEntityIndex(MapAny<Entity>);
 
 /// Per-tile component: the map coordinates
 #[derive(Debug, Clone, Copy, Component)]
@@ -157,12 +141,14 @@ struct TileBundle {
 
 fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     commands: &mut Commands,
-    data: &MapDataInit<C>,
+    data: &MapDataInitAny,
 ) {
-    let mut tile_index = TileEntityIndex::<C>(MapData::new(data.map.size(), Entity::from_raw(0)));
+    let map: &MapData<C, _> = data.map.try_get().unwrap();
 
-    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * data.map.size() as f32));
-    for (c, init) in data.map.iter() {
+    let mut tile_index = MapData::new(map.size(), Entity::from_raw(0));
+
+    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * map.size() as f32));
+    for (c, init) in map.iter() {
         let tile_e = commands.spawn_bundle(
             TileBundle {
                 kind: init.kind,
@@ -173,12 +159,13 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
             })
             .insert(MapCleanup).id();
 
-        tile_index.0[c] = tile_e;
+        tile_index[c] = tile_e;
     }
 
+    let tile_index = MapAny::from(tile_index);
     commands.insert_resource(tile_index);
 
-    commands.remove_resource::<MapDataInit<C>>();
+    commands.remove_resource::<MapDataInitAny>();
 }
 
 pub mod tileid {

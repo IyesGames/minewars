@@ -3,8 +3,7 @@
 //! Types to represent game data, functions to process it, …
 
 use enum_map::{Enum, EnumMap};
-use crate::grid::Topology;
-use crate::grid::map::{CompactMapCoordExt, MapData};
+use crate::grid::*;
 use crate::HashMap;
 
 pub mod map;
@@ -104,8 +103,24 @@ pub struct MapTileInit {
 
 pub struct MapDataInit<C: CompactMapCoordExt> {
     pub map: MapData<C, MapTileInit>,
-    pub cits: Vec<C>,
-    pub mines: HashMap<C, MineKind>,
+    pub cits: Vec<Pos>,
+    pub mines: HashMap<Pos, MineKind>,
+}
+
+pub struct MapDataInitAny {
+    pub map: MapAny<MapTileInit>,
+    pub cits: Vec<Pos>,
+    pub mines: HashMap<Pos, MineKind>,
+}
+
+impl<C: CompactMapCoordExt> From<MapDataInit<C>> for MapDataInitAny {
+    fn from(data: MapDataInit<C>) -> Self {
+        Self {
+            map: MapAny::from(data.map),
+            cits: data.cits,
+            mines: data.mines,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

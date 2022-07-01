@@ -64,6 +64,7 @@ pub fn fertilize_land<C: CompactMapCoordExt> (
     */
 }
 
+/*
 /// Compute region affiliations
 pub fn gen_regions<C: CompactMapCoordExt + Coord>(
     gen: &mut MapDataInit<C>,
@@ -106,3 +107,4 @@ pub fn gen_regions<C: CompactMapCoordExt + Coord>(
         }
     });
 }
+*/

@@ -77,11 +77,12 @@ fn world_gen_system(
     if !*done {
         // TODO: have this configurable somewhere
         let n_mines = mapdesc.size as u32 * mapdesc.size as u32 / 3;
-        match mapdesc.topology {
-            Topology::Hex => commands.insert_resource(world_gen_flat::<Hex>(mapdesc.size, n_mines)),
-            Topology::Sq => commands.insert_resource(world_gen_flat::<Sq>(mapdesc.size, n_mines)),
-            Topology::Sqr => commands.insert_resource(world_gen_flat::<Sqr>(mapdesc.size, n_mines)),
+        let mapinit = match mapdesc.topology {
+            Topology::Hex => world_gen_flat::<Hex>(mapdesc.size, n_mines),
+            Topology::Sq => world_gen_flat::<Sq>(mapdesc.size, n_mines),
+            Topology::Sqr => world_gen_flat::<Sqr>(mapdesc.size, n_mines),
         };
+        commands.insert_resource(mapinit);
         *done = true;
     }
 
@@ -95,22 +96,20 @@ fn world_gen_system(
 fn world_gen_flat<C: CompactMapCoordExt>(
     size: u8,
     mut n_mines: u32,
-) -> MapDataInit<C> {
+) -> MapDataInitAny {
     assert!(n_mines < size as u32 * size as u32);
 
     let mut rng = thread_rng();
 
-    let mut data = MapDataInit {
-        map: MapData::new(size, MapTileInit {
-            kind: TileKind::Regular,
-            mine: None,
-            region: 0xff,
-            cit: false,
-            mark: false,
-        }),
-        cits: Default::default(),
-        mines: Default::default(),
-    };
+    let mut map = MapData::new(size, MapTileInit {
+        kind: TileKind::Regular,
+        mine: None,
+        region: 0xff,
+        cit: false,
+        mark: false,
+    });
+    let cits: Vec<Pos> = Default::default();
+    let mut mines: HashMap<Pos, MineKind> = Default::default();
 
     let size = size as i8;
 
@@ -119,14 +118,19 @@ fn world_gen_flat<C: CompactMapCoordExt>(
         let y = rng.gen_range(-size..=size);
         let x = rng.gen_range(C::xmin(size as u8, y)..=C::xmax(size as u8, y));
 
-        let pos = Pos(x, y).into();
+        let pos = Pos(x, y);
+        let c: C = pos.into();
 
-        if data.map[pos].mine.is_none() {
-            data.map[pos].mine = Some(MineKind::Mine);
-            data.mines.insert(pos, MineKind::Mine);
+        if map[c].mine.is_none() {
+            map[c].mine = Some(MineKind::Mine);
+            mines.insert(pos, MineKind::Mine);
             n_mines -= 1;
         }
     }
 
-    data
+    MapDataInitAny {
+        map: MapAny::from(map),
+        cits,
+        mines,
+    }
 }

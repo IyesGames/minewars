@@ -31,7 +31,8 @@ pub use sqr::Sqr;
 pub use hex::Hex;
 pub use pos::Pos;
 pub use map::MapData;
-pub use self::map::CompactMapCoordExt;
+pub use map::MapAny;
+pub use map::CompactMapCoordExt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Topology {
@@ -56,6 +57,7 @@ pub trait Coord:
     const N0: usize;
     const N1: usize;
     const N2: usize;
+    const TOPOLOGY: Topology;
 
     type IterN0: IntoIterator<Item=Self>;
     type IterN1: IntoIterator<Item=Self>;

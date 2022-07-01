@@ -2,7 +2,7 @@ use std::io::Write;
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 
-use super::{Coord, OutOfBoundsError};
+use super::*;
 
 /// Extension trait for coordinates, providing operations for dense map layout
 pub trait CompactMapCoordExt: Coord {
@@ -15,6 +15,136 @@ pub trait CompactMapCoordExt: Coord {
     fn xmax(r: u8, y: i8) -> i8;
     fn index(r: u8, c: Self) -> usize;
     fn iter_coords(r: u8) -> Self::IterCoords;
+}
+
+pub enum MapAny<D> {
+    Hex(MapData<Hex, D>),
+    Sq(MapData<Sq, D>),
+    Sqr(MapData<Sqr, D>),
+}
+
+impl<D> MapAny<D> {
+    pub fn topology(&self) -> Topology {
+        match self {
+            MapAny::Hex(_) => Topology::Hex,
+            MapAny::Sq(_) => Topology::Sq,
+            MapAny::Sqr(_) => Topology::Sqr,
+        }
+    }
+
+    pub fn specialize<R>(
+        &self,
+        f_hex: impl FnOnce(&MapData<Hex, D>) -> R,
+        f_sq: impl FnOnce(&MapData<Sq, D>) -> R,
+        f_sqr: impl FnOnce(&MapData<Sqr, D>) -> R,
+    ) -> R {
+        match self {
+            MapAny::Hex(map) => f_hex(map),
+            MapAny::Sq(map) => f_sq(map),
+            MapAny::Sqr(map) => f_sqr(map),
+        }
+    }
+
+    pub fn specialize_mut<R>(
+        &mut self,
+        f_hex: impl FnOnce(&mut MapData<Hex, D>) -> R,
+        f_sq: impl FnOnce(&mut MapData<Sq, D>) -> R,
+        f_sqr: impl FnOnce(&mut MapData<Sqr, D>) -> R,
+    ) -> R {
+        match self {
+            MapAny::Hex(map) => f_hex(map),
+            MapAny::Sq(map) => f_sq(map),
+            MapAny::Sqr(map) => f_sqr(map),
+        }
+    }
+
+    pub fn get_hex(&self) -> Option<&MapData<Hex, D>> {
+        match self {
+            MapAny::Hex(map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn get_sq(&self) -> Option<&MapData<Sq, D>> {
+        match self {
+            MapAny::Sq(map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn get_sqr(&self) -> Option<&MapData<Sqr, D>> {
+        match self {
+            MapAny::Sqr(map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn get_hex_mut(&mut self) -> Option<&mut MapData<Hex, D>> {
+        match self {
+            MapAny::Hex(map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn get_sq_mut(&mut self) -> Option<&mut MapData<Sq, D>> {
+        match self {
+            MapAny::Sq(map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn get_sqr_mut(&mut self) -> Option<&mut MapData<Sqr, D>> {
+        match self {
+            MapAny::Sqr(map) => Some(map),
+            _ => None,
+        }
+    }
+
+    pub fn as_sqr(self) -> Result<MapData<Sqr, D>, Self> {
+        match self {
+            MapAny::Sqr(map) => Ok(map),
+            _ => Err(self),
+        }
+    }
+
+    pub fn try_unwrap<C: CompactMapCoordExt>(self) -> Result<MapData<C, D>, Self> {
+        // RELIES ON `C` BEING ONE OF THE SUPPORTED TYPES
+        unsafe {
+            match (C::TOPOLOGY, self) {
+                (Topology::Hex, MapAny::Hex(map)) => Ok(std::mem::transmute(map)),
+                (Topology::Sq, MapAny::Sq(map)) => Ok(std::mem::transmute(map)),
+                (Topology::Sqr, MapAny::Sqr(map)) => Ok(std::mem::transmute(map)),
+                (_, MapAny::Hex(map)) => Err(MapAny::Hex(map)),
+                (_, MapAny::Sq(map)) => Err(MapAny::Sq(map)),
+                (_, MapAny::Sqr(map)) => Err(MapAny::Sqr(map)),
+            }
+        }
+    }
+
+    pub fn try_get<C: CompactMapCoordExt>(&self) -> Option<&MapData<C, D>> {
+        // RELIES ON `C` BEING ONE OF THE SUPPORTED TYPES
+        unsafe {
+            match (C::TOPOLOGY, self) {
+                (Topology::Hex, MapAny::Hex(map)) => Some(std::mem::transmute(map)),
+                (Topology::Sq, MapAny::Sq(map)) => Some(std::mem::transmute(map)),
+                (Topology::Sqr, MapAny::Sqr(map)) => Some(std::mem::transmute(map)),
+                _ => None,
+            }
+        }
+    }
+}
+
+impl<C: CompactMapCoordExt, D> From<MapData<C, D>> for MapAny<D> {
+    fn from(map: MapData<C, D>) -> Self {
+        // RELIES ON `C` BEING ONE OF THE SUPPORTED TYPES
+        unsafe {
+            match C::TOPOLOGY {
+                Topology::Hex => MapAny::Hex(std::mem::transmute(map)),
+                Topology::Sq => MapAny::Sq(std::mem::transmute(map)),
+                Topology::Sqr => MapAny::Sqr(std::mem::transmute(map)),
+            }
+        }
+    }
 }
 
 /// Map storage for a "radial" map, as a compact dense array.

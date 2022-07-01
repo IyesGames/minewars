@@ -28,6 +28,8 @@ impl Coord for Sqr {
     const N1: usize = 8;
     const N2: usize = 8;
 
+    const TOPOLOGY: super::Topology = super::Topology::Sqr;
+
     type IterN0 = IterNeigh;
     type IterN1 = IterNeigh;
     type IterN2 = IterKnights;
