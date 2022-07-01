@@ -1,15 +1,6 @@
-use mw_common::game::MapDataInit;
-use mw_common::game::MapTileInit;
-use mw_common::game::MineKind;
-use mw_common::game::TileKind;
-use mw_common::game::MapDescriptor;
-use mw_common::grid::Hex;
-use mw_common::grid::MapData;
-use mw_common::grid::Pos;
-use mw_common::grid::Sq;
-use mw_common::grid::Sqr;
-use mw_common::grid::Topology;
-use mw_common::grid::map::CompactMapCoordExt;
+use mw_common::game::*;
+use mw_common::grid::*;
+use mw_common::plid::*;
 
 use crate::prelude::*;
 
@@ -40,6 +31,11 @@ impl Plugin for GamePlugin {
                 .run_in_state(AppGlobalState::GameLoading)
                 .run_in_state(StreamSource::Local)
         );
+        app.add_enter_system(
+            AppGlobalState::GameLoading,
+            init_local_as_player1
+                .run_in_state(StreamSource::Local)
+        );
         #[cfg(feature = "dev")]
         app.add_plugin(mode::dev::GameModeDevPlugin);
         // FIXME: temporary; replace with actual lobby implementations
@@ -65,6 +61,12 @@ impl Plugin for GamePlugin {
 
 fn skip_lobby_state(mut commands: Commands) {
     commands.insert_resource(NextState(AppGlobalState::GameLoading));
+}
+
+fn init_local_as_player1(
+    mut commands: Commands,
+) {
+    commands.insert_resource(ActivePlid(PlayerId::from(1)));
 }
 
 fn world_gen_system(
