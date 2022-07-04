@@ -7,11 +7,17 @@ use crate::assets::TileAssets;
 use crate::camera::GridCursor;
 use crate::settings::PlayerPaletteSettings;
 
-use super::{MapCleanup, TileCoord};
+use super::{MapCleanup, TileCoord, MapLabels, TileOwner, TileVisible, TileDigit};
 use super::tileid::{self, CoordTileids};
 
 #[derive(Component)]
 struct CursorSprite;
+#[derive(Component)]
+struct BaseSprite;
+#[derive(Component)]
+struct DecalSprite;
+#[derive(Component)]
+struct DigitSprite;
 
 /// Reference to a sprite entity displaying a "decal", if any
 #[derive(Component)]
@@ -43,9 +49,19 @@ impl Plugin for MapGfxSpritesPlugin {
         );
         app.add_system_set(ConditionSet::new()
             .run_in_state(AppGlobalState::InGame)
-            .with_system(tile_decals)
+            .with_system(tile_decal_sprite_mgr)
             .with_system(cursor_sprite)
             .into()
+        );
+        app.add_system(tile_owner_color
+            .run_in_state(AppGlobalState::InGame)
+            .after(MapLabels::TileOwner)
+            .after(MapLabels::TileVisible)
+        );
+        app.add_system(tile_digit_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .after(MapLabels::TileDigit)
+            .after(MapLabels::TileVisible)
         );
     }
 }
@@ -90,7 +106,7 @@ fn setup_tiles(
             texture_atlas: tiles.atlas.clone(),
             transform: Transform::from_translation(xy.extend(0.0)),
             ..Default::default()
-        });
+        }).insert(BaseSprite);
         *done = true;
         done_now = true;
     }
@@ -102,13 +118,17 @@ fn setup_tiles(
     (*done).into()
 }
 
-fn tile_decals(
+fn tile_decal_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
-    q_tile: Query<(Entity, &TileKind, &Transform, Option<&TileDecalSprite>), Changed<TileKind>>,
+    q_tile: Query<
+        (Entity, &TileCoord, &TileKind, &Transform, Option<&TileDecalSprite>),
+        Changed<TileKind>
+    >,
 ) {
-    for (e, kind, xf, spr_decal) in q_tile.iter() {
+    for (e, coord, kind, xf, spr_decal) in q_tile.iter() {
         let mut xyz = xf.translation;
+        // UGLY: maybe don't hardcode this here?
         xyz.z += 1.0;
 
         // remove the old decal
@@ -140,8 +160,58 @@ fn tile_decals(
             texture_atlas: tiles.atlas.clone(),
             transform: xf.clone(),
             ..Default::default()
-        }).id();
+        }).insert(DecalSprite).insert(coord.clone()).id();
         commands.entity(e).insert(TileDecalSprite(e_decal));
+    }
+}
+
+fn tile_digit_sprite_mgr(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+    q_tile: Query<
+        (Entity, &TileCoord, &TileVisible, &TileDigit, &Transform, Option<&TileDigitSprite>),
+        (With<BaseSprite>, Or<(Changed<TileDigit>, Changed<TileVisible>)>)
+    >,
+    mut q_digit: Query<&mut TextureAtlasSprite, With<DigitSprite>>,
+) {
+    for (e, coord, tilevis, digit, xf, spr_digit) in q_tile.iter() {
+        // we aren't supposed to show digits in fog of war;
+        if !tilevis.0 {
+            // remove any if present
+            if let Some(spr_digit) = spr_digit {
+                commands.entity(spr_digit.0).despawn();
+                commands.entity(e).remove::<TileDigitSprite>();
+            }
+            continue;
+        }
+
+        let mut xyz = xf.translation;
+        // UGLY: maybe don't hardcode this here?
+        xyz.z += 2.0;
+
+        if let Some(spr_digit) = spr_digit {
+            // there is an existing digit entity we can reuse (or despawn)
+            if digit.0 > 0 {
+                let e_digit = spr_digit.0;
+                let mut sprite = q_digit.get_mut(e_digit).unwrap();
+                sprite.index = tileid::DIGITS[digit.0 as usize];
+            } else {
+                commands.entity(spr_digit.0).despawn();
+                commands.entity(e).remove::<TileDigitSprite>();
+            }
+        } else if digit.0 > 0 {
+            // create a new digit entity
+            let e_digit = commands.spawn_bundle(SpriteSheetBundle {
+                sprite: TextureAtlasSprite {
+                    index: tileid::DIGITS[digit.0 as usize],
+                    ..Default::default()
+                },
+                texture_atlas: tiles.atlas.clone(),
+                transform: xf.clone(),
+                ..Default::default()
+            }).insert(DigitSprite).insert(coord.clone()).id();
+            commands.entity(e).insert(TileDigitSprite(e_digit));
+        }
     }
 }
 
@@ -167,6 +237,26 @@ fn setup_cursor(
     })
         .insert(CursorSprite)
         .insert(MapCleanup);
+}
+
+fn tile_owner_color(
+    settings_colors: Res<PlayerPaletteSettings>,
+    mut q_tile: Query<
+        (&TileKind, &TileOwner, &TileVisible, &mut TextureAtlasSprite),
+        (With<BaseSprite>, Or<(Changed<TileOwner>, Changed<TileVisible>)>)
+    >,
+) {
+    for (kind, owner, tilevis, mut sprite) in q_tile.iter_mut() {
+        if !kind.ownable() {
+            continue;
+        }
+
+        sprite.color = if tilevis.0 {
+            settings_colors.visible[owner.0.i()]
+        } else {
+            settings_colors.fog[owner.0.i()]
+        }
+    }
 }
 
 fn cursor_sprite(
