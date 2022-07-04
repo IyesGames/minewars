@@ -148,7 +148,13 @@ struct TileOwner(PlayerId);
 struct TileVisible(bool);
 
 #[derive(Bundle)]
-struct TileBundle {
+struct NonPlayableTileBundle {
+    kind: TileKind,
+    coord: TileCoord,
+}
+
+#[derive(Bundle)]
+struct PlayableTileBundle {
     kind: TileKind,
     coord: TileCoord,
     digit: TileDigit,
@@ -166,15 +172,22 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
 
     commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * map.size() as f32));
     for (c, init) in map.iter() {
-        let tile_e = commands.spawn_bundle(
-            TileBundle {
+        let tile_e = if init.kind.ownable() {
+            commands.spawn_bundle(PlayableTileBundle {
                 kind: init.kind,
                 coord: TileCoord(c.into()),
                 digit: TileDigit(0),
                 owner: TileOwner(PlayerId::Spectator),
                 vis: TileVisible(false),
             })
-            .insert(MapCleanup).id();
+                .insert(MapCleanup).id()
+        } else {
+            commands.spawn_bundle(NonPlayableTileBundle {
+                kind: init.kind,
+                coord: TileCoord(c.into()),
+            })
+                .insert(MapCleanup).id()
+        };
 
         tile_index[c] = tile_e;
     }
@@ -197,8 +210,11 @@ fn map_event_owner(
         }
         if let MapEventKind::Owner { plid } = ev.kind {
             let e_tile = index.0[ev.c];
-            let mut tile_owner = q_tile.get_mut(e_tile).unwrap();
-            tile_owner.0 = plid;
+            if let Ok(mut tile_owner) = q_tile.get_mut(e_tile) {
+                if tile_owner.0 != plid {
+                    tile_owner.0 = plid;
+                }
+            }
         }
     }
 }
@@ -215,8 +231,11 @@ fn map_event_digit(
         }
         if let MapEventKind::Digit { digit } = ev.kind {
             let e_tile = index.0[ev.c];
-            let mut tile_digit = q_tile.get_mut(e_tile).unwrap();
-            tile_digit.0 = digit;
+            if let Ok(mut tile_digit) = q_tile.get_mut(e_tile) {
+                if tile_digit.0 != digit {
+                    tile_digit.0 = digit;
+                }
+            }
         }
     }
 }

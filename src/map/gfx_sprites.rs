@@ -160,7 +160,11 @@ fn tile_decal_sprite_mgr(
             texture_atlas: tiles.atlas.clone(),
             transform: xf.clone(),
             ..Default::default()
-        }).insert(DecalSprite).insert(coord.clone()).id();
+        })
+            .insert(MapCleanup)
+            .insert(DecalSprite)
+            .insert(coord.clone())
+            .id();
         commands.entity(e).insert(TileDecalSprite(e_decal));
     }
 }
@@ -209,7 +213,11 @@ fn tile_digit_sprite_mgr(
                 texture_atlas: tiles.atlas.clone(),
                 transform: xf.clone(),
                 ..Default::default()
-            }).insert(DigitSprite).insert(coord.clone()).id();
+            })
+                .insert(MapCleanup)
+                .insert(DigitSprite)
+                .insert(coord.clone())
+                .id();
             commands.entity(e).insert(TileDigitSprite(e_digit));
         }
     }
