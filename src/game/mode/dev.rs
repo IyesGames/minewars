@@ -26,22 +26,39 @@ impl Plugin for GameModeDevPlugin {
 }
 
 fn debug_mapevents(
-    mut ew_map: EventWriter<MapEvent>,
+    mut evw_map: EventWriter<MapEvent>,
     crs: Res<GridCursor>,
     input: Res<Input<MouseButton>>,
     my_plid: Res<ActivePlid>,
 ) {
     if input.just_pressed(MouseButton::Middle) {
-        let kind = if thread_rng().gen_bool(0.5) {
+        let mut rng = thread_rng();
+
+        let kind = if rng.gen_bool(0.5) {
             MineKind::Mine
         } else {
             MineKind::Decoy
         };
 
-        ew_map.send(MapEvent {
+        let owner = rng.gen_range(0u8..7u8);
+        let digit = rng.gen_range(0u8..8u8);
+
+        evw_map.send(MapEvent {
             c: crs.0,
             plid: my_plid.0,
             kind: MapEventKind::Explosion { kind },
-        })
+        });
+
+        evw_map.send(MapEvent {
+            c: crs.0,
+            plid: my_plid.0,
+            kind: MapEventKind::Owner { plid: owner.into() },
+        });
+
+        evw_map.send(MapEvent {
+            c: crs.0,
+            plid: my_plid.0,
+            kind: MapEventKind::Digit { digit },
+        });
     }
 }
