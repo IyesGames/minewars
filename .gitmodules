@@ -22,9 +22,6 @@
 [submodule "deps/bevy_debug_lines"]
 	path = deps/bevy_debug_lines
 	url = https://github.com/IyesGames/bevy_debug_lines
-[submodule "deps/bevy_ecs_tilemap"]
-	path = deps/bevy_ecs_tilemap
-	url = https://github.com/IyesGames/bevy_ecs_tilemap
 [submodule "deps/bevy_kira_audio"]
 	path = deps/bevy_kira_audio
 	url = https://github.com/IyesGames/bevy_kira_audio

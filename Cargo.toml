@@ -32,7 +32,6 @@ features = [
     "2d",
     "bevy-ui",
     "audio",
-    "tilemap",
 ]
 
 [dependencies.tokio]
@@ -94,7 +93,6 @@ benimator = { path = "./deps/benimator" }
 bevy_asset_ron = { path = "./deps/bevy_asset_ron" }
 bevy_asset_loader = { path = "./deps/bevy_asset_loader/bevy_asset_loader" }
 bevy_prototype_debug_lines = { path = "./deps/bevy_debug_lines" }
-bevy_ecs_tilemap = { path = "./deps/bevy_ecs_tilemap" }
 bevy_kira_audio = { path = "./deps/bevy_kira_audio" }
 bevy_tweening = { path = "./deps/bevy_tweening" }
 
@@ -121,9 +119,6 @@ bevy_asset_ron = { path = "./deps/bevy_asset_ron" }
 
 [patch."https://github.com/IyesGames/bevy_debug_lines"]
 bevy_prototype_debug_lines = { path = "./deps/bevy_debug_lines" }
-
-[patch."https://github.com/IyesGames/bevy_ecs_tilemap"]
-bevy_ecs_tilemap = { path = "./deps/bevy_ecs_tilemap" }
 
 [patch."https://github.com/IyesGames/bevy_kira_audio"]
 bevy_kira_audio = { path = "./deps/bevy_kira_audio" }
