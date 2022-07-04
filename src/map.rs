@@ -41,21 +41,26 @@ impl Plugin for MapPlugin {
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)
             .label(MapLabels::TileOwner)
-            .label("map_event_owner")
         );
         app.add_system(map_event_digit
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)
+            .label("map_event_digit")
+        );
+        app.add_system(drop_digits
+            .run_in_state(AppGlobalState::InGame)
+            .after(MapLabels::TileOwner)
+            .after("map_event_digit")
             .label(MapLabels::TileDigit)
         );
         app.add_system(compute_fog_of_war::<Hex>
             .run_in_state(AppGlobalState::InGame)
-            .after("map_event_owner")
+            .after(MapLabels::TileOwner)
             .label(MapLabels::TileVisible)
         );
         app.add_system(compute_fog_of_war::<Sq>
             .run_in_state(AppGlobalState::InGame)
-            .after("map_event_owner")
+            .after(MapLabels::TileOwner)
             .label(MapLabels::TileVisible)
         );
         #[cfg(feature = "dev")]
@@ -222,9 +227,8 @@ fn map_event_owner(
         if let MapEventKind::Owner { plid } = ev.kind {
             let e_tile = index.0[ev.c];
             if let Ok(mut tile_owner) = q_tile.get_mut(e_tile) {
-                if tile_owner.0 != plid {
-                    tile_owner.0 = plid;
-                }
+                // do not try to avoid change detection!
+                tile_owner.0 = plid;
             }
         }
     }
@@ -243,9 +247,8 @@ fn map_event_digit(
         if let MapEventKind::Digit { digit } = ev.kind {
             let e_tile = index.0[ev.c];
             if let Ok(mut tile_digit) = q_tile.get_mut(e_tile) {
-                if tile_digit.0 != digit {
-                    tile_digit.0 = digit;
-                }
+                // do not try to avoid change detection!
+                tile_digit.0 = digit;
             }
         }
     }
@@ -293,6 +296,20 @@ fn compute_fog_of_war<C: Coord>(
             }
         },
     );
+}
+
+fn drop_digits(
+    my_plid: Res<ActivePlid>,
+    mut q_tile: Query<
+        (&mut TileDigit, &TileOwner),
+        Changed<TileOwner>,
+    >,
+) {
+    for (mut digit, owner) in q_tile.iter_mut() {
+        if owner.0 != my_plid.0 {
+            digit.0 = 0;
+        }
+    }
 }
 
 pub mod tileid {
