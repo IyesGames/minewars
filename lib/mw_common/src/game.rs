@@ -2,7 +2,7 @@
 //!
 //! Types to represent game data, functions to process it, …
 
-use enum_map::{Enum, EnumMap};
+use enum_map::{Enum, EnumMap, enum_map};
 use crate::grid::*;
 use crate::HashMap;
 
@@ -81,6 +81,35 @@ pub struct GameParams {
     pub radius_vis: u8,
     pub radius_fertile: u8,
     pub costs: EnumMap<ProdItem, ResPt>,
+}
+
+impl Default for GameParams {
+    fn default() -> Self {
+        Self {
+            res_base: 50,
+            res_local: enum_map! {
+                TileKind::Water => 0,
+                TileKind::Regular => 1,
+                TileKind::Fertile => 1,
+                TileKind::Mountain => 5,
+                TileKind::Road => 0,
+            },
+            res_export: enum_map! {
+                TileKind::Water => 0,
+                TileKind::Regular => 0,
+                TileKind::Fertile => 1,
+                TileKind::Mountain => 3,
+                TileKind::Road => 0,
+            },
+            radius_vis: 2,
+            radius_fertile: 2,
+            costs: enum_map! {
+                ProdItem::Mine(MineKind::Mine) => 3000,
+                ProdItem::Mine(MineKind::Decoy) => 3000,
+                ProdItem::Road => 1000,
+            },
+        }
+    }
 }
 
 /// The per-tile data used for initializing a map

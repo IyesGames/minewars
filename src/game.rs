@@ -21,6 +21,7 @@ impl Plugin for GamePlugin {
             ProgressPlugin::new(AppGlobalState::GameLoading)
                 .continue_to(AppGlobalState::InGame)
         );
+        app.add_exit_system(AppGlobalState::InGame, remove_resource::<GameParams>);
         // For "local" games, we need to generate a world map
         // (fallback for open-source builds,
         // proprietary takes care of this by itself)

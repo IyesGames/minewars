@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 use mw_common::grid::map::CompactMapCoordExt;
-use mw_common::game::{ProdState, MineKind, MapDataInitAny, TileKind, MapDescriptor};
+use mw_common::game::{ProdState, MineKind, MapDataInitAny, TileKind, MapDescriptor, GameParams};
 use mw_common::plid::PlayerId;
 use mw_common::grid::*;
 
@@ -36,6 +36,7 @@ impl Plugin for MapPlugin {
                 .run_in_state(AppGlobalState::GameLoading)
         );
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<MapCleanup>);
+        app.add_exit_system(AppGlobalState::InGame, remove_resource::<MapDescriptor>);
         app.add_system(map_event_owner
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)

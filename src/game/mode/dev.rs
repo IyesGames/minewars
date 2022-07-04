@@ -4,7 +4,7 @@ use crate::camera::GridCursor;
 use crate::game::skip_lobby_state;
 use crate::map::{MapEvent, MapEventKind, MapLabels};
 
-use mw_common::game::MineKind;
+use mw_common::game::{MineKind, GameParams};
 use mw_common::app::ActivePlid;
 
 pub struct GameModeDevPlugin;
@@ -15,6 +15,10 @@ impl Plugin for GameModeDevPlugin {
             AppGlobalState::GameLobby,
             skip_lobby_state.run_in_state(GameMode::Dev)
         );
+        app.add_exit_system(
+            AppGlobalState::GameLobby,
+            init_dev_gameparams.run_in_state(GameMode::Dev)
+        );
         app.add_system(
             debug_mapevents
                 .run_in_state(AppGlobalState::InGame)
@@ -23,6 +27,12 @@ impl Plugin for GameModeDevPlugin {
                 .before(MapLabels::ApplyEvents)
         );
     }
+}
+
+fn init_dev_gameparams(
+    mut commands: Commands,
+) {
+    commands.init_resource::<GameParams>();
 }
 
 fn debug_mapevents(
