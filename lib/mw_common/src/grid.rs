@@ -43,7 +43,7 @@ pub enum Topology {
 
 /// Common interface for working with square or hex coordinates
 pub trait Coord:
-    Debug + Copy + Eq + Hash + Default + Send + Sync + 'static
+    Debug + Copy + Eq + Ord + Hash + Default + Send + Sync + 'static
     + Into<(i8, i8)> + Into<(u8, u8)>
     + From<pos::Pos> + Into<pos::Pos>
     + Into<glam::IVec2> + Into<glam::UVec2>
