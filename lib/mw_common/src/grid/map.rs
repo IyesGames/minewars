@@ -147,6 +147,28 @@ impl<C: CompactMapCoordExt, D> From<MapData<C, D>> for MapAny<D> {
     }
 }
 
+impl<D> Index<Pos> for MapAny<D> {
+    type Output = D;
+
+    fn index(&self, pos: Pos) -> &D {
+        match self {
+            MapAny::Hex(map) => map.index(Hex::from(pos)),
+            MapAny::Sq(map) => map.index(Sq::from(pos)),
+            MapAny::Sqr(map) => map.index(Sqr::from(pos)),
+        }
+    }
+}
+
+impl<D> IndexMut<Pos> for MapAny<D> {
+    fn index_mut(&mut self, pos: Pos) -> &mut D {
+        match self {
+            MapAny::Hex(map) => map.index_mut(Hex::from(pos)),
+            MapAny::Sq(map) => map.index_mut(Sq::from(pos)),
+            MapAny::Sqr(map) => map.index_mut(Sqr::from(pos)),
+        }
+    }
+}
+
 /// Map storage for a "radial" map, as a compact dense array.
 ///
 /// `C` is the type of coordinate.

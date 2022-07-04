@@ -16,6 +16,12 @@ pub enum PlayerId {
     Player(NonZeroU8),
 }
 
+impl PlayerId {
+    pub fn i(self) -> usize {
+        self.into()
+    }
+}
+
 impl From<PlayerId> for u8 {
     fn from(plid: PlayerId) -> u8 {
         use PlayerId::*;
