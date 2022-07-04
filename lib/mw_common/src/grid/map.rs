@@ -32,6 +32,14 @@ impl<D> MapAny<D> {
         }
     }
 
+    pub fn size(&self) -> u8 {
+        self.specialize(
+            |map| map.size(),
+            |map| map.size(),
+            |map| map.size(),
+        )
+    }
+
     pub fn specialize<R>(
         &self,
         f_hex: impl FnOnce(&MapData<Hex, D>) -> R,
