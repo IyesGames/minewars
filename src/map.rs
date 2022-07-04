@@ -15,8 +15,14 @@ mod gfx_sprites;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(SystemLabel)]
 pub enum MapLabels {
-    /// Anything that sends MapEvents should come before this
+    /// Anything that sends MapEvents should come *before*
     ApplyEvents,
+    /// Anything relying on valid TileOwner should come *after*
+    TileOwner,
+    /// Anything relying on valid TileDigit should come *after*
+    TileDigit,
+    /// Anything relying on valid TileVisible should come *after*
+    TileVisible,
 }
 
 pub struct MapPlugin;
@@ -30,6 +36,16 @@ impl Plugin for MapPlugin {
                 .run_in_state(AppGlobalState::GameLoading)
         );
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<MapCleanup>);
+        app.add_system(map_event_owner
+            .run_in_state(AppGlobalState::InGame)
+            .label(MapLabels::ApplyEvents)
+            .label(MapLabels::TileOwner)
+        );
+        app.add_system(map_event_digit
+            .run_in_state(AppGlobalState::InGame)
+            .label(MapLabels::ApplyEvents)
+            .label(MapLabels::TileDigit)
+        );
         #[cfg(feature = "dev")]
         app.add_system(debug_mapevents.label(MapLabels::ApplyEvents));
         #[cfg(feature = "gfx_sprites")]
@@ -162,10 +178,46 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
         tile_index[c] = tile_e;
     }
 
-    let tile_index = MapAny::from(tile_index);
+    let tile_index = TileEntityIndex(MapAny::from(tile_index));
     commands.insert_resource(tile_index);
 
     commands.remove_resource::<MapDataInitAny>();
+}
+
+fn map_event_owner(
+    mut evr_map: EventReader<MapEvent>,
+    my_plid: Res<ActivePlid>,
+    index: Res<TileEntityIndex>,
+    mut q_tile: Query<&mut TileOwner>,
+) {
+    for ev in evr_map.iter() {
+        if ev.plid != my_plid.0 {
+            continue;
+        }
+        if let MapEventKind::Owner { plid } = ev.kind {
+            let e_tile = index.0[ev.c];
+            let mut tile_owner = q_tile.get_mut(e_tile).unwrap();
+            tile_owner.0 = plid;
+        }
+    }
+}
+
+fn map_event_digit(
+    mut evr_map: EventReader<MapEvent>,
+    my_plid: Res<ActivePlid>,
+    index: Res<TileEntityIndex>,
+    mut q_tile: Query<&mut TileDigit>,
+) {
+    for ev in evr_map.iter() {
+        if ev.plid != my_plid.0 {
+            continue;
+        }
+        if let MapEventKind::Digit { digit } = ev.kind {
+            let e_tile = index.0[ev.c];
+            let mut tile_digit = q_tile.get_mut(e_tile).unwrap();
+            tile_digit.0 = digit;
+        }
+    }
 }
 
 pub mod tileid {
