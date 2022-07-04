@@ -30,44 +30,48 @@ fn main() {
 
     let mut app = App::new();
 
-    app
-        .insert_resource(LogSettings {
-            filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=debug".into(),
-            level: bevy::log::Level::DEBUG,
-        })
-        .insert_resource(WindowDescriptor {
-            title: "MineWars™ PRE-ALPHA".into(),
-            present_mode: PresentMode::Fifo,
-            resizable: true,
-            width: 800.0,
-            height: 600.0,
-            resize_constraints: WindowResizeConstraints {
-                min_width: 800.0,
-                min_height: 600.0,
-                max_width: f32::INFINITY,
-                max_height: f32::INFINITY,
-            },
-            ..Default::default()
-        })
-        .insert_resource(ClearColor(Color::BLACK))
-        .add_plugin(IyesEverything)
-        // FIXME: for testing
-        .insert_resource(mw_common::game::MapDescriptor {
-            size: 48,
-            topology: mw_common::grid::Topology::Hex,
-        })
-        .add_loopless_state(StreamSource::Disconnected)
-        .add_loopless_state(GameMode::None)
-        .add_loopless_state(AppGlobalState::AssetsLoading)
-        .add_plugin(crate::settings::SettingsPlugin)
-        .add_plugin(crate::ui::UiPlugin)
-        .add_plugin(crate::assets::AssetsPlugin)
-        .add_plugin(crate::ui::mainmenu::MainMenuPlugin)
-        .add_plugin(crate::camera::CameraPlugin)
-        .add_plugin(crate::map::MapPlugin)
-        .add_plugin(crate::game::GamePlugin)
-        .add_system(debug_current_state)
-        ;
+    #[cfg(feature = "dev")]
+    app.insert_resource(LogSettings {
+        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace".into(),
+        level: bevy::log::Level::TRACE,
+    });
+    #[cfg(not(feature = "dev"))]
+    app.insert_resource(LogSettings {
+        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=info".into(),
+        level: bevy::log::Level::INFO,
+    });
+    app.insert_resource(WindowDescriptor {
+        title: "MineWars™ PRE-ALPHA".into(),
+        present_mode: PresentMode::Fifo,
+        resizable: true,
+        width: 800.0,
+        height: 600.0,
+        resize_constraints: WindowResizeConstraints {
+            min_width: 800.0,
+            min_height: 600.0,
+            max_width: f32::INFINITY,
+            max_height: f32::INFINITY,
+        },
+        ..Default::default()
+    });
+    app.insert_resource(ClearColor(Color::BLACK));
+    app.add_plugin(IyesEverything);
+    // FIXME: for testing
+    app.insert_resource(mw_common::game::MapDescriptor {
+        size: 48,
+        topology: mw_common::grid::Topology::Hex,
+    });
+    app.add_loopless_state(StreamSource::Disconnected);
+    app.add_loopless_state(GameMode::None);
+    app.add_loopless_state(AppGlobalState::AssetsLoading);
+    app.add_plugin(crate::settings::SettingsPlugin);
+    app.add_plugin(crate::ui::UiPlugin);
+    app.add_plugin(crate::assets::AssetsPlugin);
+    app.add_plugin(crate::ui::mainmenu::MainMenuPlugin);
+    app.add_plugin(crate::camera::CameraPlugin);
+    app.add_plugin(crate::map::MapPlugin);
+    app.add_plugin(crate::game::GamePlugin);
+    app.add_system(debug_current_state);
 
     #[cfg(feature = "proprietary")]
     app.add_plugin(mw_proprietary::ClientPlugin);
