@@ -92,7 +92,7 @@ fn debug_mapevents(
     mut er_map: EventReader<MapEvent>,
 ) {
     for ev in er_map.iter() {
-        debug!("{:?}", ev);
+        trace!("{:?}", ev);
     }
 }
 
