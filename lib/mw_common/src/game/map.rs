@@ -4,6 +4,7 @@ use crate::game::{MapTileInit, MapDataInit, TileKind};
 use crate::grid::{Pos, Coord};
 use crate::grid::map::{CompactMapCoordExt, MapData};
 use crate::algo;
+use crate::plid::PlayerId;
 
 /// Compute "fertile land" areas
 ///
@@ -108,3 +109,66 @@ pub fn gen_regions<C: CompactMapCoordExt + Coord>(
     });
 }
 */
+
+#[inline(always)]
+pub fn compute_fog_of_war<C: Coord>(
+    vis_radius: u8,
+    queue_tmp_dirty: &mut Vec<C>,
+    my_plid: PlayerId,
+    tiles: impl IntoIterator<Item = C>,
+    fetch_owner_at: impl Fn(C) -> Option<PlayerId>,
+    mut set_vis_at: impl FnMut(C, bool),
+) {
+    queue_tmp_dirty.clear();
+    // PERF: find more ways to save on the number of tiles to recompute
+    for c in tiles {
+        if let Some(c_owner) = fetch_owner_at(c) {
+            if c_owner == my_plid {
+                // we GAINED ownership
+                // grant visibility of the tile and all its neighbors
+                set_vis_at(c, true);
+                for r in 1..=vis_radius {
+                    for c2 in c.iter_ring(r) {
+                        set_vis_at(c2, true);
+                    }
+                }
+            } else {
+                // we LOST ownership
+                // the tile and all its neighbors may or may not lose visibility
+                // must test them all individually; queue coords for testing
+                queue_tmp_dirty.push(c);
+                for r in 1..=vis_radius {
+                    queue_tmp_dirty.extend(c.iter_ring(r));
+                }
+            }
+        }
+    }
+
+    if queue_tmp_dirty.is_empty() {
+        return;
+    }
+
+    queue_tmp_dirty.sort_unstable();
+    queue_tmp_dirty.dedup();
+
+    for c in queue_tmp_dirty.drain(..) {
+        let mut vis = false;
+        if let Some(c_owner) = fetch_owner_at(c) {
+            if c_owner == my_plid {
+                vis = true;
+            } else {
+                'outer: for r in 1..=vis_radius {
+                    for c2 in c.iter_ring(r) {
+                        if let Some(c2_owner) = fetch_owner_at(c2) {
+                            if c2_owner == my_plid {
+                                vis = true;
+                                break 'outer;
+                            }
+                        }
+                    }
+                }
+            }
+            set_vis_at(c, vis);
+        }
+    }
+}

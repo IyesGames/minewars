@@ -61,7 +61,6 @@ impl Plugin for MapGfxSpritesPlugin {
         app.add_system(tile_digit_sprite_mgr
             .run_in_state(AppGlobalState::InGame)
             .after(MapLabels::TileDigit)
-            .after(MapLabels::TileVisible)
         );
     }
 }
@@ -173,22 +172,12 @@ fn tile_digit_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
     q_tile: Query<
-        (Entity, &TileCoord, &TileVisible, &TileDigit, &Transform, Option<&TileDigitSprite>),
-        (With<BaseSprite>, Or<(Changed<TileDigit>, Changed<TileVisible>)>)
+        (Entity, &TileCoord, &TileDigit, &Transform, Option<&TileDigitSprite>),
+        With<BaseSprite>
     >,
     mut q_digit: Query<&mut TextureAtlasSprite, With<DigitSprite>>,
 ) {
-    for (e, coord, tilevis, digit, xf, spr_digit) in q_tile.iter() {
-        // we aren't supposed to show digits in fog of war;
-        if !tilevis.0 {
-            // remove any if present
-            if let Some(spr_digit) = spr_digit {
-                commands.entity(spr_digit.0).despawn();
-                commands.entity(e).remove::<TileDigitSprite>();
-            }
-            continue;
-        }
-
+    for (e, coord, digit, xf, spr_digit) in q_tile.iter() {
         let mut xyz = xf.translation;
         // UGLY: maybe don't hardcode this here?
         xyz.z += 2.0;

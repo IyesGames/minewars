@@ -41,11 +41,22 @@ impl Plugin for MapPlugin {
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)
             .label(MapLabels::TileOwner)
+            .label("map_event_owner")
         );
         app.add_system(map_event_digit
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)
             .label(MapLabels::TileDigit)
+        );
+        app.add_system(compute_fog_of_war::<Hex>
+            .run_in_state(AppGlobalState::InGame)
+            .after("map_event_owner")
+            .label(MapLabels::TileVisible)
+        );
+        app.add_system(compute_fog_of_war::<Sq>
+            .run_in_state(AppGlobalState::InGame)
+            .after("map_event_owner")
+            .label(MapLabels::TileVisible)
         );
         #[cfg(feature = "dev")]
         app.add_system(debug_mapevents.label(MapLabels::ApplyEvents));
@@ -238,6 +249,50 @@ fn map_event_digit(
             }
         }
     }
+}
+
+fn compute_fog_of_war<C: Coord>(
+    game_params: Res<GameParams>,
+    my_plid: Res<ActivePlid>,
+    index: Res<TileEntityIndex>,
+    // FIXME PERF: this should be Mutated
+    q_changed: Query<&TileCoord, Changed<TileOwner>>,
+    q_owner: Query<&TileOwner>,
+    mut q_vis: Query<&mut TileVisible>,
+    mut dirty: Local<Vec<C>>,
+) {
+    if index.0.topology() != C::TOPOLOGY {
+        return;
+    }
+
+    if game_params.radius_vis == 0 {
+        return;
+    }
+
+    mw_common::game::map::compute_fog_of_war(
+        game_params.radius_vis,
+        &mut *dirty,
+        my_plid.0,
+        q_changed.iter().map(|x| x.0.into()),
+        |c| {
+            if c.ring() >= index.0.size() {
+                return None;
+            }
+            let c_e = index.0[c.into()];
+            q_owner.get(c_e).ok().map(|x| x.0)
+        },
+        |c, vis| {
+            if c.ring() >= index.0.size() {
+                return;
+            }
+            let c_e = index.0[c.into()];
+            if let Ok(mut c_vis) = q_vis.get_mut(c_e) {
+                if c_vis.0 != vis {
+                    c_vis.0 = vis;
+                }
+            }
+        },
+    );
 }
 
 pub mod tileid {
