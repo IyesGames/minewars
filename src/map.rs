@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 use mw_common::grid::map::CompactMapCoordExt;
-use mw_common::game::{ProdState, MineKind, MapDataInitAny, TileKind, MapDescriptor, GameParams};
+use mw_common::game::{ProdState, MineKind, MapDataInitAny, TileKind, MapDescriptor, GameParams, CitId};
 use mw_common::plid::PlayerId;
 use mw_common::grid::*;
 
@@ -25,6 +25,8 @@ pub enum MapLabels {
     TileVisible,
     /// Anything relying on valid TileMine should come *after*
     TileMine,
+    /// Anything relying on up-to-date cit entities should come *after*
+    CitUpdate,
 }
 
 pub struct MapPlugin;
@@ -45,6 +47,11 @@ impl Plugin for MapPlugin {
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)
             .label(MapLabels::TileOwner)
+        );
+        app.add_system(map_event_owner_cit
+            .run_in_state(AppGlobalState::InGame)
+            .label(MapLabels::ApplyEvents)
+            .label(MapLabels::CitUpdate)
         );
         app.add_system(map_event_digit
             .run_in_state(AppGlobalState::InGame)
@@ -160,6 +167,11 @@ struct TileEntityIndex(MapAny<Entity>);
 
 struct MineIndex(HashMap<Pos, Entity>);
 
+struct CitIndex {
+    by_pos: HashMap<Pos, Entity>,
+    by_id: Vec<Entity>,
+}
+
 /// Per-tile component: the map coordinates
 #[derive(Debug, Clone, Copy, Component)]
 struct TileCoord(Pos);
@@ -175,6 +187,16 @@ struct TileVisible(bool);
 /// Per-tile component: mine state
 #[derive(Debug, Clone, Copy, Component)]
 struct TileMine(Option<MineDisplayState>);
+/// Per-tile component: is there a cit here?
+#[derive(Debug, Clone, Copy, Component)]
+struct TileCit(Entity);
+
+/// Marker for Map Tiles
+#[derive(Debug, Clone, Copy, Component)]
+struct PlayableTileEntity;
+/// Marker for Cits
+#[derive(Debug, Clone, Copy, Component)]
+struct CitEntity(CitId);
 
 /// How to render a mine?
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
@@ -195,6 +217,7 @@ struct NonPlayableTileBundle {
 
 #[derive(Bundle)]
 struct PlayableTileBundle {
+    marker: PlayableTileEntity,
     kind: TileKind,
     coord: TileCoord,
     digit: TileDigit,
@@ -203,26 +226,53 @@ struct PlayableTileBundle {
     mine: TileMine,
 }
 
+#[derive(Bundle)]
+struct CitBundle {
+    cit: CitEntity,
+    coord: TileCoord,
+    owner: TileOwner,
+}
+
 fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     commands: &mut Commands,
     data: &MapDataInitAny,
 ) {
     let map: &MapData<C, _> = data.map.try_get().unwrap();
 
+    let mut cit_index = CitIndex {
+        by_id: Default::default(),
+        by_pos: Default::default(),
+    };
+
+    for (i, pos) in data.cits.iter().enumerate() {
+        let cit_e = commands.spawn_bundle(CitBundle {
+            cit: CitEntity(i as u8),
+            coord: TileCoord(*pos),
+            owner: TileOwner(PlayerId::Spectator),
+        }).insert(MapCleanup).id();
+        cit_index.by_id.push(cit_e);
+        cit_index.by_pos.insert(*pos, cit_e);
+    }
+
     let mut tile_index = MapData::new(map.size(), Entity::from_raw(0));
 
     commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * map.size() as f32));
     for (c, init) in map.iter() {
         let tile_e = if init.kind.ownable() {
-            commands.spawn_bundle(PlayableTileBundle {
+            let mut builder = commands.spawn_bundle(PlayableTileBundle {
+                marker: PlayableTileEntity,
                 kind: init.kind,
                 coord: TileCoord(c.into()),
                 digit: TileDigit(0),
                 owner: TileOwner(PlayerId::Spectator),
                 vis: TileVisible(false),
                 mine: TileMine(None),
-            })
-                .insert(MapCleanup).id()
+            });
+            builder.insert(MapCleanup);
+            if init.cit {
+                builder.insert(TileCit(*cit_index.by_pos.get(&c.into()).unwrap()));
+            }
+            builder.id()
         } else {
             commands.spawn_bundle(NonPlayableTileBundle {
                 kind: init.kind,
@@ -236,8 +286,8 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
 
     let tile_index = TileEntityIndex(MapAny::from(tile_index));
     commands.insert_resource(tile_index);
-
     commands.insert_resource(MineIndex(Default::default()));
+    commands.insert_resource(cit_index);
 
     commands.remove_resource::<MapDataInitAny>();
 }
@@ -246,7 +296,7 @@ fn map_event_owner(
     mut evr_map: EventReader<MapEvent>,
     my_plid: Res<ActivePlid>,
     index: Res<TileEntityIndex>,
-    mut q_tile: Query<&mut TileOwner>,
+    mut q_tile: Query<&mut TileOwner, With<PlayableTileEntity>>,
 ) {
     for ev in evr_map.iter() {
         if ev.plid != my_plid.0 {
@@ -262,11 +312,32 @@ fn map_event_owner(
     }
 }
 
+fn map_event_owner_cit(
+    mut evr_map: EventReader<MapEvent>,
+    my_plid: Res<ActivePlid>,
+    index: Res<CitIndex>,
+    mut q_cit: Query<&mut TileOwner, With<CitEntity>>,
+) {
+    for ev in evr_map.iter() {
+        if ev.plid != my_plid.0 {
+            continue;
+        }
+        if let MapEventKind::Owner { plid } = ev.kind {
+            if let Some(e_cit) = index.by_pos.get(&ev.c) {
+                if let Ok(mut owner) = q_cit.get_mut(*e_cit) {
+                    // do not try to avoid change detection!
+                    owner.0 = plid;
+                }
+            }
+        }
+    }
+}
+
 fn map_event_digit(
     mut evr_map: EventReader<MapEvent>,
     my_plid: Res<ActivePlid>,
     index: Res<TileEntityIndex>,
-    mut q_tile: Query<&mut TileDigit>,
+    mut q_tile: Query<&mut TileDigit, With<PlayableTileEntity>>,
 ) {
     for ev in evr_map.iter() {
         if ev.plid != my_plid.0 {
@@ -283,11 +354,10 @@ fn map_event_digit(
 }
 
 fn map_event_mine(
-    mut commands: Commands,
     mut evr_map: EventReader<MapEvent>,
     my_plid: Res<ActivePlid>,
     index: Res<TileEntityIndex>,
-    mut q_tile: Query<&mut TileMine>,
+    mut q_tile: Query<&mut TileMine, With<PlayableTileEntity>>,
     mut mines: ResMut<MineIndex>,
 ) {
     for ev in evr_map.iter() {
@@ -316,9 +386,9 @@ fn compute_fog_of_war<C: Coord>(
     my_plid: Res<ActivePlid>,
     index: Res<TileEntityIndex>,
     // FIXME PERF: this should be Mutated
-    q_changed: Query<&TileCoord, Changed<TileOwner>>,
-    q_owner: Query<&TileOwner>,
-    mut q_vis: Query<&mut TileVisible>,
+    q_changed: Query<&TileCoord, (With<PlayableTileEntity>, Changed<TileOwner>)>,
+    q_owner: Query<&TileOwner, With<PlayableTileEntity>>,
+    mut q_vis: Query<&mut TileVisible, With<PlayableTileEntity>>,
     mut dirty: Local<Vec<C>>,
 ) {
     if index.0.topology() != C::TOPOLOGY {
@@ -359,7 +429,7 @@ fn drop_digits(
     my_plid: Res<ActivePlid>,
     mut q_tile: Query<
         (&mut TileDigit, &TileOwner),
-        Changed<TileOwner>,
+        (With<PlayableTileEntity>, Changed<TileOwner>),
     >,
 ) {
     for (mut digit, owner) in q_tile.iter_mut() {

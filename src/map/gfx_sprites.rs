@@ -20,6 +20,8 @@ struct DecalSprite;
 struct DigitSprite;
 #[derive(Component)]
 struct MineSprite;
+#[derive(Component)]
+struct CitSprite;
 
 #[derive(Component)]
 struct MineActiveAnimation {
@@ -93,6 +95,7 @@ fn setup_tiles(
     descriptor: Option<Res<MapDescriptor>>,
     settings_colors: Res<PlayerPaletteSettings>,
     q_tile: Query<(Entity, &TileKind, &TileCoord)>,
+    q_cit: Query<(Entity, &TileCoord), With<CitEntity>>,
     mut done: Local<bool>,
 ) -> Progress {
     let descriptor = if let Some(descriptor) = descriptor {
@@ -110,6 +113,8 @@ fn setup_tiles(
         return true.into();
     }
 
+    let map_z = 0.0;
+
     let mut done_now = false;
     for (e, kind, pos) in q_tile.iter() {
         let index = match (descriptor.topology, kind) {
@@ -125,11 +130,25 @@ fn setup_tiles(
                 ..Default::default()
             },
             texture_atlas: tiles.atlas.clone(),
-            transform: Transform::from_translation(xy.extend(0.0)),
+            transform: Transform::from_translation(xy.extend(map_z)),
             ..Default::default()
         }).insert(BaseSprite);
         *done = true;
         done_now = true;
+    }
+
+    // ASSUMES if tiles are ready cits are also ready (setup at the same time)
+    for (e, pos) in q_cit.iter() {
+        let xy = translation_pos(descriptor.topology, pos.0);
+        commands.entity(e).insert_bundle(SpriteSheetBundle {
+            sprite: TextureAtlasSprite {
+                index: tileid::LANDMARK_CITY,
+                ..Default::default()
+            },
+            texture_atlas: tiles.atlas.clone(),
+            transform: Transform::from_translation(xy.extend(map_z + zpos::CIT)),
+            ..Default::default()
+        }).insert(CitSprite);
     }
 
     if done_now {
@@ -149,8 +168,7 @@ fn tile_decal_sprite_mgr(
 ) {
     for (e, coord, kind, xf, spr_decal) in q_tile.iter() {
         let mut xyz = xf.translation;
-        // UGLY: maybe don't hardcode this here?
-        xyz.z += 1.0;
+        xyz.z += zpos::DECAL;
 
         // remove the old decal
         if let Some(spr_decal) = spr_decal {
@@ -201,8 +219,7 @@ fn tile_digit_sprite_mgr(
 ) {
     for (e, coord, digit, xf, spr_digit) in q_tile.iter() {
         let mut xyz = xf.translation;
-        // UGLY: maybe don't hardcode this here?
-        xyz.z += 3.0;
+        xyz.z += zpos::DIGIT;
 
         if let Some(spr_digit) = spr_digit {
             // there is an existing digit entity we can reuse (or despawn)
@@ -245,8 +262,7 @@ fn mine_sprite_mgr(
 ) {
     for (e, coord, mine, xf, spr_mine) in q_tile.iter() {
         let mut xyz = xf.translation;
-        // UGLY: maybe don't hardcode this here?
-        xyz.z += 2.0;
+        xyz.z += zpos::MINE;
 
         if let Some(display) = mine.0 {
             let index = match display {
@@ -316,8 +332,7 @@ fn explosion_sprite_mgr(
             let e_tile = index.0[ev.c];
             if let Ok((xf, coord)) = q_tile.get(e_tile) {
                 let mut xyz = xf.translation;
-                // UGLY: maybe don't hardcode this here?
-                xyz.z += 5.0;
+                xyz.z += zpos::EXPLOSION;
                 let index = match kind {
                     MineKind::Mine => tileid::EXPLODE_MINE,
                     MineKind::Decoy => tileid::EXPLODE_DECOY,
@@ -388,7 +403,7 @@ fn setup_cursor(
             ..Default::default()
         },
         texture_atlas: tiles.atlas.clone(),
-        transform: Transform::from_xyz(0.0, 0.0, 10.0),
+        transform: Transform::from_xyz(0.0, 0.0, zpos::CURSOR),
         ..Default::default()
     })
         .insert(CursorSprite)
@@ -421,7 +436,7 @@ fn cursor_sprite(
     descriptor: Res<MapDescriptor>,
 ) {
     let mut xf = q.single_mut();
-    xf.translation = translation_pos(descriptor.topology, crs.0).extend(10.0);
+    xf.translation = translation_pos(descriptor.topology, crs.0).extend(zpos::CURSOR);
 }
 
 fn translation_c<C: CoordTileids>(c: C) -> Vec2 {
@@ -434,4 +449,13 @@ fn translation_pos(topology: Topology, pos: Pos) -> Vec2 {
         Topology::Sq => translation_c(Sq(pos.0, pos.1)),
         _ => unimplemented!(),
     }
+}
+
+mod zpos {
+    pub const CURSOR: f32 = 10.0;
+    pub const EXPLOSION: f32 = 5.0;
+    pub const DIGIT: f32 = 4.0;
+    pub const MINE: f32 = 3.0;
+    pub const CIT: f32 = 2.0;
+    pub const DECAL: f32 = 1.0;
 }
