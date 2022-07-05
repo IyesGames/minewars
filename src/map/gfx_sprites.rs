@@ -7,8 +7,8 @@ use crate::assets::TileAssets;
 use crate::camera::GridCursor;
 use crate::settings::PlayerPaletteSettings;
 
-use super::{MapCleanup, TileCoord, MapLabels, TileOwner, TileVisible, TileDigit, MineDisplayState, TileMine};
-use super::tileid::{self, CoordTileids};
+use super::*;
+use super::tileid::CoordTileids;
 
 #[derive(Component)]
 struct CursorSprite;
@@ -23,6 +23,11 @@ struct MineSprite;
 
 #[derive(Component)]
 struct MineActiveAnimation {
+    timer: Timer,
+}
+
+#[derive(Component)]
+struct ExplosionSprite {
     timer: Timer,
 }
 
@@ -58,6 +63,7 @@ impl Plugin for MapGfxSpritesPlugin {
             .run_in_state(AppGlobalState::InGame)
             .with_system(tile_decal_sprite_mgr)
             .with_system(mine_active_animation)
+            .with_system(explosion_animation)
             .with_system(cursor_sprite)
             .into()
         );
@@ -73,6 +79,10 @@ impl Plugin for MapGfxSpritesPlugin {
         app.add_system(mine_sprite_mgr
             .run_in_state(AppGlobalState::InGame)
             .after(MapLabels::TileMine)
+        );
+        app.add_system(explosion_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .label(MapLabels::ApplyEvents)
         );
     }
 }
@@ -286,6 +296,61 @@ fn mine_sprite_mgr(
         } else if let Some(spr_mine) = spr_mine {
             commands.entity(spr_mine.0).despawn();
             commands.entity(e).remove::<TileMineSprite>();
+        }
+    }
+}
+
+fn explosion_sprite_mgr(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+    mut evr_map: EventReader<MapEvent>,
+    index: Res<TileEntityIndex>,
+    my_plid: Res<ActivePlid>,
+    q_tile: Query<(&Transform, &TileCoord), With<BaseSprite>>,
+) {
+    for ev in evr_map.iter() {
+        if ev.plid != my_plid.0 {
+            continue;
+        }
+        if let MapEventKind::Explosion { kind } = ev.kind {
+            let e_tile = index.0[ev.c];
+            if let Ok((xf, coord)) = q_tile.get(e_tile) {
+                let mut xyz = xf.translation;
+                // UGLY: maybe don't hardcode this here?
+                xyz.z += 5.0;
+                let index = match kind {
+                    MineKind::Mine => tileid::EXPLODE_MINE,
+                    MineKind::Decoy => tileid::EXPLODE_DECOY,
+                };
+                commands.spawn_bundle(SpriteSheetBundle {
+                    sprite: TextureAtlasSprite {
+                        index,
+                        ..Default::default()
+                    },
+                    texture_atlas: tiles.atlas.clone(),
+                    transform: Transform::from_translation(xyz),
+                    ..Default::default()
+                }).insert(ExplosionSprite {
+                    // TODO: make duration configurable via user setting?
+                    timer: Timer::new(Duration::from_millis(1250), false),
+                })
+                    .insert(MapCleanup)
+                    .insert(coord.clone());
+            }
+        }
+    }
+}
+
+fn explosion_animation(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut q: Query<(Entity, &mut TextureAtlasSprite, &mut ExplosionSprite)>,
+) {
+    for (e, mut sprite, mut anim) in q.iter_mut() {
+        anim.timer.tick(time.delta());
+        sprite.color.set_a(anim.timer.percent_left());
+        if anim.timer.finished() {
+            commands.entity(e).despawn();
         }
     }
 }
