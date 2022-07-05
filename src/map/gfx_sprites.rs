@@ -1,4 +1,4 @@
-use mw_common::game::{MapDescriptor, TileKind};
+use mw_common::game::{MapDescriptor, TileKind, MineKind};
 use mw_common::grid::*;
 
 use crate::prelude::*;
@@ -7,7 +7,7 @@ use crate::assets::TileAssets;
 use crate::camera::GridCursor;
 use crate::settings::PlayerPaletteSettings;
 
-use super::{MapCleanup, TileCoord, MapLabels, TileOwner, TileVisible, TileDigit};
+use super::{MapCleanup, TileCoord, MapLabels, TileOwner, TileVisible, TileDigit, MineDisplayState, TileMine};
 use super::tileid::{self, CoordTileids};
 
 #[derive(Component)]
@@ -18,6 +18,13 @@ struct BaseSprite;
 struct DecalSprite;
 #[derive(Component)]
 struct DigitSprite;
+#[derive(Component)]
+struct MineSprite;
+
+#[derive(Component)]
+struct MineActiveAnimation {
+    timer: Timer,
+}
 
 /// Reference to a sprite entity displaying a "decal", if any
 #[derive(Component)]
@@ -50,6 +57,7 @@ impl Plugin for MapGfxSpritesPlugin {
         app.add_system_set(ConditionSet::new()
             .run_in_state(AppGlobalState::InGame)
             .with_system(tile_decal_sprite_mgr)
+            .with_system(mine_active_animation)
             .with_system(cursor_sprite)
             .into()
         );
@@ -61,6 +69,10 @@ impl Plugin for MapGfxSpritesPlugin {
         app.add_system(tile_digit_sprite_mgr
             .run_in_state(AppGlobalState::InGame)
             .after(MapLabels::TileDigit)
+        );
+        app.add_system(mine_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .after(MapLabels::TileMine)
         );
     }
 }
@@ -122,7 +134,7 @@ fn tile_decal_sprite_mgr(
     tiles: Res<TileAssets>,
     q_tile: Query<
         (Entity, &TileCoord, &TileKind, &Transform, Option<&TileDecalSprite>),
-        Changed<TileKind>
+        (With<BaseSprite>, Changed<TileKind>)
     >,
 ) {
     for (e, coord, kind, xf, spr_decal) in q_tile.iter() {
@@ -157,7 +169,7 @@ fn tile_decal_sprite_mgr(
                 ..Default::default()
             },
             texture_atlas: tiles.atlas.clone(),
-            transform: xf.clone(),
+            transform: Transform::from_translation(xyz),
             ..Default::default()
         })
             .insert(MapCleanup)
@@ -173,14 +185,14 @@ fn tile_digit_sprite_mgr(
     tiles: Res<TileAssets>,
     q_tile: Query<
         (Entity, &TileCoord, &TileDigit, &Transform, Option<&TileDigitSprite>),
-        With<BaseSprite>
+        (With<BaseSprite>, Changed<TileDigit>)
     >,
     mut q_digit: Query<&mut TextureAtlasSprite, With<DigitSprite>>,
 ) {
     for (e, coord, digit, xf, spr_digit) in q_tile.iter() {
         let mut xyz = xf.translation;
         // UGLY: maybe don't hardcode this here?
-        xyz.z += 2.0;
+        xyz.z += 3.0;
 
         if let Some(spr_digit) = spr_digit {
             // there is an existing digit entity we can reuse (or despawn)
@@ -200,7 +212,7 @@ fn tile_digit_sprite_mgr(
                     ..Default::default()
                 },
                 texture_atlas: tiles.atlas.clone(),
-                transform: xf.clone(),
+                transform: Transform::from_translation(xyz),
                 ..Default::default()
             })
                 .insert(MapCleanup)
@@ -208,6 +220,88 @@ fn tile_digit_sprite_mgr(
                 .insert(coord.clone())
                 .id();
             commands.entity(e).insert(TileDigitSprite(e_digit));
+        }
+    }
+}
+
+fn mine_sprite_mgr(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+    q_tile: Query<
+        (Entity, &TileCoord, &TileMine, &Transform, Option<&TileMineSprite>),
+        (With<BaseSprite>, Changed<TileMine>)
+    >,
+    mut q_mine: Query<&mut TextureAtlasSprite, With<MineSprite>>,
+) {
+    for (e, coord, mine, xf, spr_mine) in q_tile.iter() {
+        let mut xyz = xf.translation;
+        // UGLY: maybe don't hardcode this here?
+        xyz.z += 2.0;
+
+        if let Some(display) = mine.0 {
+            let index = match display {
+                MineDisplayState::Normal(MineKind::Mine) |
+                MineDisplayState::Pending(MineKind::Mine) => tileid::ITEM_MINE,
+                MineDisplayState::Normal(MineKind::Decoy) |
+                MineDisplayState::Pending(MineKind::Decoy) => tileid::ITEM_DECOY,
+                MineDisplayState::Active => tileid::MINE_ACTIVE,
+            };
+            let mut color = Color::WHITE;
+            if let MineDisplayState::Pending(_) = display {
+                color.set_a(0.5);
+            }
+            let e_mine = if let Some(spr_mine) = spr_mine {
+                // reuse existing entity
+                let e_mine = spr_mine.0;
+                let mut sprite = q_mine.get_mut(e_mine).unwrap();
+                sprite.index = index;
+                sprite.color = color;
+                e_mine
+            } else {
+                // spawn new entity
+                let e_mine = commands.spawn_bundle(SpriteSheetBundle {
+                    sprite: TextureAtlasSprite {
+                        index,
+                        color,
+                        ..Default::default()
+                    },
+                    texture_atlas: tiles.atlas.clone(),
+                    transform: Transform::from_translation(xyz),
+                    ..Default::default()
+                })
+                    .insert(MapCleanup)
+                    .insert(MineSprite)
+                    .insert(coord.clone())
+                    .id();
+                commands.entity(e).insert(TileMineSprite(e_mine));
+                e_mine
+            };
+            if display == MineDisplayState::Active {
+                commands.entity(e_mine).insert(MineActiveAnimation {
+                    timer: Timer::new(Duration::from_millis(125), true),
+                });
+            } else {
+                commands.entity(e_mine).remove::<MineActiveAnimation>();
+            }
+        } else if let Some(spr_mine) = spr_mine {
+            commands.entity(spr_mine.0).despawn();
+            commands.entity(e).remove::<TileMineSprite>();
+        }
+    }
+}
+
+fn mine_active_animation(
+    time: Res<Time>,
+    mut q: Query<(&mut TextureAtlasSprite, &mut MineActiveAnimation)>,
+) {
+    for (mut sprite, mut anim) in q.iter_mut() {
+        anim.timer.tick(time.delta());
+        if anim.timer.just_finished() {
+            sprite.index = if sprite.index == tileid::MINE_ACTIVE {
+                tileid::ITEM_MINE
+            } else {
+                tileid::MINE_ACTIVE
+            };
         }
     }
 }

@@ -23,6 +23,8 @@ pub enum MapLabels {
     TileDigit,
     /// Anything relying on valid TileVisible should come *after*
     TileVisible,
+    /// Anything relying on valid TileMine should come *after*
+    TileMine,
 }
 
 pub struct MapPlugin;
@@ -37,6 +39,8 @@ impl Plugin for MapPlugin {
         );
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<MapCleanup>);
         app.add_exit_system(AppGlobalState::InGame, remove_resource::<MapDescriptor>);
+        app.add_exit_system(AppGlobalState::InGame, remove_resource::<TileEntityIndex>);
+        app.add_exit_system(AppGlobalState::InGame, remove_resource::<MineIndex>);
         app.add_system(map_event_owner
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)
@@ -63,6 +67,11 @@ impl Plugin for MapPlugin {
             .after(MapLabels::TileOwner)
             .label(MapLabels::TileVisible)
         );
+        app.add_system(map_event_mine
+            .run_in_state(AppGlobalState::InGame)
+            .label(MapLabels::ApplyEvents)
+            .label(MapLabels::TileMine)
+        );
         #[cfg(feature = "dev")]
         app.add_system(debug_mapevents.label(MapLabels::ApplyEvents));
         #[cfg(feature = "gfx_sprites")]
@@ -84,7 +93,7 @@ pub enum MapEventKind {
         digit: u8,
     },
     Mine {
-        kind: Option<MineKind>,
+        state: Option<MineDisplayState>,
     },
     Road {
         state: Option<ProdState>,
@@ -92,7 +101,6 @@ pub enum MapEventKind {
     Explosion {
         kind: MineKind,
     },
-    MineActive,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -150,6 +158,8 @@ fn setup_map(
 
 struct TileEntityIndex(MapAny<Entity>);
 
+struct MineIndex(HashMap<Pos, Entity>);
+
 /// Per-tile component: the map coordinates
 #[derive(Debug, Clone, Copy, Component)]
 struct TileCoord(Pos);
@@ -162,6 +172,20 @@ struct TileOwner(PlayerId);
 /// Per-tile component: visibility (fog of war) state
 #[derive(Debug, Clone, Copy, Component)]
 struct TileVisible(bool);
+/// Per-tile component: mine state
+#[derive(Debug, Clone, Copy, Component)]
+struct TileMine(Option<MineDisplayState>);
+
+/// How to render a mine?
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
+pub enum MineDisplayState {
+    // Known to be sitting on its given tile
+    Normal(MineKind),
+    // Supposed to be placed at its given tile, but unconfirmed by host
+    Pending(MineKind),
+    // Known to be activated mine
+    Active,
+}
 
 #[derive(Bundle)]
 struct NonPlayableTileBundle {
@@ -176,6 +200,7 @@ struct PlayableTileBundle {
     digit: TileDigit,
     owner: TileOwner,
     vis: TileVisible,
+    mine: TileMine,
 }
 
 fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
@@ -195,6 +220,7 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
                 digit: TileDigit(0),
                 owner: TileOwner(PlayerId::Spectator),
                 vis: TileVisible(false),
+                mine: TileMine(None),
             })
                 .insert(MapCleanup).id()
         } else {
@@ -210,6 +236,8 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
 
     let tile_index = TileEntityIndex(MapAny::from(tile_index));
     commands.insert_resource(tile_index);
+
+    commands.insert_resource(MineIndex(Default::default()));
 
     commands.remove_resource::<MapDataInitAny>();
 }
@@ -249,6 +277,35 @@ fn map_event_digit(
             if let Ok(mut tile_digit) = q_tile.get_mut(e_tile) {
                 // do not try to avoid change detection!
                 tile_digit.0 = digit;
+            }
+        }
+    }
+}
+
+fn map_event_mine(
+    mut commands: Commands,
+    mut evr_map: EventReader<MapEvent>,
+    my_plid: Res<ActivePlid>,
+    index: Res<TileEntityIndex>,
+    mut q_tile: Query<&mut TileMine>,
+    mut mines: ResMut<MineIndex>,
+) {
+    for ev in evr_map.iter() {
+        if ev.plid != my_plid.0 {
+            continue;
+        }
+        if let MapEventKind::Mine { state } = ev.kind {
+            let e_tile = index.0[ev.c];
+            if let Ok(mut tile_mine) = q_tile.get_mut(e_tile) {
+                // do not try to avoid change detection!
+                tile_mine.0 = state;
+
+                // maintain mine index
+                if state.is_some() {
+                    mines.0.insert(ev.c, e_tile);
+                } else {
+                    mines.0.remove(&ev.c);
+                }
             }
         }
     }
