@@ -77,6 +77,12 @@ impl Plugin for MapPlugin {
         app.add_system(map_event_mine
             .run_in_state(AppGlobalState::InGame)
             .label(MapLabels::ApplyEvents)
+            .label("map_event_mine")
+        );
+        app.add_system(drop_mines
+            .run_in_state(AppGlobalState::InGame)
+            .after(MapLabels::TileOwner)
+            .after("map_event_mine")
             .label(MapLabels::TileMine)
         );
         #[cfg(feature = "dev")]
@@ -439,6 +445,29 @@ fn drop_digits(
     }
 }
 
+fn drop_mines(
+    my_plid: Res<ActivePlid>,
+    mut q_tile: Query<
+        (&mut TileMine, &TileOwner),
+        (With<PlayableTileEntity>, Changed<TileOwner>),
+    >,
+) {
+    for (mut mine, owner) in q_tile.iter_mut() {
+        if owner.0 != my_plid.0 {
+            if let Some(display) = mine.0 {
+                match display {
+                    MineDisplayState::Active => (),
+                    MineDisplayState::Normal(_) |
+                    MineDisplayState::Pending(_) => {
+                        mine.0 = None;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// TODO: this should really be moved into mod gfx_sprites
 pub mod tileid {
     #![allow(dead_code)]
 
