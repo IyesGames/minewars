@@ -43,6 +43,7 @@ features = [
 [dependencies]
 mw_common = { path = "lib/mw_common", features = ["bevy"] }
 mw_dataformat = { path = "lib/mw_dataformat" }
+mw_game_classic = { path = "lib/mw_game_classic" }
 anyhow = "1.0.57"
 rand = "0.8.5"
 
