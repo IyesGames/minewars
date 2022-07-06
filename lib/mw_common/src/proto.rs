@@ -5,6 +5,7 @@
 //! replays, …, rely on this stuff.
 
 use std::time::Instant;
+use std::hash::Hash;
 
 use crate::grid::Pos;
 use crate::plid::{PlayerId, PlidMask};
@@ -40,7 +41,7 @@ pub trait Game: Sized {
     /// When the Host calls either `Game::input_action` or `Game::unsched`
     /// to drive the Game, it can call `Host::msg` to send output events.
     /// They will be broadcast to all player ids selected with `Plids`.
-    type OutEvent;
+    type OutEvent: Clone + Send + Sync + 'static;
 
     /// For things that need to be triggered on a timeout
     ///
@@ -48,19 +49,19 @@ pub trait Game: Sized {
     /// The host code should store the value along with a timer.
     /// When the time instant has passed, host code calls `Game::unsched`,
     /// passing the value that was stored back to the game code.
-    type SchedEvent;
+    type SchedEvent: Eq + Hash + Send + Sync + 'static;
 
     /// For things that are triggered by player input
     ///
     /// Host code should call `Game::input_action`, passing an appropriate
     /// value, whenever the player wishes to perform an action in the game.
-    type InputAction;
+    type InputAction: Clone + Send + Sync + 'static;
 
     /// Trigger a timer-driven event in the game
     fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent);
 
     /// Process a player input
-    fn input_action<H: Host<Self>>(&mut self, host: &mut H, action: Self::InputAction);
+    fn input_action<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction);
 }
 
 /// Game Outputs: combined enum for all protocol messages

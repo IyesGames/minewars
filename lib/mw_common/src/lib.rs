@@ -5,6 +5,8 @@ pub mod game;
 pub mod algo;
 #[cfg(feature = "bevy")]
 pub mod app;
+#[cfg(feature = "bevy")]
+pub mod host;
 
 /// Performant HashMap using AHash algorithm (not cryptographically secure)
 pub type HashMap<K, V> = hashbrown::HashMap<K, V>;
