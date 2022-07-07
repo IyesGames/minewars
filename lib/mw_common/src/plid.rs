@@ -61,9 +61,7 @@ impl PartialEq<PlayerId> for u8 {
 
 pub trait PlidMask:
     Send + Sync + Copy + Eq + Default
-    + Add<PlayerId> + Sub<PlayerId>
-    + AddAssign<PlayerId> + SubAssign<PlayerId>
-    + From<PlayerId> + Not
+    + From<PlayerId>
 {
     const MAX_PLID: u8;
 
@@ -92,6 +90,46 @@ pub struct Plids(u8);
 /// Big mask: can support huge game modes like battle-royale with up to 127 players
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct PlidsBig(u128);
+/// For singleplayer
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct PlidsSingle;
+
+impl PlidMask for PlidsSingle {
+    const MAX_PLID: u8 = 1;
+
+    fn all(_with_spect: bool) -> Self {
+        Self
+    }
+    fn spect() -> Self {
+        Self
+    }
+    fn with_spect(plid: PlayerId) -> Self {
+        assert!(plid == PlayerId::from(1));
+        Self
+    }
+    fn contains(&self, plid: PlayerId) -> bool {
+        plid == PlayerId::from(1)
+    }
+    fn contains_all(&self, _other: Self) -> bool {
+        true
+    }
+    fn contains_any(&self, _other: Self) -> bool {
+        true
+    }
+}
+
+impl From<PlayerId> for PlidsSingle {
+    fn from(plid: PlayerId) -> Self {
+        assert!(plid == PlayerId::from(1));
+        Self
+    }
+}
+
+impl From<PlidsSingle> for PlayerId {
+    fn from(_: PlidsSingle) -> Self {
+        PlayerId::from(1)
+    }
+}
 
 impl PlidMask for PlidsBig {
     const MAX_PLID: u8 = 127;
