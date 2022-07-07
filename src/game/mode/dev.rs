@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 use crate::camera::GridCursor;
 use crate::game::skip_lobby_state;
-use crate::map::{MapEvent, MapEventKind, MapLabels};
+use crate::map::{MapEvent, MapEventKind, MapLabels, MineDisplayState};
 
 use mw_common::game::{MineKind, GameParams};
 use mw_common::app::ActivePlid;
@@ -69,6 +69,20 @@ fn debug_mapevents(
             c: crs.0,
             plid: my_plid.0,
             kind: MapEventKind::Digit { digit },
+        });
+
+        let state = if rng.gen_bool(0.5) {
+            Some(MineDisplayState::Pending(kind))
+        } else if rng.gen_bool(0.5) {
+            Some(MineDisplayState::Active)
+        } else {
+            None
+        };
+
+        evw_map.send(MapEvent {
+            c: crs.0,
+            plid: my_plid.0,
+            kind: MapEventKind::Mine { state },
         });
     }
 }

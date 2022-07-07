@@ -37,15 +37,20 @@ pub struct MwClassicSingleplayerGame<C: CompactMapCoordExt> {
 }
 
 impl<C: CompactMapCoordExt> MwClassicSingleplayerGame<C> {
-    pub fn new_with_map(data: MapDataInit<C>, max_time: Option<Duration>) -> Self {
-        Self {
-            max_time,
-            game_over: false,
-            map: data.map.convert(|c, gen| {
-                let td = TileData::default();
-                // TODO
-                td
-            }),
+    /// Returns Err if topology does not match C
+    pub fn new_with_map(data: &MapDataInitAny, max_time: Option<Duration>) -> Result<Self, ()> {
+        if let Some(map) = data.map.try_get::<C>() {
+            Ok(Self {
+                max_time,
+                game_over: false,
+                map: map.convert(|c, gen| {
+                    let td = TileData::default();
+                    // TODO
+                    td
+                }),
+            })
+        } else {
+            Err(())
         }
     }
 }

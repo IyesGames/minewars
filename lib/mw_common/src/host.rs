@@ -4,59 +4,78 @@
 
 use iyesengine::prelude::*;
 
-use crate::{proto::{Game, Host}, app::ActivePlid, plid::{PlidMask, PlayerId}, HashSet};
+use bevy::ecs::schedule::StateData;
+
+use crate::{proto::{Game, Host}, app::{ActivePlid, MwLabels, AppGlobalState, StreamSource}, plid::{PlidMask, PlayerId}, HashSet};
 
 use std::{time::Instant, marker::PhantomData, collections::BTreeMap};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(SystemLabel)]
 pub enum BevyMwHostLabels {
-    /// anything feeding input events for the game should come *before*
-    InEvents,
-    /// anything needing output events from the game should come *after*
-    OutEvents,
     /// label for the systems that drive the game
     /// *before* this, the game is untouched yet
     /// *after* this, the game will be touched no more
     DriveGame,
 }
 
-pub struct BevyMwHostPlugin<G, EvIn, EvOut> {
+pub struct BevyMwHostPlugin<G, EvIn, EvOut, S> {
+    state: S,
     pd: PhantomData<(G, EvIn, EvOut)>,
 }
 
-impl<G, EvIn, EvOut> BevyMwHostPlugin<G, EvIn, EvOut>
+impl<G, EvIn, EvOut, S> BevyMwHostPlugin<G, EvIn, EvOut, S>
 where
     G: Game + Send + Sync + 'static,
     EvIn: Into<G::InputAction> + Clone + Send + Sync + 'static,
     EvOut: From<(PlayerId, G::OutEvent)> + Send + Sync + 'static,
+    S: StateData,
 {
-    pub fn new() -> Self {
-        Self { pd: PhantomData }
+    pub fn new(state: S) -> Self {
+        Self { state, pd: PhantomData }
     }
 }
 
-impl<G, EvIn, EvOut> Plugin for BevyMwHostPlugin<G, EvIn, EvOut>
+impl<G, EvIn, EvOut, S> Plugin for BevyMwHostPlugin<G, EvIn, EvOut, S>
 where
     G: Game + Send + Sync + 'static,
     EvIn: Into<G::InputAction> + Clone + Send + Sync + 'static,
     EvOut: From<(PlayerId, G::OutEvent)> + Send + Sync + 'static,
+    S: StateData,
 {
     fn build(&self, app: &mut App) {
         app.init_resource::<BevyHost<G>>();
+        app.add_enter_system(
+            AppGlobalState::InGame,
+            init_game::<G>
+                .run_in_state(StreamSource::Local)
+                .run_in_state(self.state.clone())
+        );
         app.add_system(player_inputs::<G, EvIn>
-            .label(BevyMwHostLabels::InEvents)
+            .run_in_state(AppGlobalState::InGame)
+            .run_in_state(StreamSource::Local)
+            .run_in_state(self.state.clone())
+            .label(MwLabels::HostInEvents)
             .label(BevyMwHostLabels::DriveGame)
         );
         app.add_system(unscheds::<G>
+            .run_in_state(AppGlobalState::InGame)
+            .run_in_state(StreamSource::Local)
+            .run_in_state(self.state.clone())
             .label(BevyMwHostLabels::DriveGame)
         );
         app.add_system(cancel_scheds::<G>
+            .run_in_state(AppGlobalState::InGame)
+            .run_in_state(StreamSource::Local)
+            .run_in_state(self.state.clone())
             .after(BevyMwHostLabels::DriveGame)
         );
         app.add_system(drain_out_events::<G, EvOut>
+            .run_in_state(AppGlobalState::InGame)
+            .run_in_state(StreamSource::Local)
+            .run_in_state(self.state.clone())
             .after(BevyMwHostLabels::DriveGame)
-            .label(BevyMwHostLabels::OutEvents)
+            .label(MwLabels::HostOutEvents)
         );
     }
 }
@@ -89,9 +108,19 @@ impl<G: Game> Host<G> for BevyHost<G> {
     }
 }
 
+fn init_game<G>(
+    mut host: ResMut<BevyHost<G>>,
+    mut game: ResMut<G>,
+)
+where
+    G: Game + Send + Sync + 'static,
+{
+    game.init(&mut *host);
+}
+
 fn player_inputs<G, EvIn>(
     mut host: ResMut<BevyHost<G>>,
-    game: Option<ResMut<G>>,
+    mut game: ResMut<G>,
     my_plid: Res<ActivePlid>,
     mut evr: EventReader<EvIn>,
 )
@@ -99,32 +128,28 @@ where
     G: Game + Send + Sync + 'static,
     EvIn: Into<G::InputAction> + Clone + Send + Sync + 'static,
 {
-    if let Some(mut game) = game {
-        for ev in evr.iter() {
-            let action = ev.clone().into();
-            game.input_action(&mut *host, my_plid.0, action);
-        }
+    for ev in evr.iter() {
+        let action = ev.clone().into();
+        game.input_action(&mut *host, my_plid.0, action);
     }
 }
 
 fn unscheds<G>(
     mut host: ResMut<BevyHost<G>>,
-    game: Option<ResMut<G>>,
+    mut game: ResMut<G>,
 )
 where
     G: Game + Send + Sync + 'static,
 {
-    if let Some(mut game) = game {
-        if host.scheds.is_empty() {
-            return;
-        }
+    if host.scheds.is_empty() {
+        return;
+    }
 
-        let now = Instant::now();
-        let mut split = host.scheds.split_off(&now);
-        std::mem::swap(&mut split, &mut host.scheds);
-        for ev in split.into_values() {
-            game.unsched(&mut *host, ev);
-        }
+    let now = Instant::now();
+    let mut split = host.scheds.split_off(&now);
+    std::mem::swap(&mut split, &mut host.scheds);
+    for ev in split.into_values() {
+        game.unsched(&mut *host, ev);
     }
 }
 

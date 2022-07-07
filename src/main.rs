@@ -26,6 +26,7 @@ fn main() {
     #[cfg(feature = "proprietary")]
     if let Err(e) = mw_proprietary::init() {
         error!("Init error: {:#}", e);
+        std::process::exit(42);
     }
 
     let mut app = App::new();
@@ -64,6 +65,7 @@ fn main() {
     app.add_loopless_state(StreamSource::Disconnected);
     app.add_loopless_state(GameMode::None);
     app.add_loopless_state(AppGlobalState::AssetsLoading);
+    app.add_event::<mw_common::app::GamePlayerEvent>();
     app.add_plugin(crate::settings::SettingsPlugin);
     app.add_plugin(crate::ui::UiPlugin);
     app.add_plugin(crate::assets::AssetsPlugin);
@@ -71,6 +73,15 @@ fn main() {
     app.add_plugin(crate::camera::CameraPlugin);
     app.add_plugin(crate::map::MapPlugin);
     app.add_plugin(crate::game::GamePlugin);
+
+    app.add_event::<mw_game_classic::InputAction>();
+    app.add_plugin(mw_common::host::BevyMwHostPlugin::<
+        mw_game_classic::MwClassicSingleplayerGame::<mw_common::grid::Hex>,
+        mw_game_classic::InputAction,
+        mw_common::app::GamePlayerEvent,
+        GameMode,
+    >::new(GameMode::Singleplayer));
+
     app.add_system(debug_current_state);
 
     #[cfg(feature = "proprietary")]

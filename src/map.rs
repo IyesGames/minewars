@@ -271,7 +271,7 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
                 coord: TileCoord(c.into()),
                 digit: TileDigit(0),
                 owner: TileOwner(PlayerId::Spectator),
-                vis: TileVisible(false),
+                vis: TileVisible(true),
                 mine: TileMine(None),
             });
             builder.insert(MapCleanup);
@@ -294,8 +294,6 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     commands.insert_resource(tile_index);
     commands.insert_resource(MineIndex(Default::default()));
     commands.insert_resource(cit_index);
-
-    commands.remove_resource::<MapDataInitAny>();
 }
 
 fn map_event_owner(
@@ -388,7 +386,7 @@ fn map_event_mine(
 }
 
 fn compute_fog_of_war<C: Coord>(
-    game_params: Res<GameParams>,
+    game_params: Option<Res<GameParams>>,
     my_plid: Res<ActivePlid>,
     index: Res<TileEntityIndex>,
     // FIXME PERF: this should be Mutated
@@ -401,12 +399,17 @@ fn compute_fog_of_war<C: Coord>(
         return;
     }
 
-    if game_params.radius_vis == 0 {
+    let radius = match game_params {
+        Some(params) => params.radius_vis,
+        None => 0,
+    };
+
+    if radius == 0 {
         return;
     }
 
     mw_common::game::map::compute_fog_of_war(
-        game_params.radius_vis,
+        radius,
         &mut *dirty,
         my_plid.0,
         q_changed.iter().map(|x| x.0.into()),

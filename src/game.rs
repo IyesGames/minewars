@@ -1,7 +1,12 @@
 use mw_common::game::*;
 use mw_common::grid::*;
 use mw_common::plid::*;
+use mw_common::proto::GameEvent;
 
+use crate::map::MapEvent;
+use crate::map::MapEventKind;
+use crate::map::MapLabels;
+use crate::map::MineDisplayState;
 use crate::prelude::*;
 
 use crate::GameMode;
@@ -11,6 +16,7 @@ use crate::AppGlobalState;
 mod mode {
     #[cfg(feature = "dev")]
     pub mod dev;
+    pub mod singleplayer;
 }
 
 pub struct GamePlugin;
@@ -37,6 +43,13 @@ impl Plugin for GamePlugin {
             init_local_as_player1
                 .run_in_state(StreamSource::Local)
         );
+        // drop any generated init map data when starting game
+        // everything needing it should be done in the GameLoading state
+        app.add_enter_system(
+            AppGlobalState::InGame,
+            remove_resource::<MapDataInitAny>
+        );
+        app.add_plugin(mode::singleplayer::GameModeSingleplayerPlugin);
         #[cfg(feature = "dev")]
         app.add_plugin(mode::dev::GameModeDevPlugin);
         // FIXME: temporary; replace with actual lobby implementations
@@ -47,15 +60,15 @@ impl Plugin for GamePlugin {
         );
         app.add_enter_system(
             AppGlobalState::GameLobby,
-            skip_lobby_state.run_in_state(GameMode::Singleplayer)
-        );
-        app.add_enter_system(
-            AppGlobalState::GameLobby,
             skip_lobby_state.run_in_state(GameMode::Spectator)
         );
         app.add_enter_system(
             AppGlobalState::GameLobby,
             skip_lobby_state.run_in_state(GameMode::Tutorial)
+        );
+        app.add_system(game_event_to_map_event
+            .after(MwLabels::HostOutEvents)
+            .before(MapLabels::ApplyEvents)
         );
     }
 }
@@ -68,6 +81,60 @@ fn init_local_as_player1(
     mut commands: Commands,
 ) {
     commands.insert_resource(ActivePlid(PlayerId::from(1)));
+}
+
+fn game_event_to_map_event(
+    mut evr: EventReader<GamePlayerEvent>,
+    mut evw: EventWriter<MapEvent>,
+) {
+    for ev in evr.iter() {
+        match ev.event {
+            GameEvent::Owner { tile, owner } => {
+                evw.send(MapEvent {
+                    plid: ev.plid, c: tile,
+                    kind: MapEventKind::Owner {
+                        plid: owner,
+                    },
+                });
+            }
+            GameEvent::Digit { tile, digit } => {
+                evw.send(MapEvent {
+                    plid: ev.plid, c: tile,
+                    kind: MapEventKind::Digit {
+                        digit,
+                    },
+                });
+            }
+            GameEvent::Mine { tile, kind } => {
+                evw.send(MapEvent {
+                    plid: ev.plid, c: tile,
+                    kind: MapEventKind::Mine {
+                        state: kind.map(|k| MineDisplayState::Normal(k)),
+                    },
+                });
+            }
+            GameEvent::MineActive { tile } => {
+                evw.send(MapEvent {
+                    plid: ev.plid, c: tile,
+                    kind: MapEventKind::Mine {
+                        state: Some(MineDisplayState::Active),
+                    },
+                });
+            }
+            GameEvent::Explosion { tile, kind } => {
+                evw.send(MapEvent {
+                    plid: ev.plid, c: tile,
+                    kind: MapEventKind::Explosion {
+                        kind,
+                    },
+                });
+            }
+            GameEvent::Road { tile, state } => {
+                unimplemented!()
+            }
+            _ => {}
+        }
+    }
 }
 
 fn world_gen_system(

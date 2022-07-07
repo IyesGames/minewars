@@ -4,6 +4,7 @@ use iyesengine::prelude::*;
 
 use crate::game::TileKind;
 use crate::plid::PlayerId;
+use crate::proto::GameEvent;
 
 /// State type: If we are in-game, where is the gameplay data coming from?
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -67,3 +68,27 @@ impl Component for TileKind {
 
 /// The PlayerId that the user is playing as
 pub struct ActivePlid(pub PlayerId);
+
+#[derive(Debug, Clone)]
+pub struct GamePlayerEvent {
+    pub plid: PlayerId,
+    pub event: GameEvent,
+}
+
+impl From<(PlayerId, GameEvent)> for GamePlayerEvent {
+    fn from((plid, event): (PlayerId, GameEvent)) -> GamePlayerEvent {
+        GamePlayerEvent {
+            plid, event,
+        }
+    }
+}
+
+/// Collection of system labels for important things in the game app
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(SystemLabel)]
+pub enum MwLabels {
+    /// anything feeding input events for a game host should come *before*
+    HostInEvents,
+    /// anything needing output events from a game host should come *after*
+    HostOutEvents,
+}

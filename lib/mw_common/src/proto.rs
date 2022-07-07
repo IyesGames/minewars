@@ -57,6 +57,9 @@ pub trait Game: Sized {
     /// value, whenever the player wishes to perform an action in the game.
     type InputAction: Clone + Send + Sync + 'static;
 
+    /// Called once, at the start, before anything else
+    fn init<H: Host<Self>>(&mut self, host: &mut H);
+
     /// Trigger a timer-driven event in the game
     fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent);
 
@@ -88,17 +91,17 @@ pub trait Game: Sized {
 pub enum GameEvent {
     /// Set the owner of a given tile
     Owner {
-        c: Pos,
+        tile: Pos,
         owner: PlayerId,
     },
     /// Set the digit at a given tile
     Digit {
-        c: Pos,
+        tile: Pos,
         digit: u8,
     },
     /// Reveal or hide a mine at a given tile
     Mine {
-        c: Pos,
+        tile: Pos,
         kind: Option<MineKind>,
     },
     /// Report activated mine at location
