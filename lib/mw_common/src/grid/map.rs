@@ -253,29 +253,27 @@ impl<C: CompactMapCoordExt, D> MapData<C, D> {
     }
 
     /// Construct new map based on data from another map
-    pub fn convert<T, F: FnMut(C, &T) -> D>(
-        old: &MapData<C, T>, mut f: F
-    ) -> MapData<C, D> {
-        Self {
-            size: old.size,
-            data: old.iter().map(|(c, t)| f(c, t)).collect(),
+    pub fn convert<T, F: FnMut(C, &D) -> T>(&self, mut f: F) -> MapData<C, T> {
+        MapData {
+            size: self.size,
+            data: self.iter().map(|(c, d)| f(c, d)).collect(),
             _c: PhantomData,
         }
     }
 
     /// Construct new map based on partial data from another map
-    pub fn convert_trim<T, F: FnMut(C, C, &T) -> D>(
-        old: &MapData<C, T>, new_size: u8, offset: C, mut f: F
-    ) -> Result<MapData<C, D>, OutOfBoundsError> {
+    pub fn convert_trim<T, F: FnMut(C, C, &D) -> T>(
+        &self, new_size: u8, offset: C, mut f: F
+    ) -> Result<MapData<C, T>, OutOfBoundsError> {
         let (x, y): (i8, i8) = offset.into();
 
-        if x.abs() as u8 + new_size > old.size || y.abs() as u8 + new_size > old.size {
+        if x.abs() as u8 + new_size > self.size || y.abs() as u8 + new_size > self.size {
             return Err(OutOfBoundsError);
         }
 
-        Ok(Self {
+        Ok(MapData {
             size: new_size,
-            data: old.iter_at(offset, new_size).map(|(c0, c1, t)| f(c0, c1, t)).collect(),
+            data: self.iter_at(offset, new_size).map(|(c0, c1, d)| f(c0, c1, d)).collect(),
             _c: PhantomData,
         })
     }
