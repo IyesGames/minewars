@@ -23,11 +23,14 @@ fn setup(
     uiassets: Res<UiAssets>,
     logo: Res<crate::assets::TitleLogo>,
 ) {
+    commands.spawn_bundle(Camera2dBundle::default())
+        .insert(MainMenuCleanup);
+
     let wrapper = commands.spawn_bundle(NodeBundle {
         color: UiColor(Color::NONE),
         style: Style {
             position_type: PositionType::Absolute,
-            position: Rect::all(Val::Px(0.0)),
+            position: UiRect::all(Val::Px(0.0)),
             flex_direction: FlexDirection::ColumnReverse,
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,

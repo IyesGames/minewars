@@ -1,10 +1,8 @@
-use crate::assets::TileAssets;
 use crate::map::MaxViewBounds;
 use crate::map::tileid::CoordTileids;
 use crate::prelude::*;
 use bevy::input::mouse::{MouseWheel, MouseScrollUnit, MouseMotion};
 use bevy::render::camera::RenderTarget;
-use bevy::render::render_resource::FilterMode;
 use bevy_tweening::*;
 use bevy_tweening::lens::*;
 use mw_common::game::MapDescriptor;
@@ -22,7 +20,6 @@ impl Plugin for CameraPlugin {
         app.add_system_to_stage(CoreStage::PreUpdate, world_cursor_system);
         app.add_enter_system(AppGlobalState::InGame, setup_camera);
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<CameraCleanup>);
-        app.add_exit_system(AppGlobalState::AssetsLoading, setup_tile_sampler);
         app.add_system(
             camera_control_zoom_mousewheel
                 .run_in_state(AppGlobalState::InGame)
@@ -50,7 +47,7 @@ struct GameCamera;
 fn setup_camera(
     mut commands: Commands,
 ) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d())
+    commands.spawn_bundle(Camera2dBundle::default())
         .insert(ZoomLevel(0))
         .insert(CameraCleanup)
         .insert(GameCamera);
@@ -74,15 +71,8 @@ static ZOOM_LEVELS: &'static [f32] = &[
     5.0,
 ];
 
-fn setup_tile_sampler(
-    tiles: Res<TileAssets>,
-    mut imgs: ResMut<Assets<Image>>,
-) {
-    let mut img = imgs.get_mut(&tiles.tiles).unwrap();
-    img.sampler_descriptor.mag_filter = FilterMode::Linear;
-    img.sampler_descriptor.min_filter = FilterMode::Linear;
-    img.sampler_descriptor.mipmap_filter = FilterMode::Linear;
-}
+// 256  192  128  96  80  64  56  48  40  32  24  16  8
+// 2048 1536 1024 768 640 512 448 384 320 256 192 128 64
 
 fn camera_control_zoom_mousewheel(
     mut commands: Commands,
@@ -154,7 +144,7 @@ fn world_cursor_system(
             let ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
 
             // matrix for undoing the projection and camera transform
-            let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix.inverse();
+            let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
 
             // use it to convert ndc to world-space coordinates
             let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));

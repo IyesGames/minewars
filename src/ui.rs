@@ -9,7 +9,6 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(iyes_bevy_util::ui::init_camera);
         app.add_system(butt_interact_visual);
         // app.add_system(butts::exitapp.run_if(on_butt_interact::<butts::ExitApp>));
         app.add_system(butt_handler(butts::exitapp));
@@ -80,8 +79,8 @@ fn spawn_button<B: Component + Clone>(
         style: Style {
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
-            padding: Rect::all(Val::Px(4.0)),
-            margin: Rect::all(Val::Px(4.0)),
+            padding: UiRect::all(Val::Px(4.0)),
+            margin: UiRect::all(Val::Px(4.0)),
             flex_grow: 1.0,
             flex_shrink: 0.0,
             ..Default::default()
@@ -90,14 +89,13 @@ fn spawn_button<B: Component + Clone>(
     }).insert(btn).id();
 
     let text = commands.spawn_bundle(TextBundle {
-        text: Text::with_section(
+        text: Text::from_section(
             text,
             TextStyle {
                 color: color_text,
                 font_size: 32.0,
                 font: uiassets.font_regular.clone(),
             },
-            Default::default(),
         ),
         ..Default::default()
     }).id();

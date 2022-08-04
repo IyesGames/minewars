@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 derive_more = "0.99.17"
 enum-map = "2.2.0"
-glam = "0.20.5"
+glam = "0.21.3"
 hashbrown = "0.12.1"
 
 [dependencies.iyesengine]

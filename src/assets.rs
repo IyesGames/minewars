@@ -142,7 +142,7 @@ fn setup_loadscreen(
         style: Style {
             size: Size::new(Val::Auto, Val::Auto),
             position_type: PositionType::Absolute,
-            position: Rect {
+            position: UiRect {
                 bottom: Val::Px(0.0),
                 top: Val::Px(0.0),
                 left: Val::Px(0.0),
@@ -159,8 +159,8 @@ fn setup_loadscreen(
         color: UiColor(Color::NONE),
         style: Style {
             size: Size::new(Val::Auto, Val::Auto),
-            margin: Rect::all(Val::Auto),
-            padding: Rect::all(Val::Px(4.0)),
+            margin: UiRect::all(Val::Auto),
+            padding: UiRect::all(Val::Px(4.0)),
             align_self: AlignSelf::Center,
             justify_content: JustifyContent::Center,
             ..Default::default()
@@ -172,8 +172,8 @@ fn setup_loadscreen(
         color: UiColor(Color::NONE),
         style: Style {
             size: Size::new(Val::Auto, Val::Auto),
-            margin: Rect::all(Val::Auto),
-            padding: Rect::all(Val::Px(4.0)),
+            margin: UiRect::all(Val::Auto),
+            padding: UiRect::all(Val::Px(4.0)),
             align_self: AlignSelf::Center,
             justify_content: JustifyContent::Center,
             ..Default::default()
@@ -182,27 +182,25 @@ fn setup_loadscreen(
     }).id();
 
     let txt_loading = commands.spawn_bundle(TextBundle {
-        text: Text::with_section(
+        text: Text::from_section(
             "Loading…",
             TextStyle {
                 color: Color::WHITE,
                 font_size: 16.0,
                 font: uiassets.font_regular.clone(),
             },
-            Default::default()
         ),
         ..Default::default()
     }).id();
 
     let txt_pct = commands.spawn_bundle(TextBundle {
-        text: Text::with_section(
+        text: Text::from_section(
             "0%",
             TextStyle {
                 color: Color::WHITE,
                 font_size: 64.0,
                 font: uiassets.font_regular.clone(),
             },
-            Default::default()
         ),
         ..Default::default()
     }).insert(LoadingPctText).id();
@@ -232,7 +230,7 @@ fn splash_init_iyes(
     splashes: Res<Splashes>,
 ) {
     commands.insert_resource(SplashNext(AppGlobalState::SplashBevy));
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d())
+    commands.spawn_bundle(Camera2dBundle::default())
         .insert(SplashCleanup);
     commands.spawn_bundle(SpriteBundle {
         texture: splashes.logo_iyeshead.clone(),
@@ -253,7 +251,7 @@ fn splash_init_bevy(
     splashes: Res<Splashes>,
 ) {
     commands.insert_resource(SplashNext(AppGlobalState::MainMenu));
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d())
+    commands.spawn_bundle(Camera2dBundle::default())
         .insert(SplashCleanup);
     commands.spawn_bundle(SpriteBundle {
         texture: splashes.logo_bevy.clone(),
@@ -324,25 +322,25 @@ fn splash_skip(
     mut gamepad: EventReader<GamepadEvent>,
     mut touch: EventReader<TouchInput>,
 ) {
-    use bevy::input::ElementState;
+    use bevy::input::ButtonState;
     use bevy::input::touch::TouchPhase;
 
     let mut done = false;
 
     for ev in kbd.iter() {
-        if let ElementState::Pressed = ev.state {
+        if let ButtonState::Pressed = ev.state {
             done = true;
         }
     }
 
     for ev in mouse.iter() {
-        if let ElementState::Pressed = ev.state {
+        if let ButtonState::Pressed = ev.state {
             done = true;
         }
     }
 
-    for GamepadEvent(_, kind) in gamepad.iter() {
-        if let GamepadEventType::ButtonChanged(_, _) = kind {
+    for ev in gamepad.iter() {
+        if let GamepadEventType::ButtonChanged(_, _) = ev.event_type {
             done = true;
         }
     }

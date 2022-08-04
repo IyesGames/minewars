@@ -13,9 +13,6 @@
 [submodule "deps/iyes_progress"]
 	path = deps/iyes_progress
 	url = https://github.com/IyesGames/iyes_progress
-[submodule "deps/bevy_asset_ron"]
-	path = deps/bevy_asset_ron
-	url = https://github.com/IyesGames/bevy_asset_ron
 [submodule "deps/bevy_asset_loader"]
 	path = deps/bevy_asset_loader
 	url = https://github.com/IyesGames/bevy_asset_loader
@@ -31,3 +28,6 @@
 [submodule "deps/benimator"]
 	path = deps/benimator
 	url = https://github.com/IyesGames/benimator
+[submodule "deps/bevy_common_assets"]
+	path = deps/bevy_common_assets
+	url = https://github.com/IyesGames/bevy_common_assets
