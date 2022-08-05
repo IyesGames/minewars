@@ -226,9 +226,13 @@ struct PlayableTileBundle {
     marker: PlayableTileEntity,
     kind: TileKind,
     coord: TileCoord,
-    digit: TileDigit,
     owner: TileOwner,
     vis: TileVisible,
+}
+
+#[derive(Bundle)]
+struct LandTileExtrasBundle {
+    digit: TileDigit,
     mine: TileMine,
 }
 
@@ -269,15 +273,19 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
                 marker: PlayableTileEntity,
                 kind: init.kind,
                 coord: TileCoord(c.into()),
-                digit: TileDigit(0),
                 owner: TileOwner(PlayerId::Spectator),
                 vis: TileVisible(true),
-                mine: TileMine(None),
             });
-            builder.insert(MapCleanup);
+            if init.kind.is_land() {
+                builder.insert_bundle(LandTileExtrasBundle {
+                    digit: TileDigit(0),
+                    mine: TileMine(None),
+                });
+            }
             if init.cit {
                 builder.insert(TileCit(*cit_index.by_pos.get(&c.into()).unwrap()));
             }
+            builder.insert(MapCleanup);
             builder.id()
         } else {
             commands.spawn_bundle(NonPlayableTileBundle {
@@ -438,7 +446,7 @@ fn drop_digits(
     my_plid: Res<ActivePlid>,
     mut q_tile: Query<
         (&mut TileDigit, &TileOwner),
-        (With<PlayableTileEntity>, Changed<TileOwner>),
+        (With<PlayableTileEntity>, Or<(Changed<TileDigit>, Changed<TileOwner>)>),
     >,
 ) {
     for (mut digit, owner) in q_tile.iter_mut() {
@@ -452,7 +460,7 @@ fn drop_mines(
     my_plid: Res<ActivePlid>,
     mut q_tile: Query<
         (&mut TileMine, &TileOwner),
-        (With<PlayableTileEntity>, Changed<TileOwner>),
+        (With<PlayableTileEntity>, Or<(Changed<TileMine>, Changed<TileOwner>)>),
     >,
 ) {
     for (mut mine, owner) in q_tile.iter_mut() {
