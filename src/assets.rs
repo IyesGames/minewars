@@ -12,13 +12,23 @@ pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(load_assets);
         app.add_plugin(
             ProgressPlugin::new(AppGlobalState::AssetsLoading)
-                .continue_to(AppGlobalState::SplashIyes)
-                .track_assets()
         );
-        app.add_enter_system(AppGlobalState::AssetsLoading, setup_loadscreen);
+        app.add_loading_state(
+            LoadingState::new(AppGlobalState::AssetsLoading)
+                .continue_to_state(AppGlobalState::SplashIyes)
+                .with_dynamic_collections::<StandardDynamicAssetCollection>(vec![
+                    "ui.assets",
+                    "logos.assets",
+                    "game.assets",
+                ])
+                .with_collection::<UiAssets>()
+                .with_collection::<Splashes>()
+                .with_collection::<TitleLogo>()
+                .with_collection::<TileAssets>()
+        );
+        // app.add_enter_system(AppGlobalState::AssetsLoading, setup_loadscreen);
         app.add_exit_system(AppGlobalState::AssetsLoading, despawn_with_recursive::<LoadscreenCleanup>);
         app.add_enter_system(AppGlobalState::SplashIyes, splash_init_iyes);
         app.add_exit_system(AppGlobalState::SplashIyes, despawn_with_recursive::<SplashCleanup>);
@@ -45,87 +55,36 @@ impl Plugin for AssetsPlugin {
     }
 }
 
+#[derive(AssetCollection)]
 pub struct UiAssets {
+    #[asset(key = "font.regular")]
     pub font_regular: Handle<Font>,
+    #[asset(key = "font.bold")]
     pub font_bold: Handle<Font>,
+    #[asset(key = "font.light")]
     pub font_light: Handle<Font>,
 }
 
+#[derive(AssetCollection)]
 pub struct Splashes {
+    #[asset(key = "logo.iyes.head")]
     pub logo_iyeshead: Handle<Image>,
+    #[asset(key = "logo.iyes.text")]
     pub logo_iyestext: Handle<Image>,
+    #[asset(key = "logo.bevy")]
     pub logo_bevy: Handle<Image>,
 }
 
+#[derive(AssetCollection)]
 pub struct TitleLogo {
+    #[asset(key = "logo.title")]
     pub image: Handle<Image>,
 }
 
+#[derive(AssetCollection)]
 pub struct TileAssets {
-    pub tiles: Handle<Image>,
+    #[asset(key = "tiles")]
     pub atlas: Handle<TextureAtlas>,
-}
-
-fn load_assets(
-    mut commands: Commands,
-    ass: Res<AssetServer>,
-    mut ast: ResMut<AssetsLoading>,
-    mut atlases: ResMut<Assets<TextureAtlas>>,
-) {
-    // UI FONT
-    let font_regular = ass.load("Sansation-Regular.ttf");
-    ast.add(&font_regular);
-    let font_bold = ass.load("Sansation-Bold.ttf");
-    ast.add(&font_bold);
-    let font_light = ass.load("Sansation-Light.ttf");
-    ast.add(&font_light);
-
-    commands.insert_resource(UiAssets {
-        font_regular,
-        font_bold,
-        font_light,
-    });
-
-    // SPLASH LOGOS
-
-    let logo_iyeshead = ass.load("logo_iyeshead.png");
-    ast.add(&logo_iyeshead);
-    let logo_iyestext = ass.load("logo_iyestext.png");
-    ast.add(&logo_iyeshead);
-    let logo_bevy = ass.load("logo_bevy.png");
-    ast.add(&logo_bevy);
-
-    commands.insert_resource(Splashes {
-        logo_bevy,
-        logo_iyeshead,
-        logo_iyestext,
-    });
-
-    // TITLE
-    let logo_title = ass.load("logo_minewars.png");
-    ast.add(&logo_title);
-
-    commands.insert_resource(TitleLogo {
-        image: logo_title,
-    });
-
-    // TILESET
-
-    let tiles: Handle<Image> = ass.load("tiles.ktx2");
-    ast.add(&tiles);
-
-    let atlas = TextureAtlas::from_grid(
-        tiles.clone(),
-        TILESZ,
-        8, 8,
-    );
-
-    let atlas = atlases.add(atlas);
-
-    commands.insert_resource(TileAssets {
-        tiles,
-        atlas,
-    });
 }
 
 #[derive(Component)]

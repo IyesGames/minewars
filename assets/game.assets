@@ -1,0 +1,9 @@
+({
+    "tiles": TextureAtlas (
+        path: "tiles.ktx2",
+        tile_size_x: 256.,
+        tile_size_y: 256.,
+        columns: 8,
+        rows: 8,
+    ),
+})

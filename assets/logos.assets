@@ -1,0 +1,14 @@
+({
+    "logo.title": File (
+        path: "logo/minewars.png",
+    ),
+    "logo.bevy": File (
+        path: "logo/bevy.png",
+    ),
+    "logo.iyes.head": File (
+        path: "logo/iyeshead.png",
+    ),
+    "logo.iyes.text": File (
+        path: "logo/iyestext.png",
+    ),
+})

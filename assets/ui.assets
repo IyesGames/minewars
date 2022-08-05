@@ -1,0 +1,11 @@
+({
+    "font.regular": File (
+        path: "font/Sansation-Regular.ttf",
+    ),
+    "font.bold": File (
+        path: "font/Sansation-Bold.ttf",
+    ),
+    "font.light": File (
+        path: "font/Sansation-Light.ttf",
+    ),
+})
