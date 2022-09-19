@@ -13,7 +13,7 @@ members = ["lib/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["gfx_sprites"]
+default = []
 proprietary = [
     "mw_proprietary",
 ]
@@ -22,8 +22,6 @@ dev = [
 ]
 release = [
     "iyesengine/release",
-]
-gfx_sprites = [
 ]
 
 # dev: Enable max optimizations for dependencies, but not for our code
@@ -45,6 +43,7 @@ features = [
     "2d",
     "bevy-ui",
     "audio",
+    "tilemap",
 ]
 
 [dependencies.tokio]
@@ -158,3 +157,6 @@ bevy_kira_audio = { path = "./deps/bevy_kira_audio" }
 
 [patch."https://github.com/IyesGames/bevy_tweening"]
 bevy_tweening = { path = "./deps/bevy_tweening" }
+
+[patch."https://github.com/IyesGames/bevy_ecs_tilemap"]
+bevy_ecs_tilemap = { path = "./deps/bevy_ecs_tilemap" }
