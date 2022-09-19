@@ -36,12 +36,12 @@ fn init_game_impl(
         Topology::Hex => {
             debug!("poiiong");
             commands.insert_resource(
-                MwClassicSingleplayerGame::<Hex>::new_with_map(&*data, None).unwrap()
+                MwClassicSingleplayerGame::<Hex>::new_with_map(&*data, 3, None).unwrap()
             );
         },
         Topology::Sq => {
             commands.insert_resource(
-                MwClassicSingleplayerGame::<Sq>::new_with_map(&*data, None).unwrap()
+                MwClassicSingleplayerGame::<Sq>::new_with_map(&*data, 3, None).unwrap()
             );
         },
         Topology::Sqr => { unimplemented!() },
@@ -54,6 +54,6 @@ fn mouse_input(
     input: Res<Input<MouseButton>>,
 ) {
     if input.just_pressed(MouseButton::Left) {
-        evw_game.send(InputAction::ExploreTileSingle { tile: crs.0 });
+        evw_game.send(InputAction::ExploreTile { tile: crs.0 });
     }
 }

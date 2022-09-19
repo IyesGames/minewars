@@ -141,8 +141,11 @@ pub enum GameEvent {
         plid: PlayerId,
     },
     /// Player eliminated
-    GameOver {
+    PlayerGone {
         plid: PlayerId,
     },
+    /// Game Over for us
+    /// Win/Lose (or place in multiplayer) decided by any prior PlayerGone
+    GameOver,
 }
 
