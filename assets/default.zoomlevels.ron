@@ -1,0 +1,67 @@
+[
+    (
+        size: 256,
+        offset4: (224, 224),
+        offset6: (224, 256),
+    ),
+    (
+        size: 192,
+        offset4: (168, 168),
+        offset6: (168, 192),
+    ),
+    (
+        size: 128,
+        offset4: (112, 112),
+        offset6: (112, 128),
+    ),
+    (
+        size: 96,
+        offset4: (84, 84),
+        offset6: (84, 96),
+    ),
+    (
+        size: 80,
+        offset4: (70, 70),
+        offset6: (70, 80),
+    ),
+    (
+        size: 72,
+        offset4: (63, 63),
+        offset6: (63, 72),
+    ),
+    (
+        size: 64,
+        offset4: (56, 56),
+        offset6: (56, 64),
+    ),
+    (
+        size: 56,
+        offset4: (49, 49),
+        offset6: (49, 56),
+    ),
+    (
+        size: 48,
+        offset4: (42, 42),
+        offset6: (42, 48),
+    ),
+    (
+        size: 40,
+        offset4: (35, 35),
+        offset6: (35, 40),
+    ),
+    (
+        size: 32,
+        offset4: (28, 28),
+        offset6: (28, 32),
+    ),
+    (
+        size: 24,
+        offset4: (21, 21),
+        offset6: (21, 24),
+    ),
+    (
+        size: 8,
+        offset4: (7, 7),
+        offset6: (7, 8),
+    ),
+]
