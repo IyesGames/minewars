@@ -183,9 +183,9 @@ impl Default for Sq {
 impl Sq {
     const NEIGH: [Sq; 8] = [
         // + diagonals = N1
-        Sq(1, 1), Sq(-1, 1), Sq(-1, -1), Sq(1, -1),
+        Sq(-1, -1), Sq(1, -1), Sq(-1, 1), Sq(1, 1),
         // N0
-        Sq(0, -1), Sq(1, 0), Sq(0, 1), Sq(-1, 0),
+        Sq(0, 1), Sq(-1, 0), Sq(1, 0), Sq(0, -1),
     ];
     const KNIGHTS: [Sq; 8] = [
         Sq(-1, -2), Sq(1, -2),

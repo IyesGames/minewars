@@ -74,6 +74,9 @@ pub trait Coord:
     fn iter_ring(self, radius: u8) -> Self::IterRing;
     fn from_f32_clamped(xy: (f32, f32)) -> Self;
     fn translation(self) -> glam::Vec2;
+    fn as_pos(self) -> Pos {
+        self.into()
+    }
 }
 
 #[derive(Debug)]

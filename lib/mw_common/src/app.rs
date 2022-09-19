@@ -3,6 +3,7 @@
 use iyesengine::prelude::*;
 
 use crate::game::TileKind;
+use crate::grid::Pos;
 use crate::plid::PlayerId;
 use crate::proto::GameEvent;
 
@@ -91,4 +92,36 @@ pub enum MwLabels {
     HostInEvents,
     /// anything needing output events from a game host should come *after*
     HostOutEvents,
+}
+
+impl From<Pos> for TilePos {
+    fn from(c: Pos) -> Self {
+        TilePos {
+            x: (c.0 as i32 + 128) as u32,
+            y: (c.1 as i32 + 128) as u32,
+        }
+    }
+}
+
+impl From<TilePos> for Pos {
+    fn from(tp: TilePos) -> Self {
+        debug_assert!(tp.x < 256);
+        debug_assert!(tp.y < 256);
+        Pos(
+            (tp.x as i32 - 128) as i8,
+            (tp.y as i32 - 128) as i8,
+        )
+    }
+}
+
+impl From<&Pos> for TilePos {
+    fn from(c: &Pos) -> Self {
+        TilePos::from(*c)
+    }
+}
+
+impl From<&TilePos> for Pos {
+    fn from(tp: &TilePos) -> Self {
+        Pos::from(*tp)
+    }
 }
