@@ -1,12 +1,9 @@
 use crate::prelude::*;
-use bevy::math::const_vec2;
 
 use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
 
 use crate::AppGlobalState;
-
-pub const TILESZ: Vec2 = const_vec2!([256.0, 256.0]);
 
 pub struct AssetsPlugin;
 
@@ -28,6 +25,7 @@ impl Plugin for AssetsPlugin {
                 .with_collection::<TitleLogo>()
                 .with_collection::<TileAssets>()
         );
+        app.add_system_to_stage(CoreStage::Last, debug_progress.run_in_state(AppGlobalState::AssetsLoading));
         // app.add_enter_system(AppGlobalState::AssetsLoading, setup_loadscreen);
         app.add_exit_system(AppGlobalState::AssetsLoading, despawn_with_recursive::<LoadscreenCleanup>);
         app.add_enter_system(AppGlobalState::SplashIyes, splash_init_iyes);
@@ -53,6 +51,15 @@ impl Plugin for AssetsPlugin {
         app.add_exit_system(AppGlobalState::SplashBevy, remove_resource::<Splashes>);
         app.add_system_to_stage(CoreStage::PostUpdate, update_loading_pct.run_in_state(AppGlobalState::AssetsLoading));
     }
+}
+
+fn debug_progress(
+    counter: Res<ProgressCounter>,
+) {
+    let progress = counter.progress();
+    trace!("Progress: {}/{}", progress.done, progress.total);
+    let progress = counter.progress_complete();
+    trace!("Full Progress: {}/{}", progress.done, progress.total);
 }
 
 #[derive(AssetCollection)]
