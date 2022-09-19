@@ -58,7 +58,11 @@ mw_dataformat = { path = "lib/mw_dataformat" }
 mw_game_classic = { path = "lib/mw_game_classic" }
 anyhow = "1.0.57"
 rand = "0.8.5"
+serde = { version = "1.0.144", features = ["derive", "serde_derive"] }
 # temporary workaround
+[dependencies.bevy]
+version = "0.8"
+default-features = false
 [dependencies.bevy_asset_loader]
 git = "https://github.com/IyesGames/bevy_asset_loader"
 features = [ "dynamic_assets", "stageless", "progress_tracking", "progress_tracking_stageless", "2d" ]

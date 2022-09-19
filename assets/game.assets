@@ -1,4 +1,9 @@
 ({
+    "zoomlevels": File (
+        path: "default.zoomlevels.toml",
+    ),
+    // these Files arrays must match the entries
+    // defined in `default.zoomlevels.ron`!
     "sprites.roads4": Files (
         paths: [
             "sprites/256/roads4.png",

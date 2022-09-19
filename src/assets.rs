@@ -2,6 +2,8 @@ use crate::prelude::*;
 
 use bevy::input::keyboard::KeyboardInput;
 use bevy::input::mouse::MouseButtonInput;
+use bevy::reflect::TypeUuid;
+use bevy_common_assets::toml::TomlAssetPlugin;
 
 use crate::AppGlobalState;
 
@@ -26,6 +28,7 @@ impl Plugin for AssetsPlugin {
                 .with_collection::<TitleLogo>()
                 .with_collection::<TileAssets>()
         );
+        app.add_plugin(TomlAssetPlugin::<ZoomLevelsAsset>::new(&["zoomlevels.toml"]));
         app.add_system_to_stage(CoreStage::Last, debug_progress.run_in_state(AppGlobalState::AssetsLoading));
         app.add_enter_system(AppGlobalState::AssetsLoading, setup_loadscreen);
         app.add_exit_system(AppGlobalState::AssetsLoading, despawn_with_recursive::<LoadscreenCleanup>);
@@ -91,6 +94,9 @@ pub struct TitleLogo {
 
 #[derive(AssetCollection)]
 pub struct TileAssets {
+    #[asset(key = "zoomlevels")]
+    pub zoomlevels_handle: Handle<ZoomLevelsAsset>,
+    pub zoomlevels: ZoomLevelsAsset,
     #[asset(key = "sprites.tiles6", collection(typed))]
     pub tiles6: Vec<Handle<Image>>,
     #[asset(key = "sprites.tiles4", collection(typed))]
@@ -105,6 +111,27 @@ pub struct TileAssets {
     pub gents: Vec<Handle<Image>>,
     #[asset(key = "sprites.flags", collection(typed))]
     pub flags: Vec<Handle<Image>>,
+}
+
+#[derive(Debug, Clone)]
+#[derive(serde::Deserialize)]
+pub struct ZoomLevelDescriptor {
+    pub size: u32,
+    pub offset4: (u32, u32),
+    pub offset6: (u32, u32),
+}
+
+#[derive(Debug, Clone, Deref, serde::Deserialize, TypeUuid)]
+#[uuid = "09b0abbf-c551-49d1-8ea5-d6722eeac41f"]
+pub struct ZoomLevelsAsset {
+    pub zoom: Vec<ZoomLevelDescriptor>,
+}
+
+impl FromWorld for ZoomLevelsAsset {
+    fn from_world(world: &mut World) -> Self {
+        let assets = world.resource::<Assets<ZoomLevelsAsset>>();
+        assets.iter().nth(0).unwrap().1.clone()
+    }
 }
 
 #[derive(Component)]

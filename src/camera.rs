@@ -70,9 +70,6 @@ static ZOOM_LEVELS: &'static [f32] = &[
     5.0,
 ];
 
-// 256  192  128  96  80  64  56  48  40  32  24  16  8
-// 2048 1536 1024 768 640 512 448 384 320 256 192 128 64
-
 fn camera_control_zoom_mousewheel(
     mut commands: Commands,
     mut wheel: EventReader<MouseWheel>,
