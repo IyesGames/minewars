@@ -352,7 +352,7 @@ fn mine_active_animation(
         if anim.timer.just_finished() {
             let rect_active = get_rect(zoom.desc.size, tileid::gents::MINE_ACTIVE);
             let rect_inactive = get_rect(zoom.desc.size, tileid::gents::MINE);
-            sprite.rect = if let Some(rect_active) = sprite.rect {
+            sprite.rect = if sprite.rect == Some(rect_active) {
                 Some(rect_inactive)
             } else {
                 Some(rect_active)
