@@ -83,8 +83,20 @@ pub struct TitleLogo {
 
 #[derive(AssetCollection)]
 pub struct TileAssets {
-    #[asset(key = "tiles")]
-    pub atlas: Handle<TextureAtlas>,
+    #[asset(key = "sprites.tiles6", collection(typed))]
+    pub tiles6: Vec<Handle<Image>>,
+    #[asset(key = "sprites.tiles4", collection(typed))]
+    pub tiles4: Vec<Handle<Image>>,
+    #[asset(key = "sprites.roads6", collection(typed))]
+    pub roads6: Vec<Handle<Image>>,
+    #[asset(key = "sprites.roads4", collection(typed))]
+    pub roads4: Vec<Handle<Image>>,
+    #[asset(key = "sprites.digits", collection(typed))]
+    pub digits: Vec<Handle<Image>>,
+    #[asset(key = "sprites.gents", collection(typed))]
+    pub gents: Vec<Handle<Image>>,
+    #[asset(key = "sprites.flags", collection(typed))]
+    pub flags: Vec<Handle<Image>>,
 }
 
 #[derive(Component)]
