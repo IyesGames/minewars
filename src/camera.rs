@@ -1,3 +1,4 @@
+use crate::assets::{TileAssets, ZoomLevelDescriptor};
 use crate::map::MaxViewBounds;
 use crate::prelude::*;
 use bevy::input::mouse::{MouseWheel, MouseScrollUnit, MouseMotion};
@@ -18,16 +19,23 @@ impl Plugin for CameraPlugin {
         app.insert_resource(GridCursor(Pos(0, 0)));
         app.add_system_to_stage(CoreStage::PreUpdate, world_cursor_system);
         app.add_enter_system(AppGlobalState::InGame, setup_camera);
+        app.add_enter_system(AppGlobalState::GameLoading, setup_zoom);
         app.add_exit_system(AppGlobalState::InGame, despawn_with_recursive::<CameraCleanup>);
         app.add_system(
             camera_control_zoom_mousewheel
                 .run_in_state(AppGlobalState::InGame)
-                .label("zoom")
+                .before("zoom")
         );
         app.add_system(
             camera_control_pan_mousedrag
                 .run_in_state(AppGlobalState::InGame)
                 .after("zoom")
+        );
+        app.add_system(
+            apply_next_zoomlevel
+                .run_in_state(AppGlobalState::InGame)
+                .label("zoom")
+                .after(bevy_tweening::AnimationSystem::AnimationUpdate)
         );
         app.add_system(
             grid_cursor
@@ -43,40 +51,45 @@ struct CameraCleanup;
 #[derive(Component)]
 struct GameCamera;
 
+fn setup_zoom(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+) {
+    commands.insert_resource(ZoomLevel {
+        i: 0,
+        desc: tiles.zoomlevels.zoom[0].clone(),
+    });
+}
+
 fn setup_camera(
     mut commands: Commands,
 ) {
     commands.spawn_bundle(Camera2dBundle::default())
-        .insert(ZoomLevel(0))
+        .insert(CameraZoomLevel::default())
         .insert(CameraCleanup)
         .insert(GameCamera);
 }
 
 /// The current camera zoom level
 ///
-/// This is the exponent; the camera scale will be set to 2^N.
-#[derive(Component)]
-pub struct ZoomLevel(usize);
+/// (see `TileAssets`)
+pub struct ZoomLevel {
+    pub i: usize,
+    pub desc: ZoomLevelDescriptor,
+}
 
-/// Predefined camera zoom levels; scroll wheel jumps between these
-///
-/// This is the exponent; the camera scale will be set to 2^N.
-static ZOOM_LEVELS: &'static [f32] = &[
-    0.0, 0.5,
-    1.0, 1.5, 1.75,
-    2.0, 2.25, 2.5, 2.75,
-    3.0, 3.5,
-    4.0,
-    5.0,
-];
+/// State for keeping track of transitions between zoomlevels
+#[derive(Component, Default)]
+pub struct CameraZoomLevel {
+    current: usize,
+    next: usize,
+}
 
 fn camera_control_zoom_mousewheel(
-    mut commands: Commands,
     mut wheel: EventReader<MouseWheel>,
-    mut q: Query<(Entity, &Transform, &mut ZoomLevel), With<GameCamera>>,
+    tiles: Res<TileAssets>,
+    mut q: Query<&mut CameraZoomLevel, With<GameCamera>>,
 ) {
-    const JUMP_DUR: Duration = Duration::from_millis(125);
-
     let mut change = 0.0;
 
     // accumulate all events into one variable
@@ -89,23 +102,147 @@ fn camera_control_zoom_mousewheel(
     }
 
     if change != 0.0 {
-        let (e, xf, mut level) = q.single_mut();
+        let mut level = q.single_mut();
 
         let change = change as isize;
-        let mut l = level.0 as isize;
+        let mut l = level.next as isize;
         l += change;
-        l = l.clamp(0, ZOOM_LEVELS.len() as isize - 1);
-        level.0 = l as usize;
+        l = l.clamp(0, tiles.zoomlevels.zoom.len() as isize - 1);
+        level.next = l as usize;
+    }
+}
 
-        commands.entity(e).insert(Animator::new(Tween::new(
-            EaseFunction::QuadraticOut,
-            TweeningType::Once,
-            JUMP_DUR,
-            TransformScaleLens {
-                start: xf.scale,
-                end: Vec3::splat(ZOOM_LEVELS[level.0].exp2()),
-            }
-        )));
+fn apply_next_zoomlevel(
+    mut commands: Commands,
+    tiles: Res<TileAssets>,
+    wcrs: Res<WorldCursor>,
+    descriptor: Res<MapDescriptor>,
+    mut res_zoom: ResMut<ZoomLevel>,
+    mut q_cam: Query<(Entity, &mut Transform, &mut CameraZoomLevel), (With<GameCamera>, Changed<CameraZoomLevel>)>,
+    mut q_spr: Query<(&mut Sprite, &mut Transform, &mut Handle<Image>, &TilePos), (Without<GameCamera>, Without<TilemapTexture>)>,
+    mut q_tmap: Query<(&mut TilemapTexture, &mut Transform, &mut TilemapGridSize, &mut TilemapTileSize), (Without<GameCamera>, Without<Sprite>)>,
+) {
+    const JUMP_DUR: Duration = Duration::from_millis(125);
+
+    let (e_cam, mut xf_cam, mut zoom) = if let Ok(x) = q_cam.get_single_mut() {
+        x
+    } else {
+        return;
+    };
+
+    let zoom_old = &tiles.zoomlevels.zoom[zoom.current];
+    let zoom_new = &tiles.zoomlevels.zoom[zoom.next];
+
+    for (mut spr, mut xf, mut handle, pos) in q_spr.iter_mut() {
+        if *handle == tiles.gents[zoom.current] {
+            *handle = tiles.gents[zoom.next].clone();
+        } else if *handle == tiles.tiles6[zoom.current] {
+            *handle = tiles.tiles6[zoom.next].clone();
+        } else if *handle == tiles.tiles4[zoom.current] {
+            *handle = tiles.tiles4[zoom.next].clone();
+        } else if *handle == tiles.roads6[zoom.current] {
+            *handle = tiles.roads6[zoom.next].clone();
+        } else if *handle == tiles.roads4[zoom.current] {
+            *handle = tiles.roads4[zoom.next].clone();
+        } else if *handle == tiles.digits[zoom.current] {
+            *handle = tiles.digits[zoom.next].clone();
+        } else if *handle == tiles.flags[zoom.current] {
+            *handle = tiles.flags[zoom.next].clone();
+        } else {
+            continue;
+        }
+
+        if let Some(rect) = &mut spr.rect {
+            rect.min /= zoom_old.size as f32;
+            rect.min *= zoom_new.size as f32;
+            rect.max /= zoom_old.size as f32;
+            rect.max *= zoom_new.size as f32;
+        }
+        let trans = translation_pos(descriptor.topology, pos.into(), &zoom_new);
+        xf.translation = trans.extend(xf.translation.z);
+    }
+
+    for (mut tm_tex, mut tm_xf, mut tm_gsz, mut tm_tsz) in q_tmap.iter_mut() {
+        if tm_tex.0 == tiles.gents[zoom.current] {
+            tm_tex.0 = tiles.gents[zoom.next].clone();
+        } else if tm_tex.0 == tiles.tiles6[zoom.current] {
+            tm_tex.0 = tiles.tiles6[zoom.next].clone();
+        } else if tm_tex.0 == tiles.tiles4[zoom.current] {
+            tm_tex.0 = tiles.tiles4[zoom.next].clone();
+        } else if tm_tex.0 == tiles.roads6[zoom.current] {
+            tm_tex.0 = tiles.roads6[zoom.next].clone();
+        } else if tm_tex.0 == tiles.roads4[zoom.current] {
+            tm_tex.0 = tiles.roads4[zoom.next].clone();
+        } else if tm_tex.0 == tiles.digits[zoom.current] {
+            tm_tex.0 = tiles.digits[zoom.next].clone();
+        } else if tm_tex.0 == tiles.flags[zoom.current] {
+            tm_tex.0 = tiles.flags[zoom.next].clone();
+        } else {
+            continue;
+        }
+        *tm_gsz = match descriptor.topology {
+            Topology::Hex => TilemapGridSize { x: zoom_new.offset6.0 as f32, y: zoom_new.offset6.1 as f32 },
+            Topology::Sq | Topology::Sqr => TilemapGridSize { x: zoom_new.offset4.0 as f32, y: zoom_new.offset4.1 as f32 },
+        };
+        *tm_tsz = TilemapTileSize { x: zoom_new.size as f32, y: zoom_new.size as f32 };
+        let trans = translation_tmap(descriptor.topology, &zoom_new);
+        tm_xf.translation = trans.extend(tm_xf.translation.z);
+    }
+
+    let (offset_old, offset_new): (Vec2, Vec2) = match descriptor.topology {
+        Topology::Hex => (zoom_old.offset6.into(), zoom_new.offset6.into()),
+        Topology::Sq | Topology::Sqr => (zoom_old.offset4.into(), zoom_new.offset4.into()),
+    };
+
+    // we need to set the camera scale as to start the animation
+    // from something that looks like the old zoom level
+    // let scale = zoom_new.size as f32 / zoom_old.size as f32;
+    xf_cam.scale.x = xf_cam.scale.x / zoom_old.size as f32 * zoom_new.size as f32;
+    xf_cam.scale.y = xf_cam.scale.y / zoom_old.size as f32 * zoom_new.size as f32;
+    // xf_cam.scale = Vec3::new(scale, scale, xf_cam.scale.z);
+
+    // different offsets at each zoom level mean that locations on the map might not correspond
+    // we need to jump to the "current camera location" but in the new zoom level
+    // and then animate to the "current cursor location" in the new zoom level
+    let cam_xy = xf_cam.translation.truncate();
+    let fix_xy = (cam_xy / offset_old * offset_new).round();
+    xf_cam.translation = fix_xy.extend(xf_cam.translation.z);
+    // let tgt_xy = wcrs.0 / offset_old * offset_new;
+
+    let anim = Animator::new(Tween::new(
+        EaseFunction::QuadraticOut,
+        TweeningType::Once,
+        JUMP_DUR,
+        TransformPositionScaleLens {
+            pos_start: xf_cam.translation,
+            pos_end: fix_xy.extend(xf_cam.translation.z),
+            scale_start: xf_cam.scale,
+            scale_end: Vec3::new(1.0, 1.0, xf_cam.scale.z),
+        }
+    ));
+    commands.entity(e_cam).insert(anim);
+
+    xf_cam.translation.round();
+    zoom.current = zoom.next;
+    *res_zoom = ZoomLevel {
+        i: zoom.next,
+        desc: zoom_new.clone(),
+    }
+}
+
+/// Because bevy_tweening is stupid and only supports either position or scale
+struct TransformPositionScaleLens {
+    pos_start: Vec3,
+    pos_end: Vec3,
+    scale_start: Vec3,
+    scale_end: Vec3,
+}
+impl Lens<Transform> for TransformPositionScaleLens {
+    fn lerp(&mut self, target: &mut Transform, ratio: f32) {
+        let pos_value = self.pos_start + (self.pos_end - self.pos_start) * ratio;
+        target.translation = pos_value;
+        let scale_value = self.scale_start + (self.scale_end - self.scale_start) * ratio;
+        target.scale = scale_value;
     }
 }
 
@@ -158,10 +295,11 @@ fn grid_cursor(
     crs_in: Res<WorldCursor>,
     mut crs_out: ResMut<GridCursor>,
     mapdesc: Res<MapDescriptor>,
+    zoom: Res<ZoomLevel>,
 ) {
     crs_out.0 = match mapdesc.topology {
         Topology::Hex => {
-            let tdim = Vec2::new(224.0, 256.0);
+            let tdim = Vec2::new(zoom.desc.offset6.0 as f32, zoom.desc.offset6.1 as f32);
             // PERF: fugly
             let conv = bevy_math::Mat2::from_cols_array(
                 &[tdim.x, 0.0, tdim.x * 0.5, tdim.y * 0.75]
@@ -170,20 +308,50 @@ fn grid_cursor(
             Hex::from_f32_clamped(grid.into()).into()
         }
         Topology::Sq => {
-            let adj = crs_in.0 / Vec2::new(224.0, 224.0);
+            let tdim = Vec2::new(zoom.desc.offset4.0 as f32, zoom.desc.offset4.1 as f32);
+            let adj = crs_in.0 / tdim;
             Sq::from_f32_clamped(adj.into()).into()
         }
         Topology::Sqr => {
-            let adj = crs_in.0 / Vec2::new(224.0, 224.0);
+            let tdim = Vec2::new(zoom.desc.offset4.0 as f32, zoom.desc.offset4.1 as f32);
+            let adj = crs_in.0 / tdim;
             Sqr::from_f32_clamped(adj.into()).into()
         }
     };
 }
 
+pub fn translation_pos(topology: Topology, pos: Pos, zoom: &ZoomLevelDescriptor) -> Vec2 {
+    match topology {
+        Topology::Hex => {
+            Hex::from(pos).translation() * Vec2::new(zoom.offset6.0 as f32, zoom.offset6.1 as f32)
+        }
+        Topology::Sq | Topology::Sqr => {
+            Sq::from(pos).translation() * Vec2::new(zoom.offset4.0 as f32, zoom.offset4.1 as f32)
+        }
+    }.floor()
+}
+
+pub fn translation_tmap(topology: Topology, zoom: &ZoomLevelDescriptor) -> Vec2 {
+    match topology {
+        Topology::Hex => {
+            Vec2::new(
+                - 128.0 * zoom.offset6.0 as f32 * 1.5 - zoom.size as f32 * 0.5,
+                - 128.0 * zoom.offset6.1 as f32 * 0.75 - zoom.size as f32 * 0.5,
+            )
+        }
+        Topology::Sq | Topology::Sqr => {
+            Vec2::new(
+                - 128.0 * zoom.offset4.0 as f32 - zoom.size as f32 * 0.5,
+                - 128.0 * zoom.offset4.1 as f32 - zoom.size as f32 * 0.5,
+            )
+        }
+    }.floor()
+}
+
 fn camera_control_pan_mousedrag(
     btn: Res<Input<MouseButton>>,
     mut motion: EventReader<MouseMotion>,
-    mut q_camera: Query<(&mut Transform, &ZoomLevel), With<GameCamera>>,
+    mut q_camera: Query<&mut Transform, With<GameCamera>>,
     bounds: Option<Res<MaxViewBounds>>,
 ) {
     if btn.pressed(MouseButton::Right) {
@@ -194,7 +362,7 @@ fn camera_control_pan_mousedrag(
         }
 
         if delta != Vec2::ZERO {
-            let (mut cam, _) = q_camera.single_mut();
+            let mut cam = q_camera.single_mut();
             cam.translation.x -= delta.x * cam.scale.x;
             cam.translation.y += delta.y * cam.scale.y;
 
@@ -212,18 +380,10 @@ fn camera_control_pan_mousedrag(
         }
     }
     if btn.just_released(MouseButton::Right) {
-        let (mut xf_cam, level) = q_camera.single_mut();
+        let mut xf_cam = q_camera.single_mut();
         // round camera translation to a full pixel at our current zoom level
         // (so rendering looks nice)
-        xf_cam.translation.x = round_at_zoomlevel(level.0, xf_cam.translation.x);
-        xf_cam.translation.y = round_at_zoomlevel(level.0, xf_cam.translation.y);
+        let xy = xf_cam.translation.truncate();
+        xf_cam.translation = xy.round().extend(xf_cam.translation.z);
     }
-}
-
-fn round_at_zoomlevel(level: usize, x: f32) -> f32 {
-    let levelscale = ZOOM_LEVELS[level].exp2();
-    // round to zoom level scale
-    let rounded = (x / levelscale).round() * levelscale;
-    // round to whole pixel
-    rounded.round()
 }

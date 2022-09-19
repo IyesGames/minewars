@@ -62,7 +62,7 @@ fn main() {
         size: 48,
         topology: mw_common::grid::Topology::Hex,
     });
-    app.insert_resource(crate::map::MwMapGfxBackend::Sprites);
+    app.insert_resource(crate::map::MwMapGfxBackend::Tilemap);
 
     app.add_loopless_state(StreamSource::Disconnected);
     app.add_loopless_state(GameMode::None);

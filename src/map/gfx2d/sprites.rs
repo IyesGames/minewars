@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, camera::ZoomLevel};
 
 use super::{*, tileid::get_rect};
 
@@ -55,6 +55,7 @@ fn setup_tiles(
     tiles: Res<TileAssets>,
     descriptor: Option<Res<MapDescriptor>>,
     settings_colors: Res<PlayerPaletteSettings>,
+    zoom: Res<ZoomLevel>,
     q_tile: Query<(Entity, &TileKind, &TilePos)>,
     q_cit: Query<(Entity, &TilePos), With<CitEntity>>,
     mut done: Local<bool>,
@@ -78,8 +79,8 @@ fn setup_tiles(
 
     let mut done_now = false;
     let tmap_texture = match descriptor.topology {
-        Topology::Hex => tiles.tiles6[0].clone(),
-        Topology::Sq | Topology::Sqr => tiles.tiles4[0].clone(),
+        Topology::Hex => tiles.tiles6[zoom.i].clone(),
+        Topology::Sq | Topology::Sqr => tiles.tiles4[zoom.i].clone(),
     };
     for (e, kind, pos) in q_tile.iter() {
         let i_base = match kind {
@@ -88,10 +89,10 @@ fn setup_tiles(
             TileKind::Mountain => tileid::tiles::MTN,
             TileKind::Fertile => tileid::tiles::FERTILE,
         };
-        let xy = translation_pos(descriptor.topology, pos.into());
+        let xy = translation_pos(descriptor.topology, pos.into(), &zoom.desc);
         commands.entity(e).insert_bundle(SpriteBundle {
             sprite: Sprite {
-                rect: Some(get_rect(256, i_base)),
+                rect: Some(get_rect(zoom.desc.size, i_base)),
                 color: settings_colors.visible[0],
                 ..Default::default()
             },
@@ -105,13 +106,13 @@ fn setup_tiles(
 
     // ASSUMES if tiles are ready cits are also ready (setup at the same time)
     for (e, pos) in q_cit.iter() {
-        let xy = translation_pos(descriptor.topology, pos.into());
+        let xy = translation_pos(descriptor.topology, pos.into(), &zoom.desc);
         commands.entity(e).insert_bundle(SpriteBundle {
             sprite: Sprite {
-                rect: Some(tileid::get_rect(256, tileid::gents::CIT)),
+                rect: Some(tileid::get_rect(zoom.desc.size, tileid::gents::CIT)),
                 ..Default::default()
             },
-            texture: tiles.gents[0].clone(),
+            texture: tiles.gents[zoom.i].clone(),
             transform: Transform::from_translation(xy.extend(map_z + zpos::GENTS)),
             ..Default::default()
         }).insert(CitSprite);
@@ -179,6 +180,7 @@ fn tile_decal_sprite_mgr(
 fn tile_digit_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
+    zoom: Res<ZoomLevel>,
     q_tile: Query<
         (Entity, &TilePos, &TileDigit, &Transform, Option<&TileDigitSprite>),
         (With<BaseSprite>, Changed<TileDigit>)
@@ -194,7 +196,7 @@ fn tile_digit_sprite_mgr(
             if digit.0 > 0 {
                 let e_digit = spr_digit.0;
                 let mut sprite = q_digit.get_mut(e_digit).unwrap();
-                sprite.rect = Some(tileid::get_rect(256, digit.0 as u32));
+                sprite.rect = Some(tileid::get_rect(zoom.desc.size, digit.0 as u32));
             } else {
                 commands.entity(spr_digit.0).despawn();
                 commands.entity(e).remove::<TileDigitSprite>();
@@ -203,10 +205,10 @@ fn tile_digit_sprite_mgr(
             // create a new digit entity
             let e_digit = commands.spawn_bundle(SpriteBundle {
                 sprite: Sprite {
-                    rect: Some(tileid::get_rect(256, digit.0 as u32)),
+                    rect: Some(dbg!(tileid::get_rect(zoom.desc.size, digit.0 as u32))),
                     ..Default::default()
                 },
-                texture: tiles.digits[0].clone(),
+                texture: tiles.digits[zoom.i].clone(),
                 transform: Transform::from_translation(xyz),
                 ..Default::default()
             })
@@ -222,6 +224,7 @@ fn tile_digit_sprite_mgr(
 fn mine_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
+    zoom: Res<ZoomLevel>,
     q_tile: Query<
         (Entity, &TilePos, &TileMine, &Transform, Option<&TileMineSprite>),
         (With<BaseSprite>, Changed<TileMine>)
@@ -248,18 +251,18 @@ fn mine_sprite_mgr(
                 // reuse existing entity
                 let e_mine = spr_mine.0;
                 let mut sprite = q_mine.get_mut(e_mine).unwrap();
-                sprite.rect = Some(tileid::get_rect(256, index));
+                sprite.rect = Some(tileid::get_rect(zoom.desc.size, index));
                 sprite.color = color;
                 e_mine
             } else {
                 // spawn new entity
                 let e_mine = commands.spawn_bundle(SpriteBundle {
                     sprite: Sprite {
-                        rect: Some(tileid::get_rect(256, index)),
+                        rect: Some(tileid::get_rect(zoom.desc.size, index)),
                         color,
                         ..Default::default()
                     },
-                    texture: tiles.gents[0].clone(),
+                    texture: tiles.gents[zoom.i].clone(),
                     transform: Transform::from_translation(xyz),
                     ..Default::default()
                 })
@@ -290,6 +293,7 @@ fn explosion_sprite_mgr(
     mut evr_map: EventReader<MapEvent>,
     index: Res<TileEntityIndex>,
     my_plid: Res<ActivePlid>,
+    zoom: Res<ZoomLevel>,
     q_tile: Query<(&Transform, &TilePos), With<BaseSprite>>,
 ) {
     for ev in evr_map.iter() {
@@ -307,10 +311,10 @@ fn explosion_sprite_mgr(
                 };
                 commands.spawn_bundle(SpriteBundle {
                     sprite: Sprite {
-                        rect: Some(tileid::get_rect(256, index)),
+                        rect: Some(tileid::get_rect(zoom.desc.size, index)),
                         ..Default::default()
                     },
-                    texture: tiles.gents[0].clone(),
+                    texture: tiles.gents[zoom.i].clone(),
                     transform: Transform::from_translation(xyz),
                     ..Default::default()
                 }).insert(ExplosionSprite {
@@ -340,13 +344,14 @@ fn explosion_animation(
 
 fn mine_active_animation(
     time: Res<Time>,
+    zoom: Res<ZoomLevel>,
     mut q: Query<(&mut Sprite, &mut MineActiveAnimation)>,
 ) {
     for (mut sprite, mut anim) in q.iter_mut() {
         anim.timer.tick(time.delta());
         if anim.timer.just_finished() {
-            let rect_active = get_rect(256, tileid::gents::MINE_ACTIVE);
-            let rect_inactive = get_rect(256, tileid::gents::MINE);
+            let rect_active = get_rect(zoom.desc.size, tileid::gents::MINE_ACTIVE);
+            let rect_inactive = get_rect(zoom.desc.size, tileid::gents::MINE);
             sprite.rect = if let Some(rect_active) = sprite.rect {
                 Some(rect_inactive)
             } else {

@@ -19,7 +19,6 @@
             "sprites/32/roads4.png",
             "sprites/24/roads4.png",
             "sprites/16/roads4.png",
-            "sprites/8/roads4.png",
         ],
     ),
     "sprites.roads6": Files (
@@ -37,7 +36,6 @@
             "sprites/32/roads6.png",
             "sprites/24/roads6.png",
             "sprites/16/roads6.png",
-            "sprites/8/roads6.png",
         ],
     ),
     "sprites.tiles4": Files (
@@ -55,7 +53,6 @@
             "sprites/32/tiles4.png",
             "sprites/24/tiles4.png",
             "sprites/16/tiles4.png",
-            "sprites/8/tiles4.png",
         ],
     ),
     "sprites.tiles6": Files (
@@ -73,7 +70,6 @@
             "sprites/32/tiles6.png",
             "sprites/24/tiles6.png",
             "sprites/16/tiles6.png",
-            "sprites/8/tiles6.png",
         ],
     ),
     "sprites.digits": Files (
@@ -91,7 +87,6 @@
             "sprites/32/digits.png",
             "sprites/24/digits.png",
             "sprites/16/digits.png",
-            "sprites/8/digits.png",
         ],
     ),
     "sprites.flags": Files (
@@ -109,7 +104,6 @@
             "sprites/32/flags.png",
             "sprites/24/flags.png",
             "sprites/16/flags.png",
-            "sprites/8/flags.png",
         ],
     ),
     "sprites.gents": Files (
@@ -127,7 +121,6 @@
             "sprites/32/gents.png",
             "sprites/24/gents.png",
             "sprites/16/gents.png",
-            "sprites/8/gents.png",
         ],
     ),
 })

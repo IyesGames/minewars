@@ -117,8 +117,8 @@ pub struct TileAssets {
 #[derive(serde::Deserialize)]
 pub struct ZoomLevelDescriptor {
     pub size: u32,
-    pub offset4: (u32, u32),
-    pub offset6: (u32, u32),
+    pub offset4: (f32, f32),
+    pub offset6: (f32, f32),
 }
 
 #[derive(Debug, Clone, Deref, serde::Deserialize, TypeUuid)]

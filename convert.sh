@@ -5,7 +5,7 @@
 # TODO: when Bevy(_ecs_tilemap) supports it,
 # generate texture arrays instead of spritesheets
 
-for s in 8 16 24 32 40 48 56 64 72 80 96 128 192 256
+for s in 16 24 32 40 48 56 64 72 80 96 128 192 256
 do
     mkdir -p assets/sprites/$s
 

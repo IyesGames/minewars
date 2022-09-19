@@ -3,8 +3,8 @@ use mw_common::grid::*;
 
 use crate::prelude::*;
 
-use crate::assets::TileAssets;
-use crate::camera::GridCursor;
+use crate::assets::{TileAssets, ZoomLevelDescriptor};
+use crate::camera::{GridCursor, translation_pos, ZoomLevel};
 use crate::settings::PlayerPaletteSettings;
 
 use super::*;
@@ -66,39 +66,34 @@ impl Plugin for MapGfx2dPlugin {
 fn setup_cursor(
     mut commands: Commands,
     tiles: Res<TileAssets>,
-    descriptor: Res<MapDescriptor>,
+    zoom: Res<ZoomLevel>,
 ) {
     commands.spawn_bundle(SpriteBundle {
         sprite: Sprite {
-            rect: Some(tileid::get_rect(256, tileid::tiles::CURSOR)),
+            rect: Some(tileid::get_rect(zoom.desc.size, tileid::tiles::CURSOR)),
             ..Default::default()
         },
         texture: tiles.tiles6[0].clone(),
         transform: Transform::from_xyz(0.0, 0.0, zpos::CURSOR),
         ..Default::default()
     })
+        .insert(TilePos::from(Pos::origin()))
         .insert(CursorSprite)
         .insert(MapCleanup);
 }
 
 fn cursor_sprite(
-    mut q: Query<&mut Transform, With<CursorSprite>>,
+    mut q: Query<(&mut Transform, &mut TilePos), With<CursorSprite>>,
     crs: Res<GridCursor>,
+    zoom: Res<ZoomLevel>,
     descriptor: Res<MapDescriptor>,
 ) {
-    let mut xf = q.single_mut();
-    xf.translation = translation_pos(descriptor.topology, crs.0).extend(zpos::CURSOR);
-}
-
-fn translation_pos(topology: Topology, pos: Pos) -> Vec2 {
-    match topology {
-        Topology::Hex => {
-            Hex::from(pos).translation() * Vec2::new(224.0, 256.0)
-        }
-        Topology::Sq | Topology::Sqr => {
-            Sq::from(pos).translation() * Vec2::new(224.0, 224.0)
-        }
+    if !crs.is_changed() {
+        return;
     }
+    let (mut xf, mut pos) = q.single_mut();
+    *pos = crs.0.into();
+    xf.translation = translation_pos(descriptor.topology, crs.0, &zoom.desc).extend(zpos::CURSOR);
 }
 
 mod zpos {

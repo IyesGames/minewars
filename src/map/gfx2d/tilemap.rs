@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, camera::translation_tmap};
 
 use super::*;
 
@@ -33,6 +33,7 @@ fn setup_tilemaps(
     tiles: Res<TileAssets>,
     descriptor: Option<Res<MapDescriptor>>,
     settings_colors: Res<PlayerPaletteSettings>,
+    zoom: Res<ZoomLevel>,
     q_tile: Query<(Entity, &TileKind, &TilePos)>,
     q_cit: Query<(Entity, &TilePos), With<CitEntity>>,
     mut done: Local<bool>,
@@ -70,9 +71,10 @@ fn setup_tilemaps(
         Topology::Sq | Topology::Sqr => TilemapType::square(false),
     };
     let tmap_grid_size = match descriptor.topology {
-        Topology::Hex => TilemapGridSize { x: 224.0, y: 256.0 },
-        Topology::Sq | Topology::Sqr => TilemapGridSize { x: 224.0, y: 224.0 },
+        Topology::Hex => TilemapGridSize { x: zoom.desc.offset6.0 as f32, y: zoom.desc.offset6.1 as f32 },
+        Topology::Sq | Topology::Sqr => TilemapGridSize { x: zoom.desc.offset4.0 as f32, y: zoom.desc.offset4.1 as f32 },
     };
+    let tmap_tile_size = TilemapTileSize { x: zoom.desc.size as f32, y: zoom.desc.size as f32 };
     let tmap_texture = match descriptor.topology {
         Topology::Hex => tiles.tiles6[0].clone(),
         Topology::Sq | Topology::Sqr => tiles.tiles4[0].clone(),
@@ -137,20 +139,19 @@ fn setup_tilemaps(
         tstor_base.set(pos, Some(e));
     }
 
-    // generate water fade-out effect
+    // TODO generate water fade-out effect
 
+    let trans = translation_tmap(descriptor.topology, &zoom.desc);
     commands.entity(e_tmap_base).insert_bundle(TilemapBundle {
-        grid_size: TilemapGridSize { x: 224.0, y: 256.0 },
+        grid_size: tmap_grid_size,
         size: tmap_size,
         storage: tstor_base,
         texture: TilemapTexture(tmap_texture),
-        tile_size: TilemapTileSize { x: 256.0, y: 256.0 },
+        tile_size: tmap_tile_size,
         spacing: TilemapSpacing { x: 0.0, y: 0.0 },
         map_type: tmap_mesh_type,
-        transform: Transform::from_xyz(
-            - 128.0 * 224.0 * 1.5 - 256.0 * 0.5,
-            - 128.0 * 256.0 * 0.75 - 256.0 * 0.5,
-            0.0,
+        transform: Transform::from_translation(
+            trans.extend(map_z)
         ),
         ..Default::default()
     });
