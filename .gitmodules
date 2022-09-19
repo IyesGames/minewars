@@ -31,3 +31,6 @@
 [submodule "deps/bevy_common_assets"]
 	path = deps/bevy_common_assets
 	url = https://github.com/IyesGames/bevy_common_assets
+[submodule "deps/bevy_ecs_tilemap"]
+	path = deps/bevy_ecs_tilemap
+	url = https://github.com/StarArawn/bevy_ecs_tilemap

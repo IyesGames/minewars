@@ -57,11 +57,13 @@ fn main() {
     });
     app.insert_resource(ClearColor(Color::BLACK));
     app.add_plugin(IyesEverything);
-    // FIXME: for testing
+    // FIXME: these should be handled as settings
     app.insert_resource(mw_common::game::MapDescriptor {
         size: 48,
         topology: mw_common::grid::Topology::Hex,
     });
+    app.insert_resource(crate::map::MwMapGfxBackend::Sprites);
+
     app.add_loopless_state(StreamSource::Disconnected);
     app.add_loopless_state(GameMode::None);
     app.add_loopless_state(AppGlobalState::AssetsLoading);

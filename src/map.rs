@@ -7,10 +7,13 @@ use mw_common::grid::*;
 
 use crate::AppGlobalState;
 
-use self::tileid::CoordTileids;
+mod gfx2d;
 
-#[cfg(feature = "gfx_sprites")]
-mod gfx_sprites;
+#[derive(Debug, PartialEq, Eq)]
+pub enum MwMapGfxBackend {
+    Sprites,
+    Tilemap,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(SystemLabel)]
@@ -85,10 +88,9 @@ impl Plugin for MapPlugin {
             .after("map_event_mine")
             .label(MapLabels::TileMine)
         );
+        app.add_plugin(gfx2d::MapGfx2dPlugin);
         #[cfg(feature = "dev")]
         app.add_system(debug_mapevents.label(MapLabels::ApplyEvents));
-        #[cfg(feature = "gfx_sprites")]
-        app.add_plugin(gfx_sprites::MapGfxSpritesPlugin);
     }
 }
 
@@ -178,9 +180,6 @@ struct CitIndex {
     by_id: Vec<Entity>,
 }
 
-/// Per-tile component: the map coordinates
-#[derive(Debug, Clone, Copy, Component)]
-struct TileCoord(Pos);
 /// Per-tile component: the minesweeper digit
 #[derive(Debug, Clone, Copy, Component)]
 struct TileDigit(u8);
@@ -189,7 +188,7 @@ struct TileDigit(u8);
 struct TileOwner(PlayerId);
 /// Per-tile component: visibility (fog of war) state
 #[derive(Debug, Clone, Copy, Component)]
-struct TileVisible(bool);
+struct TileFoW(bool);
 /// Per-tile component: mine state
 #[derive(Debug, Clone, Copy, Component)]
 struct TileMine(Option<MineDisplayState>);
@@ -218,16 +217,16 @@ pub enum MineDisplayState {
 #[derive(Bundle)]
 struct NonPlayableTileBundle {
     kind: TileKind,
-    coord: TileCoord,
+    coord: TilePos,
 }
 
 #[derive(Bundle)]
 struct PlayableTileBundle {
     marker: PlayableTileEntity,
     kind: TileKind,
-    coord: TileCoord,
+    coord: TilePos,
     owner: TileOwner,
-    vis: TileVisible,
+    vis: TileFoW,
 }
 
 #[derive(Bundle)]
@@ -239,11 +238,11 @@ struct LandTileExtrasBundle {
 #[derive(Bundle)]
 struct CitBundle {
     cit: CitEntity,
-    coord: TileCoord,
+    coord: TilePos,
     owner: TileOwner,
 }
 
-fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
+fn setup_map_topology<C: CompactMapCoordExt>(
     commands: &mut Commands,
     data: &MapDataInitAny,
 ) {
@@ -257,7 +256,7 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
     for (i, pos) in data.cits.iter().enumerate() {
         let cit_e = commands.spawn_bundle(CitBundle {
             cit: CitEntity(i as u8),
-            coord: TileCoord(*pos),
+            coord: TilePos::from(*pos),
             owner: TileOwner(PlayerId::Spectator),
         }).insert(MapCleanup).id();
         cit_index.by_id.push(cit_e);
@@ -266,15 +265,15 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
 
     let mut tile_index = MapData::new(map.size(), Entity::from_raw(0));
 
-    commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * map.size() as f32));
+    // commands.insert_resource(MaxViewBounds(C::TILE_OFFSET.x.min(C::TILE_OFFSET.y) * map.size() as f32));
     for (c, init) in map.iter() {
         let tile_e = if init.kind.ownable() {
             let mut builder = commands.spawn_bundle(PlayableTileBundle {
                 marker: PlayableTileEntity,
                 kind: init.kind,
-                coord: TileCoord(c.into()),
+                coord: TilePos::from(c.as_pos()),
                 owner: TileOwner(PlayerId::Spectator),
-                vis: TileVisible(true),
+                vis: TileFoW(true),
             });
             if init.kind.is_land() {
                 builder.insert_bundle(LandTileExtrasBundle {
@@ -290,7 +289,7 @@ fn setup_map_topology<C: CoordTileids + CompactMapCoordExt>(
         } else {
             commands.spawn_bundle(NonPlayableTileBundle {
                 kind: init.kind,
-                coord: TileCoord(c.into()),
+                coord: TilePos::from(c.as_pos()),
             })
                 .insert(MapCleanup).id()
         };
@@ -398,9 +397,9 @@ fn compute_fog_of_war<C: Coord>(
     my_plid: Res<ActivePlid>,
     index: Res<TileEntityIndex>,
     // FIXME PERF: this should be Mutated
-    q_changed: Query<&TileCoord, (With<PlayableTileEntity>, Changed<TileOwner>)>,
+    q_changed: Query<&TilePos, (With<PlayableTileEntity>, Changed<TileOwner>)>,
     q_owner: Query<&TileOwner, With<PlayableTileEntity>>,
-    mut q_vis: Query<&mut TileVisible, With<PlayableTileEntity>>,
+    mut q_vis: Query<&mut TileFoW, With<PlayableTileEntity>>,
     mut dirty: Local<Vec<C>>,
 ) {
     if index.0.topology() != C::TOPOLOGY {
@@ -420,7 +419,7 @@ fn compute_fog_of_war<C: Coord>(
         radius,
         &mut *dirty,
         my_plid.0,
-        q_changed.iter().map(|x| x.0.into()),
+        q_changed.iter().map(|tp| Pos::from(*tp).into()),
         |c| {
             if c.ring() >= index.0.size() {
                 return None;
@@ -476,50 +475,4 @@ fn drop_mines(
             }
         }
     }
-}
-
-// TODO: this should really be moved into mod gfx_sprites
-pub mod tileid {
-    #![allow(dead_code)]
-
-    use crate::prelude::*;
-    use bevy::math::const_vec2;
-    use mw_common::grid::*;
-
-    pub trait CoordTileids: Coord {
-        const TILE_OFFSET: Vec2;
-        const TILEID_LAND: usize;
-        const TILEID_CURSOR: usize;
-        const TILEID_ROADS: &'static [usize];
-    }
-
-    impl CoordTileids for Hex {
-        const TILE_OFFSET: Vec2 = const_vec2!([224.0, 256.0]);
-        const TILEID_LAND: usize = 0o1;
-        const TILEID_CURSOR: usize = 0o0;
-        const TILEID_ROADS: &'static [usize] = &[0o60, 0o61, 0o62, 0o63, 0o64, 0o65];
-    }
-
-    impl CoordTileids for Sq {
-        const TILE_OFFSET: Vec2 = const_vec2!([224.0, 224.0]);
-        const TILEID_LAND: usize = 0o11;
-        const TILEID_CURSOR: usize = 0o10;
-        const TILEID_ROADS: &'static [usize] = &[0o70, 0o71, 0o72, 0o73];
-    }
-
-    pub const ITEM_MINE: usize = 0o4;
-    pub const ITEM_DECOY: usize = 0o5;
-    pub const EXPLODE_MINE: usize = 0o14;
-    pub const EXPLODE_DECOY: usize = 0o15;
-    pub const MINE_ACTIVE: usize = 0o24;
-
-    pub const GEO_WATER: usize = 0o20;
-    pub const GEO_FERTILE: usize = 0o21;
-    pub const GEO_MOUNTAIN: usize = 0o22;
-
-    pub const LANDMARK_CITY: usize = 0o40;
-    pub const LANDMARK_TOWER: usize = 0o41;
-    pub const DECAL_SKULL: usize = 0o50;
-
-    pub const DIGITS: [usize; 8] = [0, 0o51, 0o52, 0o53, 0o54, 0o55, 0o56, 0o57];
 }

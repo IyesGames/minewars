@@ -1,5 +1,4 @@
 use crate::map::MaxViewBounds;
-use crate::map::tileid::CoordTileids;
 use crate::prelude::*;
 use bevy::input::mouse::{MouseWheel, MouseScrollUnit, MouseMotion};
 use bevy::render::camera::RenderTarget;
@@ -165,7 +164,7 @@ fn grid_cursor(
 ) {
     crs_out.0 = match mapdesc.topology {
         Topology::Hex => {
-            let tdim = Hex::TILE_OFFSET;
+            let tdim = Vec2::new(224.0, 256.0);
             // PERF: fugly
             let conv = bevy_math::Mat2::from_cols_array(
                 &[tdim.x, 0.0, tdim.x * 0.5, tdim.y * 0.75]
@@ -174,11 +173,11 @@ fn grid_cursor(
             Hex::from_f32_clamped(grid.into()).into()
         }
         Topology::Sq => {
-            let adj = crs_in.0 / Sq::TILE_OFFSET;
+            let adj = crs_in.0 / Vec2::new(224.0, 224.0);
             Sq::from_f32_clamped(adj.into()).into()
         }
         Topology::Sqr => {
-            let adj = crs_in.0 / Sq::TILE_OFFSET;
+            let adj = crs_in.0 / Vec2::new(224.0, 224.0);
             Sqr::from_f32_clamped(adj.into()).into()
         }
     };
@@ -202,6 +201,7 @@ fn camera_control_pan_mousedrag(
             cam.translation.x -= delta.x * cam.scale.x;
             cam.translation.y += delta.y * cam.scale.y;
 
+/*
             if let Some(bounds) = bounds {
                 let mut cam_xy = cam.translation.truncate();
                 let r = cam_xy.length();
@@ -211,6 +211,7 @@ fn camera_control_pan_mousedrag(
                     cam.translation.y = cam_xy.y;
                 }
             }
+*/
         }
     }
     if btn.just_released(MouseButton::Right) {

@@ -1,92 +1,53 @@
-use mw_common::game::{MapDescriptor, TileKind, MineKind};
-use mw_common::grid::*;
-
 use crate::prelude::*;
 
-use crate::assets::TileAssets;
-use crate::camera::GridCursor;
-use crate::settings::PlayerPaletteSettings;
-
-use super::*;
-use super::tileid::CoordTileids;
-
-#[derive(Component)]
-struct CursorSprite;
-#[derive(Component)]
-struct BaseSprite;
-#[derive(Component)]
-struct DecalSprite;
-#[derive(Component)]
-struct DigitSprite;
-#[derive(Component)]
-struct MineSprite;
-#[derive(Component)]
-struct CitSprite;
-
-#[derive(Component)]
-struct MineActiveAnimation {
-    timer: Timer,
-}
-
-#[derive(Component)]
-struct ExplosionSprite {
-    timer: Timer,
-}
-
-/// Reference to a sprite entity displaying a "decal", if any
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-struct TileDecalSprite(Entity);
-/// Reference to a sprite entity displaying the minesweeper digit, if any
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-struct TileDigitSprite(Entity);
-/// Reference to a sprite entity displaying a mine, if any
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-struct TileMineSprite(Entity);
+use super::{*, tileid::get_rect};
 
 pub struct MapGfxSpritesPlugin;
 
 impl Plugin for MapGfxSpritesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_enter_system(AppGlobalState::InGame, setup_cursor);
         app.add_system(
             setup_tiles
                 .track_progress()
                 .run_in_state(AppGlobalState::GameLoading)
+                .run_if(is_gfx_sprites_backend_enabled)
         );
-        app.add_system(
-            cursor_sprite
-                .run_in_state(AppGlobalState::InGame)
-                .after("cursor")
+        app.add_system(explosion_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_sprites_backend_enabled)
+            .label(MapLabels::ApplyEvents)
         );
         app.add_system_set(ConditionSet::new()
             .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_sprites_backend_enabled)
             .with_system(tile_decal_sprite_mgr)
             .with_system(mine_active_animation)
             .with_system(explosion_animation)
-            .with_system(cursor_sprite)
             .into()
         );
         app.add_system(tile_owner_color
             .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_sprites_backend_enabled)
             .after(MapLabels::TileOwner)
             .after(MapLabels::TileVisible)
         );
         app.add_system(tile_digit_sprite_mgr
             .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_sprites_backend_enabled)
             .after(MapLabels::TileDigit)
         );
         app.add_system(mine_sprite_mgr
             .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_sprites_backend_enabled)
             .after(MapLabels::TileMine)
         );
-        app.add_system(explosion_sprite_mgr
-            .run_in_state(AppGlobalState::InGame)
-            .label(MapLabels::ApplyEvents)
-        );
     }
+}
+
+fn is_gfx_sprites_backend_enabled(
+    backend: Res<MwMapGfxBackend>,
+) -> bool {
+    *backend == MwMapGfxBackend::Sprites
 }
 
 fn setup_tiles(
@@ -94,8 +55,8 @@ fn setup_tiles(
     tiles: Res<TileAssets>,
     descriptor: Option<Res<MapDescriptor>>,
     settings_colors: Res<PlayerPaletteSettings>,
-    q_tile: Query<(Entity, &TileKind, &TileCoord)>,
-    q_cit: Query<(Entity, &TileCoord), With<CitEntity>>,
+    q_tile: Query<(Entity, &TileKind, &TilePos)>,
+    q_cit: Query<(Entity, &TilePos), With<CitEntity>>,
     mut done: Local<bool>,
 ) -> Progress {
     let descriptor = if let Some(descriptor) = descriptor {
@@ -116,20 +77,25 @@ fn setup_tiles(
     let map_z = 0.0;
 
     let mut done_now = false;
+    let tmap_texture = match descriptor.topology {
+        Topology::Hex => tiles.tiles6[0].clone(),
+        Topology::Sq | Topology::Sqr => tiles.tiles4[0].clone(),
+    };
     for (e, kind, pos) in q_tile.iter() {
-        let index = match (descriptor.topology, kind) {
-            (_, TileKind::Water) => tileid::GEO_WATER,
-            (Topology::Hex, _) => Hex::TILEID_LAND,
-            (Topology::Sq | Topology::Sqr, _) => Sq::TILEID_LAND,
+        let i_base = match kind {
+            TileKind::Water => tileid::tiles::WATER,
+            TileKind::Regular | TileKind::Road => tileid::tiles::LAND,
+            TileKind::Mountain => tileid::tiles::MTN,
+            TileKind::Fertile => tileid::tiles::FERTILE,
         };
-        let xy = translation_pos(descriptor.topology, pos.0);
-        commands.entity(e).insert_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                index,
+        let xy = translation_pos(descriptor.topology, pos.into());
+        commands.entity(e).insert_bundle(SpriteBundle {
+            sprite: Sprite {
+                rect: Some(get_rect(256, i_base)),
                 color: settings_colors.visible[0],
                 ..Default::default()
             },
-            texture_atlas: tiles.atlas.clone(),
+            texture: tmap_texture.clone(),
             transform: Transform::from_translation(xy.extend(map_z)),
             ..Default::default()
         }).insert(BaseSprite);
@@ -139,14 +105,14 @@ fn setup_tiles(
 
     // ASSUMES if tiles are ready cits are also ready (setup at the same time)
     for (e, pos) in q_cit.iter() {
-        let xy = translation_pos(descriptor.topology, pos.0);
-        commands.entity(e).insert_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                index: tileid::LANDMARK_CITY,
+        let xy = translation_pos(descriptor.topology, pos.into());
+        commands.entity(e).insert_bundle(SpriteBundle {
+            sprite: Sprite {
+                rect: Some(tileid::get_rect(256, tileid::gents::CIT)),
                 ..Default::default()
             },
-            texture_atlas: tiles.atlas.clone(),
-            transform: Transform::from_translation(xy.extend(map_z + zpos::CIT)),
+            texture: tiles.gents[0].clone(),
+            transform: Transform::from_translation(xy.extend(map_z + zpos::GENTS)),
             ..Default::default()
         }).insert(CitSprite);
     }
@@ -162,10 +128,11 @@ fn tile_decal_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
     q_tile: Query<
-        (Entity, &TileCoord, &TileKind, &Transform, Option<&TileDecalSprite>),
+        (Entity, &TilePos, &TileKind, &Transform, Option<&TileDecalSprite>),
         (With<BaseSprite>, Changed<TileKind>)
     >,
 ) {
+    /*
     for (e, coord, kind, xf, spr_decal) in q_tile.iter() {
         let mut xyz = xf.translation;
         xyz.z += zpos::DECAL;
@@ -206,16 +173,17 @@ fn tile_decal_sprite_mgr(
             .id();
         commands.entity(e).insert(TileDecalSprite(e_decal));
     }
+    */
 }
 
 fn tile_digit_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
     q_tile: Query<
-        (Entity, &TileCoord, &TileDigit, &Transform, Option<&TileDigitSprite>),
+        (Entity, &TilePos, &TileDigit, &Transform, Option<&TileDigitSprite>),
         (With<BaseSprite>, Changed<TileDigit>)
     >,
-    mut q_digit: Query<&mut TextureAtlasSprite, With<DigitSprite>>,
+    mut q_digit: Query<&mut Sprite, With<DigitSprite>>,
 ) {
     for (e, coord, digit, xf, spr_digit) in q_tile.iter() {
         let mut xyz = xf.translation;
@@ -226,19 +194,19 @@ fn tile_digit_sprite_mgr(
             if digit.0 > 0 {
                 let e_digit = spr_digit.0;
                 let mut sprite = q_digit.get_mut(e_digit).unwrap();
-                sprite.index = tileid::DIGITS[digit.0 as usize];
+                sprite.rect = Some(tileid::get_rect(256, digit.0 as u32));
             } else {
                 commands.entity(spr_digit.0).despawn();
                 commands.entity(e).remove::<TileDigitSprite>();
             }
         } else if digit.0 > 0 {
             // create a new digit entity
-            let e_digit = commands.spawn_bundle(SpriteSheetBundle {
-                sprite: TextureAtlasSprite {
-                    index: tileid::DIGITS[digit.0 as usize],
+            let e_digit = commands.spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    rect: Some(tileid::get_rect(256, digit.0 as u32)),
                     ..Default::default()
                 },
-                texture_atlas: tiles.atlas.clone(),
+                texture: tiles.digits[0].clone(),
                 transform: Transform::from_translation(xyz),
                 ..Default::default()
             })
@@ -255,22 +223,22 @@ fn mine_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
     q_tile: Query<
-        (Entity, &TileCoord, &TileMine, &Transform, Option<&TileMineSprite>),
+        (Entity, &TilePos, &TileMine, &Transform, Option<&TileMineSprite>),
         (With<BaseSprite>, Changed<TileMine>)
     >,
-    mut q_mine: Query<&mut TextureAtlasSprite, With<MineSprite>>,
+    mut q_mine: Query<&mut Sprite, With<MineSprite>>,
 ) {
     for (e, coord, mine, xf, spr_mine) in q_tile.iter() {
         let mut xyz = xf.translation;
-        xyz.z += zpos::MINE;
+        xyz.z += zpos::GENTS;
 
         if let Some(display) = mine.0 {
             let index = match display {
                 MineDisplayState::Normal(MineKind::Mine) |
-                MineDisplayState::Pending(MineKind::Mine) => tileid::ITEM_MINE,
+                MineDisplayState::Pending(MineKind::Mine) => tileid::gents::MINE,
                 MineDisplayState::Normal(MineKind::Decoy) |
-                MineDisplayState::Pending(MineKind::Decoy) => tileid::ITEM_DECOY,
-                MineDisplayState::Active => tileid::MINE_ACTIVE,
+                MineDisplayState::Pending(MineKind::Decoy) => tileid::gents::DECOY,
+                MineDisplayState::Active => tileid::gents::MINE_ACTIVE,
             };
             let mut color = Color::WHITE;
             if let MineDisplayState::Pending(_) = display {
@@ -280,18 +248,18 @@ fn mine_sprite_mgr(
                 // reuse existing entity
                 let e_mine = spr_mine.0;
                 let mut sprite = q_mine.get_mut(e_mine).unwrap();
-                sprite.index = index;
+                sprite.rect = Some(tileid::get_rect(256, index));
                 sprite.color = color;
                 e_mine
             } else {
                 // spawn new entity
-                let e_mine = commands.spawn_bundle(SpriteSheetBundle {
-                    sprite: TextureAtlasSprite {
-                        index,
+                let e_mine = commands.spawn_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        rect: Some(tileid::get_rect(256, index)),
                         color,
                         ..Default::default()
                     },
-                    texture_atlas: tiles.atlas.clone(),
+                    texture: tiles.gents[0].clone(),
                     transform: Transform::from_translation(xyz),
                     ..Default::default()
                 })
@@ -322,7 +290,7 @@ fn explosion_sprite_mgr(
     mut evr_map: EventReader<MapEvent>,
     index: Res<TileEntityIndex>,
     my_plid: Res<ActivePlid>,
-    q_tile: Query<(&Transform, &TileCoord), With<BaseSprite>>,
+    q_tile: Query<(&Transform, &TilePos), With<BaseSprite>>,
 ) {
     for ev in evr_map.iter() {
         if ev.plid != my_plid.0 {
@@ -334,15 +302,15 @@ fn explosion_sprite_mgr(
                 let mut xyz = xf.translation;
                 xyz.z += zpos::EXPLOSION;
                 let index = match kind {
-                    MineKind::Mine => tileid::EXPLODE_MINE,
-                    MineKind::Decoy => tileid::EXPLODE_DECOY,
+                    MineKind::Mine => tileid::gents::EXPLODE_MINE,
+                    MineKind::Decoy => tileid::gents::EXPLODE_DECOY,
                 };
-                commands.spawn_bundle(SpriteSheetBundle {
-                    sprite: TextureAtlasSprite {
-                        index,
+                commands.spawn_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        rect: Some(tileid::get_rect(256, index)),
                         ..Default::default()
                     },
-                    texture_atlas: tiles.atlas.clone(),
+                    texture: tiles.gents[0].clone(),
                     transform: Transform::from_translation(xyz),
                     ..Default::default()
                 }).insert(ExplosionSprite {
@@ -359,7 +327,7 @@ fn explosion_sprite_mgr(
 fn explosion_animation(
     mut commands: Commands,
     time: Res<Time>,
-    mut q: Query<(Entity, &mut TextureAtlasSprite, &mut ExplosionSprite)>,
+    mut q: Query<(Entity, &mut Sprite, &mut ExplosionSprite)>,
 ) {
     for (e, mut sprite, mut anim) in q.iter_mut() {
         anim.timer.tick(time.delta());
@@ -372,49 +340,27 @@ fn explosion_animation(
 
 fn mine_active_animation(
     time: Res<Time>,
-    mut q: Query<(&mut TextureAtlasSprite, &mut MineActiveAnimation)>,
+    mut q: Query<(&mut Sprite, &mut MineActiveAnimation)>,
 ) {
     for (mut sprite, mut anim) in q.iter_mut() {
         anim.timer.tick(time.delta());
         if anim.timer.just_finished() {
-            sprite.index = if sprite.index == tileid::MINE_ACTIVE {
-                tileid::ITEM_MINE
+            let rect_active = get_rect(256, tileid::gents::MINE_ACTIVE);
+            let rect_inactive = get_rect(256, tileid::gents::MINE);
+            sprite.rect = if let Some(rect_active) = sprite.rect {
+                Some(rect_inactive)
             } else {
-                tileid::MINE_ACTIVE
+                Some(rect_active)
             };
         }
     }
 }
 
-fn setup_cursor(
-    mut commands: Commands,
-    tiles: Res<TileAssets>,
-    descriptor: Res<MapDescriptor>,
-) {
-    let index = match descriptor.topology {
-        Topology::Hex => Hex::TILEID_CURSOR,
-        Topology::Sq => Sq::TILEID_CURSOR,
-        Topology::Sqr => Sq::TILEID_CURSOR,
-    };
-
-    commands.spawn_bundle(SpriteSheetBundle {
-        sprite: TextureAtlasSprite {
-            index,
-            ..Default::default()
-        },
-        texture_atlas: tiles.atlas.clone(),
-        transform: Transform::from_xyz(0.0, 0.0, zpos::CURSOR),
-        ..Default::default()
-    })
-        .insert(CursorSprite)
-        .insert(MapCleanup);
-}
-
 fn tile_owner_color(
     settings_colors: Res<PlayerPaletteSettings>,
     mut q_tile: Query<
-        (&TileKind, &TileOwner, &TileVisible, &mut TextureAtlasSprite),
-        (With<BaseSprite>, Or<(Changed<TileOwner>, Changed<TileVisible>)>)
+        (&TileKind, &TileOwner, &TileFoW, &mut Sprite),
+        (With<BaseSprite>, Or<(Changed<TileOwner>, Changed<TileFoW>)>)
     >,
 ) {
     for (kind, owner, tilevis, mut sprite) in q_tile.iter_mut() {
@@ -428,34 +374,4 @@ fn tile_owner_color(
             settings_colors.fog[owner.0.i()]
         }
     }
-}
-
-fn cursor_sprite(
-    mut q: Query<&mut Transform, With<CursorSprite>>,
-    crs: Res<GridCursor>,
-    descriptor: Res<MapDescriptor>,
-) {
-    let mut xf = q.single_mut();
-    xf.translation = translation_pos(descriptor.topology, crs.0).extend(zpos::CURSOR);
-}
-
-fn translation_c<C: CoordTileids>(c: C) -> Vec2 {
-    c.translation() * C::TILE_OFFSET
-}
-
-fn translation_pos(topology: Topology, pos: Pos) -> Vec2 {
-    match topology {
-        Topology::Hex => translation_c(Hex(pos.0, pos.1)),
-        Topology::Sq => translation_c(Sq(pos.0, pos.1)),
-        _ => unimplemented!(),
-    }
-}
-
-mod zpos {
-    pub const CURSOR: f32 = 10.0;
-    pub const EXPLOSION: f32 = 5.0;
-    pub const DIGIT: f32 = 4.0;
-    pub const MINE: f32 = 3.0;
-    pub const CIT: f32 = 2.0;
-    pub const DECAL: f32 = 1.0;
 }
