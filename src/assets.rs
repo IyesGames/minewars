@@ -11,6 +11,7 @@ impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(
             ProgressPlugin::new(AppGlobalState::AssetsLoading)
+                // .continue_to(AppGlobalState::SplashIyes)
         );
         app.add_loading_state(
             LoadingState::new(AppGlobalState::AssetsLoading)
@@ -26,7 +27,7 @@ impl Plugin for AssetsPlugin {
                 .with_collection::<TileAssets>()
         );
         app.add_system_to_stage(CoreStage::Last, debug_progress.run_in_state(AppGlobalState::AssetsLoading));
-        // app.add_enter_system(AppGlobalState::AssetsLoading, setup_loadscreen);
+        app.add_enter_system(AppGlobalState::AssetsLoading, setup_loadscreen);
         app.add_exit_system(AppGlobalState::AssetsLoading, despawn_with_recursive::<LoadscreenCleanup>);
         app.add_enter_system(AppGlobalState::SplashIyes, splash_init_iyes);
         app.add_exit_system(AppGlobalState::SplashIyes, despawn_with_recursive::<SplashCleanup>);
@@ -109,23 +110,26 @@ pub struct TileAssets {
 #[derive(Component)]
 struct LoadscreenCleanup;
 #[derive(Component)]
-struct LoadingPctText;
+struct LoadingProgressIndicator;
 
 fn setup_loadscreen(
     mut commands: Commands,
-    uiassets: Res<UiAssets>,
 ) {
-    let top = commands.spawn_bundle(NodeBundle {
-        color: UiColor(Color::NONE),
+    commands.spawn_bundle(Camera2dBundle::default())
+        .insert(LoadscreenCleanup);
+
+    let container = commands.spawn_bundle(NodeBundle {
+        color: UiColor(Color::GRAY),
         style: Style {
             size: Size::new(Val::Auto, Val::Auto),
             position_type: PositionType::Absolute,
             position: UiRect {
-                bottom: Val::Px(0.0),
-                top: Val::Px(0.0),
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
+                bottom: Val::Percent(48.0),
+                top: Val::Percent(48.0),
+                left: Val::Percent(20.0),
+                right: Val::Percent(20.0),
             },
+            padding: UiRect::all(Val::Px(2.0)),
             flex_direction: FlexDirection::ColumnReverse,
             justify_content: JustifyContent::Center,
             ..Default::default()
@@ -134,67 +138,24 @@ fn setup_loadscreen(
     }).insert(LoadscreenCleanup).id();
 
     let inner = commands.spawn_bundle(NodeBundle {
-        color: UiColor(Color::NONE),
+        color: UiColor(Color::WHITE),
         style: Style {
-            size: Size::new(Val::Auto, Val::Auto),
-            margin: UiRect::all(Val::Auto),
-            padding: UiRect::all(Val::Px(4.0)),
-            align_self: AlignSelf::Center,
-            justify_content: JustifyContent::Center,
+            size: Size::new(Val::Percent(0.0), Val::Percent(100.0)),
             ..Default::default()
         },
         ..Default::default()
-    }).id();
+    }).insert(LoadingProgressIndicator).id();
 
-    let inner_pct = commands.spawn_bundle(NodeBundle {
-        color: UiColor(Color::NONE),
-        style: Style {
-            size: Size::new(Val::Auto, Val::Auto),
-            margin: UiRect::all(Val::Auto),
-            padding: UiRect::all(Val::Px(4.0)),
-            align_self: AlignSelf::Center,
-            justify_content: JustifyContent::Center,
-            ..Default::default()
-        },
-        ..Default::default()
-    }).id();
-
-    let txt_loading = commands.spawn_bundle(TextBundle {
-        text: Text::from_section(
-            "Loading…",
-            TextStyle {
-                color: Color::WHITE,
-                font_size: 16.0,
-                font: uiassets.font_regular.clone(),
-            },
-        ),
-        ..Default::default()
-    }).id();
-
-    let txt_pct = commands.spawn_bundle(TextBundle {
-        text: Text::from_section(
-            "0%",
-            TextStyle {
-                color: Color::WHITE,
-                font_size: 64.0,
-                font: uiassets.font_regular.clone(),
-            },
-        ),
-        ..Default::default()
-    }).insert(LoadingPctText).id();
-
-    commands.entity(inner).push_children(&[txt_loading]);
-    commands.entity(inner_pct).push_children(&[txt_pct]);
-    commands.entity(top).push_children(&[inner, inner_pct]);
+    commands.entity(container).push_children(&[inner]);
 }
 
 fn update_loading_pct(
-    mut q: Query<&mut Text, With<LoadingPctText>>,
+    mut q: Query<&mut Style, With<LoadingProgressIndicator>>,
     progress: Res<ProgressCounter>,
 ) {
     let progress: f32 = progress.progress().into();
-    for mut txt in q.iter_mut() {
-        txt.sections[0].value = format!("{:.0}%", progress * 100.0);
+    for mut style in q.iter_mut() {
+        style.size.width = Val::Percent(progress * 100.0);
     }
 }
 
