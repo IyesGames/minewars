@@ -18,6 +18,7 @@ features = [
     "2d",
     "bevy-ui",
     "audio",
+    "tilemap",
 ]
 
 [features]
