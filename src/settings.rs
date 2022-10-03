@@ -14,6 +14,7 @@ impl Plugin for SettingsPlugin {
 pub struct PlayerPaletteSettings {
     pub visible: [Color; 7],
     pub fog: [Color; 7],
+    pub pending: [Color; 7],
 }
 
 impl Default for PlayerPaletteSettings {
@@ -21,12 +22,21 @@ impl Default for PlayerPaletteSettings {
         PlayerPaletteSettings {
             visible: [
                 Color::rgb_u8(200, 200, 200),
-                Color::rgb_u8(238, 96, 96),
+                Color::rgb_u8(255, 96, 96),
                 Color::rgb_u8(127, 127, 255),
                 Color::rgb_u8(123, 231, 123),
                 Color::rgb_u8(233, 212, 0),
                 Color::rgb_u8(204, 128, 255),
-                Color::rgb_u8(250, 120, 180),
+                Color::rgb_u8(250, 120, 160),
+            ],
+            pending: [
+                Color::rgb_u8(210, 210, 210),
+                Color::rgb_u8(255, 120, 120),
+                Color::rgb_u8(160, 160, 255),
+                Color::rgb_u8(140, 255, 140),
+                Color::rgb_u8(240, 220, 80),
+                Color::rgb_u8(220, 175, 255),
+                Color::rgb_u8(255, 150, 180),
             ],
             fog: [
                 Color::rgb_u8(127, 127, 127),
