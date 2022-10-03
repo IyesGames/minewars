@@ -12,6 +12,10 @@ impl Plugin for MapGfxTilemapPlugin {
                 .run_in_state(AppGlobalState::GameLoading)
                 .run_if(is_gfx_tilemap_backend_enabled)
         );
+        app.add_system(base_kind_changed
+            .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_tilemap_backend_enabled)
+        );
         app.add_system(tile_owner_color
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_tilemap_backend_enabled)
@@ -255,5 +259,33 @@ fn tile_owner_color(
         } else {
             settings_colors.fog[owner.0.i()]
         }
+    }
+}
+
+fn base_kind_changed(
+    mut q_tile: Query<
+        (&TileKind, &mut TileTexture),
+        (With<BaseSprite>, Changed<TileKind>)
+    >,
+) {
+    for (kind, mut sprite) in q_tile.iter_mut() {
+        let index = match kind {
+            TileKind::Water => {
+                tileid::tiles::WATER
+            }
+            TileKind::Regular => {
+                tileid::tiles::LAND
+            }
+            TileKind::Fertile => {
+                tileid::tiles::FERTILE
+            }
+            TileKind::Mountain => {
+                tileid::tiles::MTN
+            }
+            TileKind::Road => {
+                todo!()
+            }
+        };
+        sprite.0 = index;
     }
 }

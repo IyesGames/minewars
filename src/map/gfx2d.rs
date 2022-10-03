@@ -17,8 +17,6 @@ struct CursorSprite;
 #[derive(Component)]
 struct BaseSprite;
 #[derive(Component)]
-struct DecalSprite;
-#[derive(Component)]
 struct DigitSprite;
 #[derive(Component)]
 struct MineSprite;
@@ -35,10 +33,6 @@ struct ExplosionSprite {
     timer: Timer,
 }
 
-/// Reference to a sprite entity displaying a "decal", if any
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-struct TileDecalSprite(Entity);
 /// Reference to a sprite entity displaying the minesweeper digit, if any
 #[derive(Component)]
 #[component(storage = "SparseSet")]

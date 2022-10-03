@@ -12,6 +12,10 @@ impl Plugin for MapGfxSpritesPlugin {
                 .run_in_state(AppGlobalState::GameLoading)
                 .run_if(is_gfx_sprites_backend_enabled)
         );
+        app.add_system(base_kind_changed
+            .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_sprites_backend_enabled)
+        );
         app.add_system(explosion_sprite_mgr
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_sprites_backend_enabled)
@@ -20,7 +24,6 @@ impl Plugin for MapGfxSpritesPlugin {
         app.add_system_set(ConditionSet::new()
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_sprites_backend_enabled)
-            .with_system(tile_decal_sprite_mgr)
             .with_system(mine_active_animation)
             .with_system(explosion_animation)
             .into()
@@ -125,56 +128,35 @@ fn setup_tiles(
     (*done).into()
 }
 
-fn tile_decal_sprite_mgr(
-    mut commands: Commands,
-    tiles: Res<TileAssets>,
-    q_tile: Query<
-        (Entity, &TilePos, &TileKind, &Transform, Option<&TileDecalSprite>),
+fn base_kind_changed(
+    zoom: Res<ZoomLevel>,
+    mut q_tile: Query<
+        (&TileKind, &mut Sprite),
         (With<BaseSprite>, Changed<TileKind>)
     >,
 ) {
-    /*
-    for (e, coord, kind, xf, spr_decal) in q_tile.iter() {
-        let mut xyz = xf.translation;
-        xyz.z += zpos::DECAL;
-
-        // remove the old decal
-        if let Some(spr_decal) = spr_decal {
-            commands.entity(spr_decal.0).despawn();
-            commands.entity(e).remove::<TileDecalSprite>();
-        }
-
+    for (kind, mut sprite) in q_tile.iter_mut() {
         let index = match kind {
-            TileKind::Water | TileKind::Regular => {
-                continue;
+            TileKind::Water => {
+                tileid::tiles::WATER
+            }
+            TileKind::Regular => {
+                tileid::tiles::LAND
             }
             TileKind::Fertile => {
-                tileid::GEO_FERTILE
+                tileid::tiles::FERTILE
             }
             TileKind::Mountain => {
-                tileid::GEO_MOUNTAIN
+                tileid::tiles::MTN
             }
             TileKind::Road => {
                 todo!()
             }
         };
 
-        let e_decal = commands.spawn_bundle(SpriteSheetBundle {
-            sprite: TextureAtlasSprite {
-                index,
-                ..Default::default()
-            },
-            texture_atlas: tiles.atlas.clone(),
-            transform: Transform::from_translation(xyz),
-            ..Default::default()
-        })
-            .insert(MapCleanup)
-            .insert(DecalSprite)
-            .insert(coord.clone())
-            .id();
-        commands.entity(e).insert(TileDecalSprite(e_decal));
+        let rect = get_rect(zoom.desc.size, index);
+        sprite.rect = Some(rect);
     }
-    */
 }
 
 fn tile_digit_sprite_mgr(
