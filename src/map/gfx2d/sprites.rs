@@ -16,18 +16,6 @@ impl Plugin for MapGfxSpritesPlugin {
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_sprites_backend_enabled)
         );
-        app.add_system(explosion_sprite_mgr
-            .run_in_state(AppGlobalState::InGame)
-            .run_if(is_gfx_sprites_backend_enabled)
-            .label(MapLabels::ApplyEvents)
-        );
-        app.add_system_set(ConditionSet::new()
-            .run_in_state(AppGlobalState::InGame)
-            .run_if(is_gfx_sprites_backend_enabled)
-            .with_system(mine_active_animation)
-            .with_system(explosion_animation)
-            .into()
-        );
         app.add_system(tile_owner_color
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_sprites_backend_enabled)
@@ -43,6 +31,23 @@ impl Plugin for MapGfxSpritesPlugin {
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_sprites_backend_enabled)
             .after(MapLabels::TileMine)
+        );
+        // explosions and active mines always rendered with sprites
+        // even if tilemap gfx backend is selected
+        app.add_system(mineactive_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .run_if_not(is_gfx_sprites_backend_enabled)
+            .after(MapLabels::TileMine)
+        );
+        app.add_system(explosion_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .label(MapLabels::ApplyEvents)
+        );
+        app.add_system_set(ConditionSet::new()
+            .run_in_state(AppGlobalState::InGame)
+            .with_system(mine_active_animation)
+            .with_system(explosion_animation)
+            .into()
         );
     }
 }
@@ -203,6 +208,7 @@ fn tile_digit_sprite_mgr(
     }
 }
 
+/// handles sprites for all mines (sprites backend)
 fn mine_sprite_mgr(
     mut commands: Commands,
     tiles: Res<TileAssets>,
@@ -269,43 +275,77 @@ fn mine_sprite_mgr(
     }
 }
 
+/// handles sprites for active mines (non-sprites backend)
+fn mineactive_sprite_mgr(
+    mut commands: Commands,
+    descriptor: Res<MapDescriptor>,
+    tiles: Res<TileAssets>,
+    zoom: Res<ZoomLevel>,
+    q_tile: Query<
+        (Entity, &TilePos, &TileMine, Option<&TileMineSprite>),
+        (With<BaseSprite>, Changed<TileMine>)
+    >,
+) {
+    for (e, coord, mine, spr_mine) in q_tile.iter() {
+        if let Some(spr_mine) = spr_mine {
+            commands.entity(spr_mine.0).despawn();
+            commands.entity(e).remove::<TileMineSprite>();
+        }
+        if let Some(MineDisplayState::Active) = mine.0 {
+            let xy = translation_pos(descriptor.topology, coord.into(), &zoom.desc);
+            let e_mine = commands.spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    rect: Some(tileid::get_rect(zoom.desc.size, tileid::gents::MINE_ACTIVE)),
+                    ..Default::default()
+                },
+                texture: tiles.gents[zoom.i].clone(),
+                transform: Transform::from_translation(xy.extend(zpos::EXPLOSION)),
+                ..Default::default()
+            })
+                .insert(MapCleanup)
+                .insert(MineSprite)
+                .insert(MineActiveAnimation {
+                    timer: Timer::new(Duration::from_millis(125), true),
+                })
+                .insert(coord.clone())
+                .id();
+            commands.entity(e).insert(TileMineSprite(e_mine));
+        }
+    }
+}
+
 fn explosion_sprite_mgr(
     mut commands: Commands,
+    descriptor: Res<MapDescriptor>,
     tiles: Res<TileAssets>,
     mut evr_map: EventReader<MapEvent>,
-    index: Res<TileEntityIndex>,
     my_plid: Res<ActivePlid>,
     zoom: Res<ZoomLevel>,
-    q_tile: Query<(&Transform, &TilePos), With<BaseSprite>>,
 ) {
     for ev in evr_map.iter() {
         if ev.plid != my_plid.0 {
             continue;
         }
         if let MapEventKind::Explosion { kind } = ev.kind {
-            let e_tile = index.0[ev.c];
-            if let Ok((xf, coord)) = q_tile.get(e_tile) {
-                let mut xyz = xf.translation;
-                xyz.z += zpos::EXPLOSION;
-                let index = match kind {
-                    MineKind::Mine => tileid::gents::EXPLODE_MINE,
-                    MineKind::Decoy => tileid::gents::EXPLODE_DECOY,
-                };
-                commands.spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        rect: Some(tileid::get_rect(zoom.desc.size, index)),
-                        ..Default::default()
-                    },
-                    texture: tiles.gents[zoom.i].clone(),
-                    transform: Transform::from_translation(xyz),
+            let xy = translation_pos(descriptor.topology, ev.c, &zoom.desc);
+            let index = match kind {
+                MineKind::Mine => tileid::gents::EXPLODE_MINE,
+                MineKind::Decoy => tileid::gents::EXPLODE_DECOY,
+            };
+            commands.spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    rect: Some(tileid::get_rect(zoom.desc.size, index)),
                     ..Default::default()
-                }).insert(ExplosionSprite {
-                    // TODO: make duration configurable via user setting?
-                    timer: Timer::new(Duration::from_millis(1250), false),
-                })
-                    .insert(MapCleanup)
-                    .insert(coord.clone());
-            }
+                },
+                texture: tiles.gents[zoom.i].clone(),
+                transform: Transform::from_translation(xy.extend(zpos::EXPLOSION)),
+                ..Default::default()
+            }).insert(ExplosionSprite {
+                // TODO: make duration configurable via user setting?
+                timer: Timer::new(Duration::from_millis(1250), false),
+            })
+                .insert(MapCleanup)
+                .insert(TilePos::from(ev.c));
         }
     }
 }
