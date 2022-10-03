@@ -27,6 +27,11 @@ impl Plugin for MapGfxTilemapPlugin {
             .run_if(is_gfx_tilemap_backend_enabled)
             .after(MapLabels::TileDigit)
         );
+        app.add_system(mine_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_tilemap_backend_enabled)
+            .after(MapLabels::TileMine)
+        );
     }
 }
 
@@ -224,7 +229,6 @@ fn tile_digit_sprite_mgr(
                     stor.set(pos, None);
                 }
             } else if digit.0 > 0 {
-                dbg!(digit.0);
                 // create a new digit entity
                 let e_digit = commands.spawn_bundle(TileBundle {
                     position: *pos,
@@ -237,6 +241,58 @@ fn tile_digit_sprite_mgr(
                     .id();
                 commands.entity(e).insert(TileDigitSprite(e_digit));
                 stor.set(pos, Some(e_digit));
+            }
+        }
+    }
+}
+
+fn mine_sprite_mgr(
+    mut commands: Commands,
+    q_tile: Query<
+        (Entity, &TilePos, &TileMine, Option<&TileMineSprite>),
+        (With<BaseSprite>, Changed<TileMine>)
+    >,
+    mut q_mine: Query<(&mut TileTexture, &mut TileColor), With<MineSprite>>,
+    mut q_tmap: Query<(Entity, &mut TileStorage), With<GentsTilemap>>,
+) {
+    if let Ok((e_tmap, mut stor)) = q_tmap.get_single_mut() {
+        for (e, pos, mine, spr_mine) in q_tile.iter() {
+            let index = match mine.0 {
+                Some(MineDisplayState::Normal(MineKind::Mine)) |
+                Some(MineDisplayState::Pending(MineKind::Mine)) => Some(tileid::gents::MINE),
+                Some(MineDisplayState::Normal(MineKind::Decoy)) |
+                Some(MineDisplayState::Pending(MineKind::Decoy)) => Some(tileid::gents::DECOY),
+                _ => None,
+            };
+            let mut color = Color::WHITE;
+            if let Some(MineDisplayState::Pending(_)) = mine.0 {
+                color.set_a(0.5);
+            }
+            if let Some(spr_mine) = spr_mine {
+                // there is an existing mine entity we can reuse (or despawn)
+                if let Some(index) = index {
+                    let (mut tiletex, mut tileclr) = q_mine.get_mut(spr_mine.0).unwrap();
+                    tiletex.0 = index;
+                    tileclr.0 = color;
+                } else {
+                    commands.entity(spr_mine.0).despawn();
+                    commands.entity(e).remove::<TileMineSprite>();
+                    stor.set(pos, None);
+                }
+            } else if let Some(index) = index {
+                // create a new mine entity
+                let e_mine = commands.spawn_bundle(TileBundle {
+                    position: *pos,
+                    tilemap_id: TilemapId(e_tmap),
+                    texture: TileTexture(index),
+                    color: TileColor(color),
+                    ..Default::default()
+                })
+                    .insert(MapCleanup)
+                    .insert(MineSprite)
+                    .id();
+                commands.entity(e).insert(TileMineSprite(e_mine));
+                stor.set(pos, Some(e_mine));
             }
         }
     }

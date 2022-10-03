@@ -287,9 +287,11 @@ fn mineactive_sprite_mgr(
     >,
 ) {
     for (e, coord, mine, spr_mine) in q_tile.iter() {
-        if let Some(spr_mine) = spr_mine {
-            commands.entity(spr_mine.0).despawn();
-            commands.entity(e).remove::<TileMineSprite>();
+        if mine.0.is_none() {
+            if let Some(spr_mine) = spr_mine {
+                commands.entity(spr_mine.0).despawn();
+                commands.entity(e).remove::<TileMineSprite>();
+            }
         }
         if let Some(MineDisplayState::Active) = mine.0 {
             let xy = translation_pos(descriptor.topology, coord.into(), &zoom.desc);
