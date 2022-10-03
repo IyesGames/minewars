@@ -101,8 +101,7 @@ mod zpos {
     pub const EXPLOSION: f32 = 5.0;
     pub const DIGIT: f32 = 3.0;
     pub const GENTS: f32 = 2.0;
-    pub const ROADS: f32 = 1.0;
-    pub const BASE: f32 = 0.0;
+    pub const ROAD: f32 = 1.0;
 }
 
 pub mod tileid {
