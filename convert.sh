@@ -17,7 +17,24 @@ do
     inkscape -w $s -h $s8 assets-src/gents.svg -o assets/sprites/$s/gents.png
     inkscape -w $s -h $s6 assets-src/flags.svg -o assets/sprites/$s/flags.png
     inkscape -w $s -h $s8 assets-src/tiles4.svg -o assets/sprites/$s/tiles4.png
-    inkscape -w $s -h $s8 assets-src/tiles6.svg -o assets/sprites/$s/tiles6.png
     inkscape -w $s4 -h $s4 assets-src/roads4.svg -o assets/sprites/$s/roads4.png
     inkscape -w $s8 -h $s8 assets-src/roads6.svg -o assets/sprites/$s/roads6.png
+done
+
+for s in 128 192 256
+do
+    s8=$(($s * 8))
+    inkscape -w $s -h $s8 assets-src/tiles6-big.svg -o assets/sprites/$s/tiles6.png
+done
+
+for s in 16 32 48 64 80 96
+do
+    s8=$(($s * 8))
+    inkscape -w $s -h $s8 assets-src/tiles6.svg -o assets/sprites/$s/tiles6.png
+done
+
+for s in 24 40 56 72
+do
+    s8=$(($s * 8))
+    inkscape -w $s -h $s8 assets-src/tiles6-thin.svg -o assets/sprites/$s/tiles6.png
 done

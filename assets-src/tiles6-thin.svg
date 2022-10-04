@@ -25,14 +25,14 @@
      inkscape:document-units="px"
      showgrid="false"
      inkscape:zoom="10.067433"
-     inkscape:cx="15.396179"
-     inkscape:cy="85.672288"
+     inkscape:cx="26.719821"
+     inkscape:cy="257.51351"
      inkscape:window-width="2556"
      inkscape:window-height="1390"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g2953" />
+     inkscape:current-layer="layer1" />
   <defs
      id="defs476">
     <inkscape:path-effect
@@ -135,11 +135,11 @@
          inkscape:rounded="0.125"
          inkscape:randomized="0"
          d="m 59.999508,2.4348469 c 2.195645,0 14.114047,6.8810933 15.211869,8.7825771 1.097822,1.901483 1.097822,15.663669 -10e-7,17.565153 -1.097822,1.901484 -13.016224,8.782576 -15.211869,8.782576 -2.195644,0 -14.114046,-6.881093 -15.211868,-8.782577 -1.097822,-1.901483 -1.097822,-15.663669 0,-17.565153 1.097822,-1.9014835 13.016225,-8.7825762 15.211869,-8.7825761 z"
-         transform="matrix(1.028984,0,0,1.0247562,-41.738533,79.504876)" />
+         transform="matrix(0.99780263,0,0,1.0247562,-39.867667,79.504876)" />
     </g>
     <g
        id="g2959"
-       transform="translate(0,40)">
+       transform="matrix(0.96969693,0,0,1,0.60606074,40)">
       <path
          sodipodi:type="star"
          style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.21728"
@@ -159,7 +159,7 @@
     </g>
     <g
        id="g2965"
-       transform="translate(0,80)">
+       transform="matrix(0.96969693,0,0,1,0.60606074,80)">
       <path
          sodipodi:type="star"
          style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.21728"
@@ -179,7 +179,7 @@
     </g>
     <g
        id="g2971"
-       transform="translate(0,120)">
+       transform="matrix(0.96969693,0,0,1,0.60606074,120)">
       <path
          sodipodi:type="star"
          style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.21728"
@@ -199,7 +199,7 @@
     </g>
     <g
        id="g2977"
-       transform="translate(0,160)">
+       transform="matrix(0.96969693,0,0,1,0.60606074,160)">
       <path
          sodipodi:type="star"
          style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4.21728"
