@@ -3,7 +3,7 @@ use mw_common::grid::*;
 
 use crate::prelude::*;
 
-use crate::assets::{TileAssets, ZoomLevelDescriptor};
+use crate::assets::TileAssets;
 use crate::camera::{GridCursor, translation_pos, ZoomLevel};
 use crate::settings::PlayerPaletteSettings;
 
@@ -19,9 +19,15 @@ struct BaseSprite;
 #[derive(Component)]
 struct DigitSprite;
 #[derive(Component)]
+struct GentSprite;
+#[derive(Component)]
 struct MineSprite;
 #[derive(Component)]
 struct CitSprite;
+#[derive(Component)]
+struct TowerSprite;
+#[derive(Component)]
+struct FortSprite;
 
 #[derive(Component)]
 struct MineActiveAnimation {

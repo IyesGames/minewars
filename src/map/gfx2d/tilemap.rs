@@ -16,6 +16,10 @@ impl Plugin for MapGfxTilemapPlugin {
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_tilemap_backend_enabled)
         );
+        app.add_system(gents_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_tilemap_backend_enabled)
+        );
         app.add_system(tile_owner_color
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_tilemap_backend_enabled)
@@ -57,7 +61,6 @@ fn setup_tilemaps(
     settings_colors: Res<PlayerPaletteSettings>,
     zoom: Res<ZoomLevel>,
     q_tile: Query<(Entity, &TileKind, &TilePos)>,
-    q_cit: Query<(Entity, &TilePos), With<CitEntity>>,
     mut done: Local<bool>,
 ) -> Progress {
     let descriptor = if let Some(descriptor) = descriptor {
@@ -115,7 +118,7 @@ fn setup_tilemaps(
     // TileStorages
     let mut tstor_base = TileStorage::empty(tmap_size);
     let tstor_roads = TileStorage::empty(tmap_size);
-    let mut tstor_gents = TileStorage::empty(tmap_size);
+    let tstor_gents = TileStorage::empty(tmap_size);
     let tstor_digit = TileStorage::empty(tmap_size);
 
     for (e, kind, pos) in q_tile.iter() {
@@ -207,6 +210,46 @@ fn setup_tilemaps(
     (*done).into()
 }
 
+fn gents_sprite_mgr(
+    mut commands: Commands,
+    mut q_tmap: Query<(Entity, &mut TileStorage), With<GentsTilemap>>,
+    q_cit: Query<(Entity, &TilePos), Added<CitEntity>>,
+    q_tower: Query<(Entity, &TilePos), Added<TowerEntity>>,
+    q_fort: Query<(Entity, &TilePos), Added<FortEntity>>,
+) {
+    let (e_tmap, mut tstor) = q_tmap.single_mut();
+
+    for (e, pos) in q_cit.iter() {
+        commands.entity(e).insert_bundle(TileBundle {
+            position: *pos,
+            texture: TileTexture(tileid::gents::CIT),
+            tilemap_id: TilemapId(e_tmap),
+            ..Default::default()
+        }).insert(GentSprite).insert(CitSprite);
+        tstor.set(pos, Some(e));
+    }
+
+    for (e, pos) in q_tower.iter() {
+        commands.entity(e).insert_bundle(TileBundle {
+            position: *pos,
+            texture: TileTexture(tileid::gents::TOWER),
+            tilemap_id: TilemapId(e_tmap),
+            ..Default::default()
+        }).insert(GentSprite).insert(TowerSprite);
+        tstor.set(pos, Some(e));
+    }
+
+    for (e, pos) in q_fort.iter() {
+        commands.entity(e).insert_bundle(TileBundle {
+            position: *pos,
+            texture: TileTexture(tileid::gents::FORT),
+            tilemap_id: TilemapId(e_tmap),
+            ..Default::default()
+        }).insert(GentSprite).insert(FortSprite);
+        tstor.set(pos, Some(e));
+    }
+}
+
 fn tile_digit_sprite_mgr(
     mut commands: Commands,
     q_tile: Query<
@@ -257,6 +300,12 @@ fn mine_sprite_mgr(
 ) {
     if let Ok((e_tmap, mut stor)) = q_tmap.get_single_mut() {
         for (e, pos, mine, spr_mine) in q_tile.iter() {
+            // UGLY: if there is another gent there; DO NOT TOUCH!
+            // (we reuse one tilemap for all gents: mines and other things)
+            if spr_mine.is_none() && stor.get(pos).is_some() {
+                continue;
+            }
+
             let index = match mine.0 {
                 Some(MineDisplayState::Normal(MineKind::Mine)) |
                 Some(MineDisplayState::Pending(MineKind::Mine)) => Some(tileid::gents::MINE),

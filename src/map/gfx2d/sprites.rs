@@ -16,6 +16,10 @@ impl Plugin for MapGfxSpritesPlugin {
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_sprites_backend_enabled)
         );
+        app.add_system(gents_sprite_mgr
+            .run_in_state(AppGlobalState::InGame)
+            .run_if(is_gfx_sprites_backend_enabled)
+        );
         app.add_system(tile_owner_color
             .run_in_state(AppGlobalState::InGame)
             .run_if(is_gfx_sprites_backend_enabled)
@@ -65,7 +69,6 @@ fn setup_tiles(
     settings_colors: Res<PlayerPaletteSettings>,
     zoom: Res<ZoomLevel>,
     q_tile: Query<(Entity, &TileKind, &TilePos)>,
-    q_cit: Query<(Entity, &TilePos), With<CitEntity>>,
     mut done: Local<bool>,
 ) -> Progress {
     let descriptor = if let Some(descriptor) = descriptor {
@@ -112,7 +115,22 @@ fn setup_tiles(
         done_now = true;
     }
 
-    // ASSUMES if tiles are ready cits are also ready (setup at the same time)
+    if done_now {
+        debug!("Setup grid tiles rendering using Bevy Sprites!");
+    }
+
+    (*done).into()
+}
+
+fn gents_sprite_mgr(
+    mut commands: Commands,
+    descriptor: Res<MapDescriptor>,
+    tiles: Res<TileAssets>,
+    zoom: Res<ZoomLevel>,
+    q_cit: Query<(Entity, &TilePos), Added<CitEntity>>,
+    q_tower: Query<(Entity, &TilePos), Added<TowerEntity>>,
+    q_fort: Query<(Entity, &TilePos), Added<FortEntity>>,
+) {
     for (e, pos) in q_cit.iter() {
         let xy = translation_pos(descriptor.topology, pos.into(), &zoom.desc);
         commands.entity(e).insert_bundle(SpriteBundle {
@@ -121,16 +139,36 @@ fn setup_tiles(
                 ..Default::default()
             },
             texture: tiles.gents[zoom.i].clone(),
-            transform: Transform::from_translation(xy.extend(map_z + zpos::GENTS)),
+            transform: Transform::from_translation(xy.extend(zpos::GENTS)),
             ..Default::default()
-        }).insert(CitSprite);
+        }).insert(GentSprite).insert(CitSprite);
     }
 
-    if done_now {
-        debug!("Setup grid tiles rendering using Bevy Sprites!");
+    for (e, pos) in q_tower.iter() {
+        let xy = translation_pos(descriptor.topology, pos.into(), &zoom.desc);
+        commands.entity(e).insert_bundle(SpriteBundle {
+            sprite: Sprite {
+                rect: Some(tileid::get_rect(zoom.desc.size, tileid::gents::TOWER)),
+                ..Default::default()
+            },
+            texture: tiles.gents[zoom.i].clone(),
+            transform: Transform::from_translation(xy.extend(zpos::GENTS)),
+            ..Default::default()
+        }).insert(GentSprite).insert(TowerSprite);
     }
 
-    (*done).into()
+    for (e, pos) in q_fort.iter() {
+        let xy = translation_pos(descriptor.topology, pos.into(), &zoom.desc);
+        commands.entity(e).insert_bundle(SpriteBundle {
+            sprite: Sprite {
+                rect: Some(tileid::get_rect(zoom.desc.size, tileid::gents::FORT)),
+                ..Default::default()
+            },
+            texture: tiles.gents[zoom.i].clone(),
+            transform: Transform::from_translation(xy.extend(zpos::GENTS)),
+            ..Default::default()
+        }).insert(GentSprite).insert(FortSprite);
+    }
 }
 
 fn base_kind_changed(

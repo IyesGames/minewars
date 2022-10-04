@@ -113,6 +113,12 @@ pub enum MapEventKind {
     Road {
         state: Option<ProdState>,
     },
+    Tower {
+        state: Option<ProdState>,
+    },
+    Fort {
+        state: Option<ProdState>,
+    },
     Explosion {
         kind: MineKind,
     },
@@ -202,6 +208,12 @@ struct PlayableTileEntity;
 /// Marker for Cits
 #[derive(Debug, Clone, Copy, Component)]
 struct CitEntity(CitId);
+/// Marker for Towers
+#[derive(Debug, Clone, Copy, Component)]
+struct TowerEntity;
+/// Marker for Forts
+#[derive(Debug, Clone, Copy, Component)]
+struct FortEntity;
 
 /// How to render a mine?
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
