@@ -129,7 +129,7 @@ fn setup_tiles(
             texture: tmap_texture.clone(),
             transform: Transform::from_translation(xy.extend(map_z)),
             ..Default::default()
-        }).insert(BaseSprite);
+        }).insert(MapCleanup).insert(BaseSprite);
         *done = true;
         done_now = true;
     }
@@ -160,7 +160,7 @@ fn gents_sprite_mgr(
             texture: tiles.gents[zoom.i].clone(),
             transform: Transform::from_translation(xy.extend(zpos::GENTS)),
             ..Default::default()
-        }).insert(GentSprite).insert(CitSprite);
+        }).insert(MapCleanup).insert(GentSprite).insert(CitSprite);
     }
 
     for (e, pos) in q_tower.iter() {
@@ -173,7 +173,7 @@ fn gents_sprite_mgr(
             texture: tiles.gents[zoom.i].clone(),
             transform: Transform::from_translation(xy.extend(zpos::GENTS)),
             ..Default::default()
-        }).insert(GentSprite).insert(TowerSprite);
+        }).insert(MapCleanup).insert(GentSprite).insert(TowerSprite);
     }
 
     for (e, pos) in q_fort.iter() {
@@ -186,7 +186,7 @@ fn gents_sprite_mgr(
             texture: tiles.gents[zoom.i].clone(),
             transform: Transform::from_translation(xy.extend(zpos::GENTS)),
             ..Default::default()
-        }).insert(GentSprite).insert(FortSprite);
+        }).insert(MapCleanup).insert(GentSprite).insert(FortSprite);
     }
 }
 
@@ -312,6 +312,7 @@ fn mine_sprite_mgr(
                     ..Default::default()
                 })
                     .insert(MapCleanup)
+                    .insert(GentSprite)
                     .insert(MineSprite)
                     .insert(coord.clone())
                     .id();
@@ -362,6 +363,7 @@ fn mineactive_sprite_mgr(
                 ..Default::default()
             })
                 .insert(MapCleanup)
+                .insert(GentSprite)
                 .insert(MineSprite)
                 .insert(MineActiveAnimation {
                     timer: Timer::new(Duration::from_millis(125), true),

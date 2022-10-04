@@ -63,23 +63,34 @@ impl Plugin for MapGfx2dPlugin {
     }
 }
 
+#[derive(Bundle)]
+struct CursorSpriteBundle {
+    #[bundle]
+    sprite: SpriteBundle,
+    pos: TilePos,
+    marker: CursorSprite,
+    cleanup: MapCleanup,
+}
+
 fn setup_cursor(
     mut commands: Commands,
     tiles: Res<TileAssets>,
     zoom: Res<ZoomLevel>,
 ) {
-    commands.spawn_bundle(SpriteBundle {
-        sprite: Sprite {
-            rect: Some(tileid::get_rect(zoom.desc.size, tileid::tiles::CURSOR)),
+    commands.spawn_bundle(CursorSpriteBundle {
+        sprite: SpriteBundle {
+            sprite: Sprite {
+                rect: Some(tileid::get_rect(zoom.desc.size, tileid::tiles::CURSOR)),
+                ..Default::default()
+            },
+            texture: tiles.tiles6[0].clone(),
+            transform: Transform::from_xyz(0.0, 0.0, zpos::CURSOR),
             ..Default::default()
         },
-        texture: tiles.tiles6[0].clone(),
-        transform: Transform::from_xyz(0.0, 0.0, zpos::CURSOR),
-        ..Default::default()
-    })
-        .insert(TilePos::from(Pos::origin()))
-        .insert(CursorSprite)
-        .insert(MapCleanup);
+        pos: Pos::origin().into(),
+        marker: CursorSprite,
+        cleanup: MapCleanup,
+    });
 }
 
 fn cursor_sprite(

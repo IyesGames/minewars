@@ -111,10 +111,10 @@ fn setup_tilemaps(
     };
 
     // the tilemaps:
-    let e_tmap_base = commands.spawn().insert(BaseTilemap).id();
-    let e_tmap_roads = commands.spawn().insert(RoadsTilemap).id();
-    let e_tmap_gents = commands.spawn().insert(GentsTilemap).id();
-    let e_tmap_digit = commands.spawn().insert(DigitTilemap).id();
+    let e_tmap_base = commands.spawn().insert(BaseTilemap).insert(MapCleanup).id();
+    let e_tmap_roads = commands.spawn().insert(RoadsTilemap).insert(MapCleanup).id();
+    let e_tmap_gents = commands.spawn().insert(GentsTilemap).insert(MapCleanup).id();
+    let e_tmap_digit = commands.spawn().insert(DigitTilemap).insert(MapCleanup).id();
 
     // TileStorages
     let mut tstor_base = TileStorage::empty(tmap_size);
@@ -154,7 +154,7 @@ fn setup_tilemaps(
             tilemap_id: TilemapId(e_tmap_base),
             color: TileColor(color),
             ..Default::default()
-        }).insert(BaseSprite);
+        }).insert(BaseSprite).insert(MapCleanup);
         tstor_base.set(pos, Some(e));
     }
 
@@ -238,7 +238,7 @@ fn gents_sprite_mgr(
             texture: TileTexture(tileid::gents::CIT),
             tilemap_id: TilemapId(e_tmap),
             ..Default::default()
-        }).insert(GentSprite).insert(CitSprite);
+        }).insert(MapCleanup).insert(GentSprite).insert(CitSprite);
         tstor.set(pos, Some(e));
     }
 
@@ -248,7 +248,7 @@ fn gents_sprite_mgr(
             texture: TileTexture(tileid::gents::TOWER),
             tilemap_id: TilemapId(e_tmap),
             ..Default::default()
-        }).insert(GentSprite).insert(TowerSprite);
+        }).insert(MapCleanup).insert(GentSprite).insert(TowerSprite);
         tstor.set(pos, Some(e));
     }
 
@@ -258,7 +258,7 @@ fn gents_sprite_mgr(
             texture: TileTexture(tileid::gents::FORT),
             tilemap_id: TilemapId(e_tmap),
             ..Default::default()
-        }).insert(GentSprite).insert(FortSprite);
+        }).insert(MapCleanup).insert(GentSprite).insert(FortSprite);
         tstor.set(pos, Some(e));
     }
 }
@@ -351,6 +351,7 @@ fn mine_sprite_mgr(
                     ..Default::default()
                 })
                     .insert(MapCleanup)
+                    .insert(GentSprite)
                     .insert(MineSprite)
                     .id();
                 commands.entity(e).insert(TileMineSprite(e_mine));
