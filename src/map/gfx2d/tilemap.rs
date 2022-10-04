@@ -60,6 +60,7 @@ fn setup_tilemaps(
     descriptor: Option<Res<MapDescriptor>>,
     settings_colors: Res<PlayerPaletteSettings>,
     zoom: Res<ZoomLevel>,
+    index: Option<Res<TileEntityIndex>>,
     q_tile: Query<(Entity, &TileKind, &TilePos)>,
     mut done: Local<bool>,
 ) -> Progress {
@@ -121,6 +122,13 @@ fn setup_tilemaps(
     let tstor_gents = TileStorage::empty(tmap_size);
     let tstor_digit = TileStorage::empty(tmap_size);
 
+    let index = index.expect("index should have been ready");
+    let f_kind = |c| {
+        let e = index.0[c];
+        let (_, kind, _) = q_tile.get(e).unwrap();
+        *kind
+    };
+
     for (e, kind, pos) in q_tile.iter() {
         let i_base = match kind {
             TileKind::Water => tileid::tiles::WATER,
@@ -128,22 +136,27 @@ fn setup_tilemaps(
             TileKind::Mountain => tileid::tiles::MTN,
             TileKind::Fertile => tileid::tiles::FERTILE,
         };
+        let color = if let TileKind::Water = *kind {
+            let fade_a = match descriptor.topology {
+                Topology::Hex => fancytint(descriptor.size, Hex::from(Pos::from(pos)), f_kind),
+                Topology::Sq => fancytint(descriptor.size, Sq::from(Pos::from(pos)), f_kind),
+                Topology::Sqr => fancytint(descriptor.size, Sqr::from(Pos::from(pos)), f_kind),
+            };
+            let mut color = Color::WHITE;
+            color.set_a(fade_a);
+            color
+        } else {
+            settings_colors.visible[0]
+        };
         commands.entity(e).insert_bundle(TileBundle {
             position: *pos,
             texture: TileTexture(i_base as u32),
             tilemap_id: TilemapId(e_tmap_base),
-            visible: TileVisible(true),
-            color: TileColor(if *kind == TileKind::Water {
-                Color::WHITE
-            } else {
-                settings_colors.visible[0]
-            }),
+            color: TileColor(color),
             ..Default::default()
         }).insert(BaseSprite);
         tstor_base.set(pos, Some(e));
     }
-
-    // TODO generate water fade-out effect
 
     let trans = translation_tmap(descriptor.topology, &zoom.desc);
 

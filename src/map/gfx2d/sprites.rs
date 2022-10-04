@@ -68,6 +68,7 @@ fn setup_tiles(
     descriptor: Option<Res<MapDescriptor>>,
     settings_colors: Res<PlayerPaletteSettings>,
     zoom: Res<ZoomLevel>,
+    index: Option<Res<TileEntityIndex>>,
     q_tile: Query<(Entity, &TileKind, &TilePos)>,
     mut done: Local<bool>,
 ) -> Progress {
@@ -93,6 +94,12 @@ fn setup_tiles(
         Topology::Hex => tiles.tiles6[zoom.i].clone(),
         Topology::Sq | Topology::Sqr => tiles.tiles4[zoom.i].clone(),
     };
+    let index = index.expect("index should have been ready");
+    let f_kind = |c| {
+        let e = index.0[c];
+        let (_, kind, _) = q_tile.get(e).unwrap();
+        *kind
+    };
     for (e, kind, pos) in q_tile.iter() {
         let i_base = match kind {
             TileKind::Water => tileid::tiles::WATER,
@@ -100,11 +107,23 @@ fn setup_tiles(
             TileKind::Mountain => tileid::tiles::MTN,
             TileKind::Fertile => tileid::tiles::FERTILE,
         };
+        let color = if let TileKind::Water = *kind {
+            let fade_a = match descriptor.topology {
+                Topology::Hex => fancytint(descriptor.size, Hex::from(Pos::from(pos)), f_kind),
+                Topology::Sq => fancytint(descriptor.size, Sq::from(Pos::from(pos)), f_kind),
+                Topology::Sqr => fancytint(descriptor.size, Sqr::from(Pos::from(pos)), f_kind),
+            };
+            let mut color = Color::WHITE;
+            color.set_a(fade_a);
+            color
+        } else {
+            settings_colors.visible[0]
+        };
         let xy = translation_pos(descriptor.topology, pos.into(), &zoom.desc);
         commands.entity(e).insert_bundle(SpriteBundle {
             sprite: Sprite {
                 rect: Some(get_rect(zoom.desc.size, i_base)),
-                color: settings_colors.visible[0],
+                color,
                 ..Default::default()
             },
             texture: tmap_texture.clone(),

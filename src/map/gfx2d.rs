@@ -96,6 +96,39 @@ fn cursor_sprite(
     xf.translation = translation_pos(descriptor.topology, crs.0, &zoom.desc).extend(zpos::CURSOR);
 }
 
+/// Generate fancy alpha values for water
+fn fancytint<C: CompactMapCoordExt>(map_size: u8, c: C, f_kind: impl Fn(Pos) -> TileKind) -> f32 {
+    let mut d_edge = 0;
+    let mut d_land = 0;
+
+    'outer: for r in 1..=map_size {
+        for c2 in c.iter_ring(r) {
+            if c2.ring() > map_size {
+                if d_edge == 0 {
+                    d_edge = r;
+                }
+                if d_land != 0 {
+                    break 'outer;
+                }
+            } else if f_kind(c2.into()) != TileKind::Water {
+                if d_land == 0 {
+                    d_land = r;
+                }
+                if d_edge != 0 {
+                    break 'outer;
+                }
+            }
+        }
+    }
+
+    if d_land >= d_edge {
+        0.0
+    } else {
+        let x = (d_edge - d_land) as f32 / d_edge as f32;
+        x * x
+    }
+}
+
 mod zpos {
     pub const CURSOR: f32 = 10.0;
     pub const EXPLOSION: f32 = 5.0;
