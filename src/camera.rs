@@ -89,22 +89,43 @@ fn camera_control_zoom_mousewheel(
     mut wheel: EventReader<MouseWheel>,
     tiles: Res<TileAssets>,
     mut q: Query<&mut CameraZoomLevel, With<GameCamera>>,
+    mut pixels: Local<f32>,
+    mut oldpixels: Local<f32>,
 ) {
-    let mut change = 0.0;
+    if wheel.is_empty() && *oldpixels == *pixels {
+        *pixels = 0.0;
+        return;
+    }
+
+    *oldpixels = *pixels;
+
+    let mut lines = 0.0;
 
     // accumulate all events into one variable
     for ev in wheel.iter() {
-        let delta = match ev.unit {
-            MouseScrollUnit::Line => -ev.y,
-            MouseScrollUnit::Pixel => unimplemented!(),
-        };
-        change += delta;
+        match ev.unit {
+            MouseScrollUnit::Line => {
+                lines -= ev.y;
+            },
+            MouseScrollUnit::Pixel => {
+                *pixels += ev.y;
+            },
+        }
     }
 
-    if change != 0.0 {
+    if *pixels > 32.0 {
+        lines += 1.0;
+        *pixels = 0.0;
+    }
+    if *pixels < -32.0 {
+        lines -= 1.0;
+        *pixels = 0.0;
+    }
+
+    if lines != 0.0 {
         let mut level = q.single_mut();
 
-        let change = change as isize;
+        let change = lines as isize;
         let mut l = level.next as isize;
         l += change;
         l = l.clamp(0, tiles.zoomlevels.zoom.len() as isize - 1);
