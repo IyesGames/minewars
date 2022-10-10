@@ -138,6 +138,7 @@ fn apply_next_zoomlevel(
     tiles: Res<TileAssets>,
     wcrs: Res<WorldCursor>,
     descriptor: Res<MapDescriptor>,
+    wnds: Res<Windows>,
     mut res_zoom: ResMut<ZoomLevel>,
     mut q_cam: Query<(Entity, &mut Transform, &mut CameraZoomLevel), (With<GameCamera>, Changed<CameraZoomLevel>)>,
     mut q_spr: Query<(&mut Sprite, &mut Transform, &mut Handle<Image>, &TilePos), (Without<GameCamera>, Without<TilemapTexture>)>,
@@ -222,11 +223,14 @@ fn apply_next_zoomlevel(
     xf_cam.scale.y = xf_cam.scale.y / zoom_old.size as f32 * zoom_new.size as f32;
     // xf_cam.scale = Vec3::new(scale, scale, xf_cam.scale.z);
 
+    let wnd_scale = wnds.primary().scale_factor() as f32;
+
     // different offsets at each zoom level mean that locations on the map might not correspond
     // we need to jump to the "current camera location" but in the new zoom level
     // and then animate to the "current cursor location" in the new zoom level
     let cam_xy = xf_cam.translation.truncate();
-    let fix_xy = (cam_xy / offset_old * offset_new).round();
+    let fix_xy = cam_xy / offset_old * offset_new;
+    let fix_xy = (fix_xy / wnd_scale).round() * wnd_scale;
     xf_cam.translation = fix_xy.extend(xf_cam.translation.z);
     // let tgt_xy = wcrs.0 / offset_old * offset_new;
 
@@ -238,7 +242,7 @@ fn apply_next_zoomlevel(
             pos_start: xf_cam.translation,
             pos_end: fix_xy.extend(xf_cam.translation.z),
             scale_start: xf_cam.scale,
-            scale_end: Vec3::new(1.0, 1.0, xf_cam.scale.z),
+            scale_end: Vec3::new(wnd_scale, wnd_scale, xf_cam.scale.z),
         }
     ));
     commands.entity(e_cam).insert(anim);

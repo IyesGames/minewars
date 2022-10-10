@@ -53,7 +53,7 @@ fn main() {
             max_width: f32::INFINITY,
             max_height: f32::INFINITY,
         },
-        scale_factor_override: Some(1.0),
+        // scale_factor_override: Some(1.0),
         ..Default::default()
     });
     app.insert_resource(ClearColor(Color::BLACK));
