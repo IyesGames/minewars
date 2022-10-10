@@ -30,7 +30,7 @@ opt-level = 3
 # dev: no LTO, lots of codegen units for parallelism during compilation
 [profile.dev]
 lto = false
-codegen-units = 16
+codegen-units = 8
 # release: Enable LTO and limit codegen units for better codegen
 [profile.release]
 lto = "thin"
