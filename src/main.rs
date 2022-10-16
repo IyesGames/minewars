@@ -60,7 +60,7 @@ fn main() {
     app.add_plugin(IyesEverything);
     // FIXME: these should be handled as settings
     app.insert_resource(mw_common::game::MapDescriptor {
-        size: 48,
+        size: 32,
         topology: mw_common::grid::Topology::Hex,
     });
     app.insert_resource(crate::map::MwMapGfxBackend::Tilemap);

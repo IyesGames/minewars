@@ -216,13 +216,13 @@ struct TowerEntity;
 struct FortEntity;
 
 /// How to render a mine?
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MineDisplayState {
-    // Known to be sitting on its given tile
+    /// Known to be sitting on its given tile
     Normal(MineKind),
-    // Supposed to be placed at its given tile, but unconfirmed by host
+    /// Supposed to be placed at its given tile, but unconfirmed by host
     Pending(MineKind),
-    // Known to be activated mine
+    /// Known to be activated mine
     Active,
 }
 

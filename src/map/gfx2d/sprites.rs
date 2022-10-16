@@ -87,6 +87,10 @@ fn setup_tiles(
         return true.into();
     }
 
+    if q_tile.is_empty() {
+        return false.into();
+    }
+
     let map_z = 0.0;
 
     let mut done_now = false;
