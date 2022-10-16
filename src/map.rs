@@ -198,6 +198,9 @@ struct TileFoW(bool);
 /// Per-tile component: mine state
 #[derive(Debug, Clone, Copy, Component)]
 struct TileMine(Option<MineDisplayState>);
+/// Per-tile component: mine state
+#[derive(Debug, Clone, Copy, Component)]
+struct TileRoad(Option<RoadDisplayState>);
 /// Per-tile component: is there a cit here?
 #[derive(Debug, Clone, Copy, Component)]
 struct TileCit(Entity);
@@ -226,6 +229,21 @@ pub enum MineDisplayState {
     Active,
 }
 
+/// How to render a road?
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoadDisplayState {
+    /// Show that a road cannot be built on that tile
+    Invalid,
+    /// The player is planning a road, but has not started production
+    Mock,
+    /// The road is in progress of being produced
+    Pending,
+    /// Completed, functional road
+    Normal,
+    /// Existing built road that is not operational
+    Broken,
+}
+
 #[derive(Bundle)]
 struct NonPlayableTileBundle {
     kind: TileKind,
@@ -245,6 +263,7 @@ struct PlayableTileBundle {
 struct LandTileExtrasBundle {
     digit: TileDigit,
     mine: TileMine,
+    road: TileRoad,
 }
 
 #[derive(Bundle)]
@@ -291,6 +310,7 @@ fn setup_map_topology<C: CompactMapCoordExt>(
                 builder.insert_bundle(LandTileExtrasBundle {
                     digit: TileDigit(0),
                     mine: TileMine(None),
+                    road: TileRoad(None),
                 });
             }
             if init.cit {
