@@ -7,19 +7,20 @@ edition = "2021"
 
 [dependencies]
 derive_more = "0.99.17"
-enum-map = "2.2.0"
-glam = "0.21.3"
-hashbrown = "0.12.1"
+enum-map = "2.5.0"
+glam = "0.23.0"
+hashbrown = "0.13.2"
 
-[dependencies.iyesengine]
+[dependencies.bevy]
+version = "0.10.1"
+default-features = false
 optional = true
-git = "https://github.com/IyesGames/iyesengine"
 features = [
-    "2d",
-    "bevy-ui",
-    "audio",
-    "tilemap",
+	"bevy_asset",
+	"bevy_core_pipeline",
+	"bevy_render",
+	"bevy_scene",
+	"bevy_sprite",
+	"bevy_text",
+	"bevy_ui",
 ]
-
-[features]
-bevy = ["iyesengine"]

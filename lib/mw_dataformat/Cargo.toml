@@ -9,6 +9,6 @@ edition = "2021"
 mw_common = { path = "../mw_common" }
 
 [dependencies.lz4_flex]
-version = "0.9.2"
+version = "0.10.0"
 default-features = false
 features = ["std", "safe-encode", "safe-decode"]

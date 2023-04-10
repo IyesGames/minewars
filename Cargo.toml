@@ -18,10 +18,9 @@ proprietary = [
     "mw_proprietary",
 ]
 dev = [
-    "iyesengine/dev",
+    "bevy/filesystem_watcher",
 ]
 release = [
-    "iyesengine/release",
 ]
 
 # dev: Enable max optimizations for dependencies, but not for our code
@@ -37,40 +36,6 @@ lto = "thin"
 codegen-units = 1
 strip = true
 
-[dependencies.iyesengine]
-git = "https://github.com/IyesGames/iyesengine"
-features = [
-    "2d",
-    "bevy-ui",
-    "audio",
-    "tilemap",
-]
-
-[dependencies.tokio]
-version = "1.17.0"
-features = [
-    "sync",
-]
-
-[dependencies]
-mw_common = { path = "lib/mw_common", features = ["bevy"] }
-mw_dataformat = { path = "lib/mw_dataformat" }
-mw_game_classic = { path = "lib/mw_game_classic" }
-anyhow = "1.0.57"
-rand = "0.8.5"
-serde = { version = "1.0.144", features = ["derive", "serde_derive"] }
-# temporary workaround
-[dependencies.bevy]
-version = "0.8"
-default-features = false
-[dependencies.bevy_asset_loader]
-git = "https://github.com/IyesGames/bevy_asset_loader"
-features = [ "dynamic_assets", "stageless", "progress_tracking", "progress_tracking_stageless", "2d" ]
-
-[dependencies.mw_proprietary]
-path = "./proprietary/client"
-optional = true
-
 [package.metadata.android]
 apk_label = "MineWars"
 assets = "assets"
@@ -84,83 +49,89 @@ build_targets = [
 min_sdk_version = 16
 target_sdk_version = 29
 
-[patch.crates-io]
-bevy = { path = "./deps/bevy" }
-# list of all bevy sub-crates, just to be safe
-bevy_animation = { path = "./deps/bevy/crates/bevy_animation" }
-bevy_app = { path = "./deps/bevy/crates/bevy_app" }
-bevy_asset = { path = "./deps/bevy/crates/bevy_asset" }
-bevy_audio = { path = "./deps/bevy/crates/bevy_audio" }
-bevy_core = { path = "./deps/bevy/crates/bevy_core" }
-bevy_core_pipeline = { path = "./deps/bevy/crates/bevy_core_pipeline" }
-bevy_derive = { path = "./deps/bevy/crates/bevy_derive" }
-bevy_diagnostic = { path = "./deps/bevy/crates/bevy_diagnostic" }
-bevy_dylib = { path = "./deps/bevy/crates/bevy_dylib" }
-bevy_dynamic_plugin = { path = "./deps/bevy/crates/bevy_dynamic_plugin" }
-bevy_ecs = { path = "./deps/bevy/crates/bevy_ecs" }
-bevy_encase_derive = { path = "./deps/bevy/crates/bevy_encase_derive" }
-bevy_gilrs = { path = "./deps/bevy/crates/bevy_gilrs" }
-bevy_gltf = { path = "./deps/bevy/crates/bevy_gltf" }
-bevy_hierarchy = { path = "./deps/bevy/crates/bevy_hierarchy" }
-bevy_input = { path = "./deps/bevy/crates/bevy_input" }
-bevy_internal = { path = "./deps/bevy/crates/bevy_internal" }
-bevy_log = { path = "./deps/bevy/crates/bevy_log" }
-bevy_macro_utils = { path = "./deps/bevy/crates/bevy_macro_utils" }
-bevy_math = { path = "./deps/bevy/crates/bevy_math" }
-bevy_mikktspace = { path = "./deps/bevy/crates/bevy_mikktspace" }
-bevy_ptr = { path = "./deps/bevy/crates/bevy_ptr" }
-bevy_reflect = { path = "./deps/bevy/crates/bevy_reflect" }
-bevy_render = { path = "./deps/bevy/crates/bevy_render" }
-bevy_scene = { path = "./deps/bevy/crates/bevy_scene" }
-bevy_sprite = { path = "./deps/bevy/crates/bevy_sprite" }
-bevy_tasks = { path = "./deps/bevy/crates/bevy_tasks" }
-bevy_text = { path = "./deps/bevy/crates/bevy_text" }
-bevy_time = { path = "./deps/bevy/crates/bevy_time" }
-bevy_transform = { path = "./deps/bevy/crates/bevy_transform" }
-bevy_ui = { path = "./deps/bevy/crates/bevy_ui" }
-bevy_utils = { path = "./deps/bevy/crates/bevy_utils" }
-bevy_window = { path = "./deps/bevy/crates/bevy_window" }
-bevy_winit = { path = "./deps/bevy/crates/bevy_winit" }
+[dependencies]
+mw_common = { path = "lib/mw_common", features = ["bevy"] }
+mw_dataformat = { path = "lib/mw_dataformat" }
+mw_game_classic = { path = "lib/mw_game_classic" }
+anyhow = "1.0.70"
+rand = "0.8.5"
+serde = { version = "1.0.159", features = ["derive", "serde_derive"] }
 
-iyes_loopless = { path = "./deps/iyes_loopless" }
-iyes_progress = { path = "./deps/iyes_progress" }
+[dependencies.mw_proprietary]
+path = "./proprietary/client"
+optional = true
 
-benimator = { path = "./deps/benimator" }
-bevy_asset_loader = { path = "./deps/bevy_asset_loader/bevy_asset_loader" }
-bevy_common_assets = { path = "./deps/bevy_common_assets" }
-bevy_prototype_debug_lines = { path = "./deps/bevy_debug_lines" }
-bevy_kira_audio = { path = "./deps/bevy_kira_audio" }
-bevy_tweening = { path = "./deps/bevy_tweening" }
+[dependencies.bevy]
+version = "0.10.1"
+default-features = false
+features = [
+	"android_shared_stdcxx",
+	"tonemapping_luts",
+	"bevy_asset",
+	"bevy_core_pipeline",
+	# "bevy_gilrs",
+	"bevy_render",
+	"bevy_scene",
+	"bevy_sprite",
+	"bevy_text",
+	"bevy_ui",
+	"bevy_winit",
+	"ktx2",
+	"png",
+	"zstd",
+	"x11",
+	"wayland",
+	"accesskit_unix",
+	# TODO: let's give bevy audio a try, switch to kira if not good enough
+	"bevy_audio",
+	"flac",
+]
 
-[patch."https://github.com/IyesGames/iyesengine"]
-iyesengine = { path = "./deps/iyesengine" }
+[dependencies.tokio]
+version = "1.27.0"
+features = [
+    "sync",
+]
 
-[patch."https://github.com/IyesGames/iyes_bevy_util"]
-iyes_bevy_util = { path = "./deps/iyes_bevy_util" }
+[dependencies.bevy_asset_loader]
+version = "0.16.0"
+features = [
+    "2d",
+    "progress_tracking",
+    "standard_dynamic_assets",
+]
 
-[patch."https://github.com/IyesGames/iyes_loopless"]
-iyes_loopless = { path = "./deps/iyes_loopless" }
+[dependencies.bevy_common_assets]
+version = "0.6.0"
+features = [
+    "ron",
+    "toml",
+]
 
-[patch."https://github.com/IyesGames/iyes_progress"]
-iyes_progress = { path = "./deps/iyes_progress" }
+[dependencies.bevy_fluent]
+version = "0.6.0"
+features = []
 
-[patch."https://github.com/IyesGames/bevy_asset_loader"]
-bevy_asset_loader = { path = "./deps/bevy_asset_loader/bevy_asset_loader" }
+[dependencies.bevy_mod_ui_texture_atlas_image]
+version = "0.4.1"
+features = []
 
-[patch."https://github.com/IyesGames/benimator"]
-benimator = { path = "./deps/benimator" }
+[dependencies.bevy_tweening]
+version = "0.7.0"
+features = []
 
-[patch."https://github.com/IyesGames/bevy_common_assets"]
-bevy_common_assets = { path = "./deps/bevy_common_assets" }
+[dependencies.bevy_ecs_tilemap]
+version = "0.10.0"
+features = []
 
-[patch."https://github.com/IyesGames/bevy_debug_lines"]
-bevy_prototype_debug_lines = { path = "./deps/bevy_debug_lines" }
+[dependencies.iyes_progress]
+version = "0.8.0"
+features = []
 
-[patch."https://github.com/IyesGames/bevy_kira_audio"]
-bevy_kira_audio = { path = "./deps/bevy_kira_audio" }
+[dependencies.iyes_bevy_extras]
+git = "https://github.com/IyesGames/iyes_bevy_extras"
 
-[patch."https://github.com/IyesGames/bevy_tweening"]
-bevy_tweening = { path = "./deps/bevy_tweening" }
+[dependencies.leafwing-input-manager]
+version = "0.9.1"
+features = []
 
-[patch."https://github.com/IyesGames/bevy_ecs_tilemap"]
-bevy_ecs_tilemap = { path = "./deps/bevy_ecs_tilemap" }
