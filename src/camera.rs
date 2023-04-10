@@ -122,6 +122,15 @@ fn camera_control_zoom_mousewheel(
         *pixels = 0.0;
     }
 
+    // round fractional values
+    // (can happen on platforms like macOS that try too hard to be fancy)
+    // away from zero
+    if lines > 0.0 {
+        lines = lines.ceil();
+    } else if lines < 0.0 {
+        lines = lines.floor();
+    }
+
     if lines != 0.0 {
         let mut level = q.single_mut();
 
