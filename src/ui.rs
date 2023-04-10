@@ -4,13 +4,14 @@ use iyes_bevy_util::ui::{butt_handler, UiInactive};
 use crate::assets::UiAssets;
 
 pub mod mainmenu;
+pub mod error;
 
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugin(error::ErrorPlugin);
         app.add_system(butt_interact_visual);
-        // app.add_system(butts::exitapp.run_if(on_butt_interact::<butts::ExitApp>));
         app.add_system(butt_handler(butts::exitapp));
         app.add_system(butt_handler(butts::enter_game_mode));
     }
