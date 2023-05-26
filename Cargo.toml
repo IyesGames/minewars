@@ -1,0 +1,110 @@
+[package]
+name = "minewars"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+publish = false
+
+[workspace]
+resolver = "2"
+members = ["proprietary", "lib/*"]
+
+# dev: Enable max optimizations for dependencies, but not for our code
+[profile.dev.package."*"]
+opt-level = 3
+# dev: no LTO, lots of codegen units for parallelism during compilation
+[profile.dev]
+debug = false
+lto = false
+codegen-units = 8
+# release: Enable LTO and limit codegen units for better codegen
+[profile.release]
+lto = true
+codegen-units = 1
+debug = false
+strip = true
+
+[features]
+dev = [
+    "bevy/filesystem_watcher"
+]
+release = [
+]
+
+[dependencies]
+
+[dependencies.mw_common]
+path = "lib/mw_common"
+features = [ "bevy" ]
+
+[dependencies.mw_proprietary]
+path = "proprietary"
+
+[dependencies.iyes_bevy_extras]
+git = "https://github.com/IyesGames/iyes_bevy_extras"
+
+[dependencies.tokio]
+version = "1.28.1"
+features = [
+    "parking_lot",
+    "rt",
+    "sync",
+]
+
+[dependencies.bevy]
+version = "0.10.1"
+# default-features = false
+features = [
+    "android_shared_stdcxx",
+    "bevy_asset",
+    "bevy_core_pipeline",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_winit",
+    "png",
+    "ktx2",
+    "zstd",
+    "x11",
+    "wayland",
+]
+
+[dependencies.iyes_progress]
+version = "0.8.0"
+features = []
+
+[dependencies.bevy_asset_loader]
+version = "0.16.0"
+features = [
+    "progress_tracking",
+    "standard_dynamic_assets",
+]
+
+[dependencies.bevy_common_assets]
+version = "0.6.0"
+features = [
+    "ron",
+    "toml",
+]
+
+[dependencies.bevy_fluent]
+version = "0.6.0"
+features = []
+
+[dependencies.bevy_ecs_tilemap]
+version = "0.10.0"
+features = []
+
+[dependencies.bevy_prototype_lyon]
+version = "0.8.0"
+features = []
+
+[dependencies.bevy_kira_audio]
+version = "0.15.0"
+default-features = false
+features = [ "flac" ]
+
+[dependencies.bevy_tweening]
+version = "0.7.0"

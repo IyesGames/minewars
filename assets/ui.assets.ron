@@ -1,0 +1,17 @@
+({
+    "ui.font": File (
+        path: "font/Sansation-Regular.ttf"
+    ),
+    "ui.font.bold": File (
+        path: "font/Sansation-Bold.ttf"
+    ),
+    "ui.font.light": File (
+        path: "font/Sansation-Light.ttf"
+    ),
+    "ui.font2": File (
+        path: "font/Ubuntu-R.ttf"
+    ),
+    "ui.font2.bold": File (
+        path: "font/Ubuntu-B.ttf"
+    ),
+})

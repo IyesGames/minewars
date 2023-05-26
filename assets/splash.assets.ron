@@ -1,0 +1,11 @@
+({
+    "splash.iyes.logo": File (
+        path: "splash/iyes_logo.png",
+    ),
+    "splash.iyes.text": File (
+        path: "splash/iyes_text.png",
+    ),
+    "splash.bevy": File (
+        path: "splash/bevy.png",
+    ),
+})
