@@ -20,6 +20,7 @@ pub const PROPRIETARY: bool = cfg!(feature = "mw_proprietary");
 
 mod assets;
 mod cli;
+mod locale;
 mod screens {
     pub mod loading;
     pub mod splash;
@@ -82,6 +83,8 @@ fn main() {
     });
     app.add_plugin(screens::splash::SplashesPlugin);
     app.add_plugin(crate::assets::AssetsPlugin);
+    app.add_plugin(crate::locale::LocalePlugin);
+    app.add_plugin(crate::ui::UiPlugin);
 
     app.run();
 }

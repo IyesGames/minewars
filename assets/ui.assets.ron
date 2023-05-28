@@ -1,4 +1,7 @@
 ({
+    "ui.img.logo": File (
+        path: "minewars.png"
+    ),
     "ui.font": File (
         path: "font/Sansation-Regular.ttf"
     ),
@@ -13,5 +16,8 @@
     ),
     "ui.font2.bold": File (
         path: "font/Ubuntu-B.ttf"
+    ),
+    "ui.font2.light": File (
+        path: "font/Ubuntu-L.ttf"
     ),
 })

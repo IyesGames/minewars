@@ -17,9 +17,15 @@ impl Plugin for AssetsPlugin {
             AppState::AssetsLoading,
             "game.assets.ron",
         );
+        app.add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
+            AppState::AssetsLoading,
+            "locale.assets.ron",
+        );
         app.add_collection_to_loading_state::<_, UiAssets>(AppState::AssetsLoading);
         app.add_collection_to_loading_state::<_, SplashAssets>(AppState::AssetsLoading);
+        app.add_collection_to_loading_state::<_, TitleLogo>(AppState::AssetsLoading);
         app.add_collection_to_loading_state::<_, GameAssets>(AppState::AssetsLoading);
+        app.add_collection_to_loading_state::<_, LocaleAssets>(AppState::AssetsLoading);
     }
 }
 
@@ -35,6 +41,8 @@ pub struct UiAssets {
     pub font2: Handle<Font>,
     #[asset(key = "ui.font2.bold")]
     pub font2_bold: Handle<Font>,
+    #[asset(key = "ui.font2.light")]
+    pub font2_light: Handle<Font>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -45,6 +53,12 @@ pub struct SplashAssets {
     pub iyes_text: Handle<Image>,
     #[asset(key = "splash.bevy")]
     pub bevy: Handle<Image>,
+}
+
+#[derive(AssetCollection, Resource)]
+pub struct TitleLogo {
+    #[asset(key = "ui.img.logo")]
+    pub image: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -63,4 +77,10 @@ pub struct GameAssets {
     pub gents: Handle<Image>,
     #[asset(key = "game.tilemap.flags")]
     pub flags: Handle<Image>,
+}
+
+#[derive(AssetCollection, Resource)]
+pub struct LocaleAssets {
+    #[asset(key = "locale.bundles", collection(typed))]
+    pub bundles: Vec<Handle<bevy_fluent::BundleAsset>>,
 }
