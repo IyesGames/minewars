@@ -8,6 +8,8 @@ mod prelude {
     pub use bevy_prototype_lyon::prelude::*;
     pub use iyes_bevy_extras::prelude::*;
     pub use iyes_progress::prelude::*;
+    pub use iyes_cli::prelude::*;
+    pub use iyes_ui::prelude::*;
     pub use mw_common::bevy::*;
     pub use mw_common::prelude::*;
 }
@@ -17,6 +19,7 @@ use crate::prelude::*;
 pub const PROPRIETARY: bool = cfg!(feature = "mw_proprietary");
 
 mod assets;
+mod cli;
 mod screens {
     pub mod loading;
     pub mod splash;
@@ -45,6 +48,11 @@ fn main() {
         ..Default::default()
     });
     #[cfg(feature = "dev")]
+    let bevy_plugins = bevy_plugins.set(bevy::asset::AssetPlugin {
+        watch_for_changes: true,
+        ..default()
+    });
+    #[cfg(feature = "dev")]
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
         filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace".into(),
         level: bevy::log::Level::TRACE,
@@ -66,6 +74,7 @@ fn main() {
     #[cfg(feature = "dev")]
     app.add_system(debug_progress.run_if(in_state(AppState::AssetsLoading)));
 
+    app.add_plugin(crate::cli::CliPlugin);
     app.add_plugin(mw_proprietary::MwProprietaryPlugin);
 
     app.add_plugin(screens::loading::LoadscreenPlugin {

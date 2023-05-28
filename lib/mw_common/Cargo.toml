@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.71"
 derive_more = "0.99.17"
+directories = "5.0.1"
 enum-map = "2.5.0"
 glam = "0.23.0"
 hashbrown = "0.13.2"

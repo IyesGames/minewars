@@ -26,13 +26,12 @@ debug = false
 strip = true
 
 [features]
-dev = [
-    "bevy/filesystem_watcher"
-]
-release = [
-]
+dev = ["bevy/filesystem_watcher"]
+release = []
 
 [dependencies]
+fluent_content = "0.0.5"
+unic-langid = "0.9.1"
 
 [dependencies.mw_common]
 path = "lib/mw_common"
@@ -43,6 +42,14 @@ path = "proprietary"
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
+features = ["2d"]
+
+[dependencies.iyes_cli]
+git = "https://github.com/IyesGames/iyes_cli"
+
+[dependencies.iyes_ui]
+git = "https://github.com/IyesGames/iyes_ui"
+features = ["iyes_cli"]
 
 [dependencies.tokio]
 version = "1.28.1"
