@@ -3,11 +3,13 @@ use crate::{prelude::*, assets::UiAssets, locale::{L10nKey, L10nResolveSet}};
 pub struct UiPlugin;
 
 mod mainmenu;
+mod hud;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(iyes_ui::UiExtrasPlugin);
         app.add_plugin(mainmenu::MainMenuPlugin);
+        app.add_plugin(hud::HudPlugin);
         app.add_system(butt_interact_visual);
         app.add_system(butt_interact_infotext.before(L10nResolveSet));
     }

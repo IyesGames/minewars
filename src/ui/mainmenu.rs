@@ -60,7 +60,7 @@ fn setup_mainmenu(
                 padding: UiRect {
                     top: Val::Auto,
                     bottom: Val::Px(4.0),
-                    left: Val::Px(4.0),
+                    left: Val::Auto,
                     right: Val::Auto,
                 },
                 justify_content: JustifyContent::Center,
@@ -242,7 +242,7 @@ fn setup_mainmenu(
         let butt_dev = ui::spawn_button(
             &mut commands,
             &*uiassets,
-            OnClick::new(),
+            OnClick::new().cli("devmode"),
             "button-dev-play",
             "tooltip-dev-play",
             true,
