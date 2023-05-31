@@ -25,6 +25,7 @@ mod screens {
     pub mod loading;
     pub mod splash;
 }
+mod settings;
 mod ui;
 
 fn main() {
@@ -83,6 +84,7 @@ fn main() {
     });
     app.add_plugin(screens::splash::SplashesPlugin);
     app.add_plugin(crate::assets::AssetsPlugin);
+    app.add_plugin(crate::settings::SettingsPlugin);
     app.add_plugin(crate::locale::LocalePlugin);
     app.add_plugin(crate::ui::UiPlugin);
 

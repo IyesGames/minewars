@@ -6,6 +6,14 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 publish = false
 
+# UNCOMMENT for my machine / local development
+[patch."https://github.com/IyesGames/iyes_bevy_extras"]
+iyes_bevy_extras = { path = "../../engine/iyes_bevy_extras" }
+[patch."https://github.com/IyesGames/iyes_cli"]
+iyes_cli = { path = "../../engine/iyes_cli" }
+[patch."https://github.com/IyesGames/iyes_ui"]
+iyes_ui = { path = "../../engine/iyes_ui" }
+
 [workspace]
 resolver = "2"
 members = ["proprietary", "lib/*"]
@@ -30,7 +38,10 @@ dev = ["bevy/filesystem_watcher"]
 release = []
 
 [dependencies]
+directories = "5.0.1"
 fluent_content = "0.0.5"
+serde = "1.0.163"
+toml = "0.7.4"
 unic-langid = "0.9.1"
 
 [dependencies.mw_common]
