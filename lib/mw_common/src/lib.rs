@@ -4,6 +4,8 @@
 pub mod prelude {
     pub use anyhow::{anyhow, bail, ensure, Context, Error as AnyError, Result as AnyResult};
     #[cfg(feature = "bevy")]
+    pub use bevy::prelude::*;
+    #[cfg(feature = "bevy")]
     pub use bevy::utils::{Duration, HashMap, HashSet, Instant};
     #[cfg(not(feature = "bevy"))]
     pub use hashbrown::{HashMap, HashSet};
@@ -13,9 +15,13 @@ pub mod prelude {
     pub use std::time::{Duration, Instant};
     pub use thiserror::Error;
     pub use tracing::{debug, error, info, trace, warn};
+    #[cfg(feature = "bevy")]
+    pub use crate::bevy::*;
 }
 
 #[cfg(feature = "bevy")]
 pub mod bevy;
 
+pub mod algo;
 pub mod grid;
+pub mod plid;

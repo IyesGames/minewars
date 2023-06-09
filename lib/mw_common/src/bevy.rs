@@ -17,3 +17,7 @@ pub enum AppState {
     /// Gameplay
     InGame,
 }
+
+/// Everything that must be despawned when exiting the InGame state
+#[derive(Component)]
+pub struct GameCleanup;

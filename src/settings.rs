@@ -10,16 +10,16 @@ impl Plugin for SettingsPlugin {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Resource, Serialize, Deserialize, Default, Clone)]
 #[serde(default)]
 pub struct AllSettings {
-    pub player_colors: PlayerPaletteSettings,
-    pub ui_hud: UiHudSettings,
+    pub gameplay: GameplaySettings,
     pub camera: CameraSettings,
+    pub ui_hud: UiHudSettings,
+    pub player_colors: PlayerPaletteSettings,
 }
 
-/// Settings for the in-game UI (HUD)
-#[derive(Resource, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct CameraSettings {
     pub zoom_tween_duration_ms: u32,
@@ -41,8 +41,22 @@ impl Default for CameraSettings {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct GameplaySettings {
+    pub show_skulls: bool,
+}
+
+impl Default for GameplaySettings {
+    fn default() -> Self {
+        GameplaySettings {
+            show_skulls: true,
+        }
+    }
+}
+
 /// Settings for the in-game UI (HUD)
-#[derive(Resource, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct UiHudSettings {
     bottom_layout_reverse: bool,
@@ -86,7 +100,7 @@ impl From<Lcha> for Color {
 /// The color palette to use for different players
 ///
 /// Indexed by player ID (0 = neutral)
-#[derive(Resource, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct PlayerPaletteSettings {
     pub visible: [Lcha; 8],
     pub fog: Lcha,
@@ -131,9 +145,7 @@ fn load_or_init_settings(
     if let Some(iothr) = iothread.take() {
         if iothr.is_finished() {
             let allsettings = iothr.join().unwrap_or(AllSettings::default());
-            commands.insert_resource(allsettings.camera);
-            commands.insert_resource(allsettings.ui_hud);
-            commands.insert_resource(allsettings.player_colors);
+            commands.insert_resource(allsettings);
             commands.insert_resource(SettingsLoaded);
         } else {
             *iothread = Some(iothr);
@@ -181,11 +193,7 @@ fn load_or_init_settings(
 pub fn write_settings(
     world: &World,
 ) {
-    let settings = AllSettings {
-        player_colors: world.resource::<PlayerPaletteSettings>().clone(),
-        ui_hud: world.resource::<UiHudSettings>().clone(),
-        camera: world.resource::<CameraSettings>().clone(),
-    };
+    let settings = world.resource::<AllSettings>().clone();
     std::thread::spawn(move || {
         let dir = directories::ProjectDirs::from(
             "com", "IyesGames", "MineWars",

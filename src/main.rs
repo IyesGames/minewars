@@ -10,7 +10,6 @@ mod prelude {
     pub use iyes_progress::prelude::*;
     pub use iyes_cli::prelude::*;
     pub use iyes_ui::prelude::*;
-    pub use mw_common::bevy::*;
     pub use mw_common::prelude::*;
 }
 
