@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+pub const PROPRIETARY: bool = false;
+
 /// Placeholder for the real MineWars Proprietary Plugin
 ///
 /// In open-source builds, this plugin provides any replacements

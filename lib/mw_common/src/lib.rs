@@ -9,6 +9,10 @@ pub mod prelude {
     pub use bevy::utils::{Duration, HashMap, HashSet, Instant};
     #[cfg(not(feature = "bevy"))]
     pub use hashbrown::{HashMap, HashSet};
+    pub use num_traits;
+    pub use num;
+    pub use num_traits::{FromPrimitive, ToPrimitive};
+    pub use num_derive::{FromPrimitive, ToPrimitive};
     pub use rand::prelude::*;
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
     #[cfg(not(feature = "bevy"))]

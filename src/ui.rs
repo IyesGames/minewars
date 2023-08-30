@@ -7,11 +7,14 @@ mod hud;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(iyes_ui::UiExtrasPlugin);
-        app.add_plugin(mainmenu::MainMenuPlugin);
-        app.add_plugin(hud::HudPlugin);
-        app.add_system(butt_interact_visual);
-        app.add_system(butt_interact_infotext.before(L10nResolveSet));
+        app.add_plugins((
+            self::hud::HudPlugin,
+            self::mainmenu::MainMenuPlugin,
+        ));
+        app.add_systems(Update, (
+            butt_interact_visual,
+            butt_interact_infotext.before(L10nResolveSet),
+        ));
     }
 }
 
@@ -119,7 +122,7 @@ fn butt_interact_visual(
 ) {
     for (interaction, mut color) in query.iter_mut() {
         match interaction {
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 *color = BackgroundColor(Color::rgb(0.24, 0.24, 0.25));
             }
             Interaction::Hovered => {

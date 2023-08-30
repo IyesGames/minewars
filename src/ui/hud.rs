@@ -4,7 +4,7 @@ pub struct HudPlugin;
 
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(setup_hud.in_schedule(OnEnter(AppState::InGame)));
+        app.add_systems(OnEnter(AppState::InGame), setup_hud);
     }
 }
 
@@ -32,7 +32,8 @@ pub fn spawn_cityentry_unowned(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(32.0)),
+                width: Val::Px(32.0),
+                height: Val::Px(32.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.3, 0.3, 0.0)),
@@ -97,7 +98,8 @@ pub fn spawn_cityentry_owned(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(32.0)),
+                width: Val::Px(32.0),
+                height: Val::Px(32.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.3, 0.3, 0.0)),
@@ -214,7 +216,8 @@ pub fn spawn_cityentry_owned(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(32.0)),
+                width: Val::Px(32.0),
+                height: Val::Px(32.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.3, 0.3, 0.0)),
@@ -249,7 +252,8 @@ fn spawn_playericon(commands: &mut Commands, uiassets: &UiAssets, color: Color, 
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(64.0)),
+                width: Val::Px(64.0),
+                height: Val::Px(64.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(color),
@@ -281,12 +285,10 @@ fn setup_hud(
         NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                position: UiRect {
-                    bottom: Val::Auto,
-                    left: Val::Px(0.0),
-                    right: Val::Px(0.0),
-                    top: Val::Px(0.0),
-                },
+                bottom: Val::Auto,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                top: Val::Px(0.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Start,
@@ -300,12 +302,10 @@ fn setup_hud(
         NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                position: UiRect {
-                    top: Val::Auto,
-                    left: Val::Px(0.0),
-                    right: Val::Px(0.0),
-                    bottom: Val::Px(0.0),
-                },
+                top: Val::Auto,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                bottom: Val::Px(0.0),
                 flex_direction: FlexDirection::Row,
                 align_items: AlignItems::End,
                 justify_content: JustifyContent::SpaceBetween,
@@ -319,12 +319,10 @@ fn setup_hud(
         NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                position: UiRect {
-                    bottom: Val::Auto,
-                    left: Val::Px(0.0),
-                    right: Val::Auto,
-                    top: Val::Px(0.0),
-                },
+                bottom: Val::Auto,
+                left: Val::Px(0.0),
+                right: Val::Auto,
+                top: Val::Px(0.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Stretch,
                 justify_content: JustifyContent::Start,
@@ -383,12 +381,10 @@ fn setup_hud(
         NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                position: UiRect {
-                    bottom: Val::Auto,
-                    right: Val::Px(16.0),
-                    left: Val::Auto,
-                    top: Val::Px(96.0),
-                },
+                bottom: Val::Auto,
+                right: Val::Px(16.0),
+                left: Val::Auto,
+                top: Val::Px(96.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::End,
                 justify_content: JustifyContent::Start,
@@ -419,7 +415,8 @@ fn setup_hud(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(240.0)),
+                width: Val::Px(240.0),
+                height: Val::Px(240.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.0, 0.3, 0.0)),
@@ -432,7 +429,8 @@ fn setup_hud(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::SpaceBetween,
-                size: Size::new(Val::Px(200.0), Val::Px(140.0)),
+                width: Val::Px(200.0),
+                height: Val::Px(140.0),
                 padding: UiRect::all(Val::Px(4.0)),
                 ..Default::default()
             },
@@ -460,7 +458,8 @@ fn setup_hud(
                 flex_direction: FlexDirection::Row,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::SpaceEvenly,
-                size: Size::new(Val::Percent(100.0), Val::Auto),
+                width: Val::Percent(100.0),
+                height: Val::Auto,
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.0, 0.4, 0.3)),
@@ -484,7 +483,8 @@ fn setup_hud(
             style: Style {
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(64.0)),
+                width: Val::Px(64.0),
+                height: Val::Px(64.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.5, 0.3, 0.0)),
@@ -521,7 +521,8 @@ fn setup_hud(
             style: Style {
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(64.0)),
+                width: Val::Px(64.0),
+                height: Val::Px(64.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.5, 0.3, 0.0)),
@@ -556,7 +557,8 @@ fn setup_hud(
     let info_area = commands.spawn((
         NodeBundle {
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Auto),
+                width: Val::Percent(100.0),
+                height: Val::Auto,
                 padding: UiRect {
                     top: Val::Px(4.0),
                     bottom: Val::Px(4.0),
@@ -601,7 +603,8 @@ fn setup_hud(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(64.0)),
+                width: Val::Px(64.0),
+                height: Val::Px(64.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.3, 0.0, 0.3)),
@@ -614,7 +617,8 @@ fn setup_hud(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(64.0)),
+                width: Val::Px(64.0),
+                height: Val::Px(64.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.4, 0.0, 0.3)),
@@ -627,7 +631,8 @@ fn setup_hud(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(64.0)),
+                width: Val::Px(64.0),
+                height: Val::Px(64.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.3, 0.0, 0.4)),
@@ -640,7 +645,8 @@ fn setup_hud(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                size: Size::all(Val::Px(64.0)),
+                width: Val::Px(64.0),
+                height: Val::Px(64.0),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.3, 0.1, 0.3)),

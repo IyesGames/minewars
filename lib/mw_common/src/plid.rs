@@ -9,8 +9,11 @@
 use std::num::NonZeroU8;
 use std::ops::{Add, AddAssign, Sub, SubAssign, Not};
 
+use crate::prelude::*;
+
 /// Player ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "bevy", derive(Component))]
 pub enum PlayerId {
     Neutral,
     Player(NonZeroU8),

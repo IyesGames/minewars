@@ -8,6 +8,7 @@ use super::*;
 ///
 /// `C` is the type of coordinate.
 /// `D` is the data to store for each map cell.
+#[derive(Clone)]
 pub struct MapData<C: Coord, D> {
     size: u8,
     data: Vec<D>,

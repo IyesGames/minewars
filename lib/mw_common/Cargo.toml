@@ -5,23 +5,31 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+bevy = [ "iyes_bevy_extras", "dep:bevy" ]
+
 [dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.75"
 derive_more = "0.99.17"
 directories = "5.0.1"
-enum-map = "2.5.0"
-glam = "0.23.0"
-hashbrown = "0.13.2"
+enum-iterator = "1.4.1"
+enum-map = "2.6.1"
+glam = "0.24.1"
+hashbrown = "0.14.0"
+modular-bitfield = "0.11.2"
+num = "0.4.1"
+num-derive = "0.4.0"
+num-traits = "0.2.16"
 rand = "0.8.5"
-thiserror = "1.0.40"
+thiserror = "1.0.47"
 tracing = "0.1.37"
 
 [dependencies.serde]
-version = "1.0.163"
+version = "1.0.188"
 features = [ "derive" ]
 
 [dependencies.bevy]
-version = "0.10.1"
+version = "0.11.2"
 default-features = false
 optional = true
 features = [
@@ -32,3 +40,8 @@ features = [
 	"bevy_text",
 	"bevy_ui",
 ]
+
+[dependencies.iyes_bevy_extras]
+git = "https://github.com/IyesGames/iyes_bevy_extras"
+optional = true
+features = ["2d"]

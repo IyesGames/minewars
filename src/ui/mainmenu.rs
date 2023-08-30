@@ -4,31 +4,28 @@ pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(setup_mainmenu.in_schedule(OnEnter(AppState::MainMenu)));
-        app.add_system(
-            despawn_all_recursive::<With<MainMenuCleanup>>.in_schedule(OnExit(AppState::MainMenu)),
-        );
+        app.add_systems(OnEnter(AppState::MainMenu), setup_mainmenu);
     }
 }
-
-#[derive(Component)]
-struct MainMenuCleanup;
 
 fn setup_mainmenu(
     mut commands: Commands,
     uiassets: Res<UiAssets>,
     logo: Res<crate::assets::TitleLogo>,
 ) {
-    commands.spawn((MainMenuCleanup, Camera2dBundle::default()));
+    commands.spawn((StateDespawnMarker, Camera2dBundle::default()));
 
     let wrapper = commands
         .spawn((
-            MainMenuCleanup,
+            StateDespawnMarker,
             NodeBundle {
                 background_color: BackgroundColor(Color::NONE),
                 style: Style {
                     position_type: PositionType::Absolute,
-                    position: UiRect::all(Val::Px(0.0)),
+                    left: Val::Px(0.0),
+                    right: Val::Px(0.0),
+                    top: Val::Px(0.0),
+                    bottom: Val::Px(0.0),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
@@ -44,8 +41,10 @@ fn setup_mainmenu(
             background_color: BackgroundColor(Color::NONE),
             style: Style {
                 flex_direction: FlexDirection::Column,
-                min_size: Size::new(Val::Px(800.0), Val::Px(600.0)),
-                size: Size::new(Val::Percent(75.0), Val::Percent(50.0)),
+                min_width: Val::Px(800.0),
+                min_height: Val::Px(600.0),
+                width: Val::Percent(75.0),
+                height: Val::Percent(50.0),
                 justify_content: JustifyContent::Center,
                 ..Default::default()
             },
@@ -56,7 +55,8 @@ fn setup_mainmenu(
     let info_area = commands
         .spawn((NodeBundle {
             style: Style {
-                size: Size::new(Val::Auto, Val::Px(32.0)),
+                width: Val::Auto,
+                height: Val::Px(32.0),
                 padding: UiRect {
                     top: Val::Auto,
                     bottom: Val::Px(4.0),
@@ -98,7 +98,7 @@ fn setup_mainmenu(
                 flex_grow: 0.0,
                 margin: UiRect {
                     bottom: Val::Px(8.0),
-                    ..UiRect::all(Val::Undefined)
+                    ..UiRect::all(Val::Auto)
                 },
                 align_self: AlignSelf::Center,
                 ..Default::default()
@@ -111,7 +111,8 @@ fn setup_mainmenu(
         .spawn((NodeBundle {
             background_color: BackgroundColor(Color::NONE),
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Undefined),
+                width: Val::Percent(100.0),
+                height: Val::Auto,
                 flex_shrink: 0.0,
                 ..Default::default()
             },
@@ -123,7 +124,8 @@ fn setup_mainmenu(
         .spawn((NodeBundle {
             background_color: BackgroundColor(Color::NONE),
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Undefined),
+                width: Val::Percent(100.0),
+                height: Val::Auto,
                 flex_shrink: 0.0,
                 ..Default::default()
             },
@@ -135,7 +137,8 @@ fn setup_mainmenu(
         .spawn((NodeBundle {
             background_color: BackgroundColor(Color::NONE),
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Undefined),
+                width: Val::Percent(100.0),
+                height: Val::Auto,
                 flex_shrink: 0.0,
                 ..Default::default()
             },
@@ -147,7 +150,8 @@ fn setup_mainmenu(
         .spawn((NodeBundle {
             background_color: BackgroundColor(Color::NONE),
             style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Undefined),
+                width: Val::Percent(100.0),
+                height: Val::Auto,
                 flex_shrink: 0.0,
                 ..Default::default()
             },

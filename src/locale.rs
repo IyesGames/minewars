@@ -1,18 +1,21 @@
-use crate::{assets::LocaleAssets, prelude::*};
 use bevy_fluent::prelude::*;
 use fluent_content::Content;
 use unic_langid::LanguageIdentifier;
+
+use crate::assets::LocaleAssets;
+use crate::prelude::*;
 
 pub struct LocalePlugin;
 
 impl Plugin for LocalePlugin {
     fn build(&self, app: &mut App) {
+        app.register_clicommand_args("locale", cli_locale);
         app.add_systems(
-            (detect_locales, init_l10n)
-                .chain()
-                .in_schedule(OnExit(AppState::AssetsLoading)),
+            OnExit(AppState::AssetsLoading),
+            (detect_locales, init_l10n).chain(),
         );
-        app.add_system(
+        app.add_systems(
+            Update,
             resolve_l10n
                 .in_set(L10nResolveSet)
                 .run_if(not(in_state(AppState::AssetsLoading))),
@@ -27,26 +30,43 @@ pub struct L10nResolveSet;
 pub struct L10nKey(pub String);
 
 #[derive(Resource)]
-pub struct Locales(Vec<LanguageIdentifier>);
+pub struct Locales(HashSet<LanguageIdentifier>);
+
+fn cli_locale(In(args): In<Vec<String>>, mut locale: ResMut<Locale>, locales: Res<Locales>) {
+    if args.len() != 1 {
+        error!("\"locale <locale>\"");
+        return;
+    }
+    match args[0].parse::<LanguageIdentifier>() {
+        Ok(langid) => {
+            if locales.0.contains(&langid) {
+                locale.requested = langid;
+            } else {
+                error!("Unsupported locale: {:?}", args[0]);
+            }
+        },
+        Err(e) => {
+            error!("Invalid locale {:?}: {}", args[0], e);
+        },
+    }
+}
 
 fn detect_locales(world: &mut World) {
     let locales = {
         let assets = world.resource::<LocaleAssets>();
         let bundles = world.resource::<Assets<BundleAsset>>();
-        let mut locales: Vec<_> = assets
+        assets
             .bundles
             .iter()
             .map(|handle| {
                 let bundle = bundles.get(handle).unwrap();
                 bundle.locales[0].clone()
             })
-            .collect();
-        locales.sort_unstable();
-        locales
+            .collect()
     };
     world.insert_resource(
         // FIXME: do actual locale selection
-        Locale::new(locales[0].clone()).with_default("en-US".parse().unwrap()),
+        Locale::new("en-US".parse().unwrap()).with_default("en-US".parse().unwrap()),
     );
     world.insert_resource(Locales(locales));
 }

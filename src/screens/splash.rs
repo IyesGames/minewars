@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 use bevy::{
     core_pipeline::clear_color::ClearColorConfig,
-    ecs::{schedule::SystemConfig, system::BoxedSystem},
+    ecs::{schedule::SystemConfigs, system::BoxedSystem},
     input::{gamepad::GamepadEvent, keyboard::KeyboardInput, mouse::MouseButtonInput},
 };
 
@@ -12,19 +12,21 @@ pub struct SplashesPlugin;
 
 impl Plugin for SplashesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(SplashscreenPlugin {
+        app.add_plugins(SplashscreenPlugin {
             state: AppState::SplashIyes,
             next: AppState::SplashBevy,
             skip_to: AppState::MainMenu,
         });
-        app.add_system(splash_init_iyes.in_schedule(OnEnter(AppState::SplashIyes)));
-        app.add_plugin(SplashscreenPlugin {
+        app.add_systems(OnEnter(AppState::SplashIyes), splash_init_iyes);
+
+        app.add_plugins(SplashscreenPlugin {
             state: AppState::SplashBevy,
             next: AppState::MainMenu,
             skip_to: AppState::MainMenu,
         });
-        app.add_system(splash_init_bevy.in_schedule(OnEnter(AppState::SplashBevy)));
-        app.add_system(remove_resource::<SplashAssets>.in_schedule(OnEnter(AppState::MainMenu)));
+        app.add_systems(OnEnter(AppState::SplashBevy), splash_init_bevy);
+
+        app.add_systems(OnEnter(AppState::MainMenu), remove_resource::<SplashAssets>);
     }
 }
 
@@ -36,27 +38,26 @@ struct SplashscreenPlugin<S: States> {
 
 impl<S: States> Plugin for SplashscreenPlugin<S> {
     fn build(&self, app: &mut App) {
-        app.add_system(
-            setup_splashscreen(self.next.clone()).in_schedule(OnEnter(self.state.clone())),
+        app.add_systems(OnEnter(self.state.clone()),
+            setup_splashscreen(self.next.clone())
         );
-        app.add_system(
-            despawn_all_recursive::<With<SplashCleanup>>.in_schedule(OnExit(self.state.clone())),
-        );
-        app.add_system(remove_resource::<SplashNext<S>>.in_schedule(OnExit(self.state.clone())));
-        app.add_system(splash_fade::<S>.run_if(in_state(self.state.clone())));
-        app.add_system(splash_skip(self.skip_to.clone()).run_if(in_state(self.state.clone())));
+        app.add_systems(OnExit(self.state.clone()), remove_resource::<SplashNext<S>>);
+        app.add_systems(Update, (
+            splash_fade::<S>.run_if(in_state(self.state.clone())),
+            splash_skip(self.skip_to.clone()).run_if(in_state(self.state.clone())),
+        ));
     }
     fn is_unique(&self) -> bool {
         false
     }
 }
 
-fn setup_splashscreen<S: States>(next: S) -> SystemConfig {
+fn setup_splashscreen<S: States>(next: S) -> SystemConfigs {
     let next = next.clone();
     let system = move |mut commands: Commands| {
         commands.insert_resource(SplashNext(next.clone()));
         commands.spawn((
-            SplashCleanup,
+            StateDespawnMarker,
             Camera2dBundle {
                 camera_2d: Camera2d {
                     clear_color: ClearColorConfig::Custom(Color::BLACK),
@@ -66,12 +67,12 @@ fn setup_splashscreen<S: States>(next: S) -> SystemConfig {
         ));
     };
     let boxed: BoxedSystem = Box::new(IntoSystem::into_system(system));
-    IntoSystemConfig::into_config(boxed)
+    IntoSystemConfigs::into_configs(boxed)
 }
 
 fn splash_init_iyes(mut commands: Commands, splashes: Res<SplashAssets>) {
     commands.spawn((
-        SplashCleanup,
+        StateDespawnMarker,
         SpriteBundle {
             texture: splashes.iyes_logo.clone(),
             transform: Transform::from_xyz(0.0, 75.0, 0.0),
@@ -80,7 +81,7 @@ fn splash_init_iyes(mut commands: Commands, splashes: Res<SplashAssets>) {
         SplashFade::new(0.0, 0.0, 1.25, 1.5),
     ));
     commands.spawn((
-        SplashCleanup,
+        StateDespawnMarker,
         SpriteBundle {
             texture: splashes.iyes_text.clone(),
             transform: Transform::from_xyz(0.0, -175.0, 0.0),
@@ -92,7 +93,7 @@ fn splash_init_iyes(mut commands: Commands, splashes: Res<SplashAssets>) {
 
 fn splash_init_bevy(mut commands: Commands, splashes: Res<SplashAssets>) {
     commands.spawn((
-        SplashCleanup,
+        StateDespawnMarker,
         SpriteBundle {
             texture: splashes.bevy.clone(),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
@@ -101,9 +102,6 @@ fn splash_init_bevy(mut commands: Commands, splashes: Res<SplashAssets>) {
         SplashFade::new(0.0, 0.5, 1.0, 1.5),
     ));
 }
-
-#[derive(Component)]
-struct SplashCleanup;
 
 #[derive(Resource)]
 struct SplashNext<S: States>(S);
@@ -162,7 +160,7 @@ fn splash_fade<S: States>(
     }
 }
 
-fn splash_skip<S: States>(skip_to: S) -> SystemConfig {
+fn splash_skip<S: States>(skip_to: S) -> SystemConfigs {
     let skip_to = skip_to.clone();
     let system = move |mut next_state: ResMut<NextState<S>>,
                        mut kbd: EventReader<KeyboardInput>,
@@ -203,5 +201,5 @@ fn splash_skip<S: States>(skip_to: S) -> SystemConfig {
         }
     };
     let boxed: BoxedSystem = Box::new(IntoSystem::into_system(system));
-    IntoSystemConfig::into_config(boxed)
+    IntoSystemConfigs::into_configs(boxed)
 }

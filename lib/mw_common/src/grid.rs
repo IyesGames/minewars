@@ -19,6 +19,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+use enum_iterator::Sequence;
+use enum_map::Enum;
 use thiserror::Error;
 
 pub mod hex;
@@ -32,6 +34,7 @@ pub use pos::Pos;
 pub use sq::Sq;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Enum, Sequence)]
 #[repr(u8)]
 pub enum Topology {
     Hex,

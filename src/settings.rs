@@ -4,7 +4,7 @@ pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(
+        app.add_systems(Update,
             load_or_init_settings
                 .run_if(not(resource_exists::<SettingsLoaded>())));
     }
@@ -147,6 +147,7 @@ fn load_or_init_settings(
             let allsettings = iothr.join().unwrap_or(AllSettings::default());
             commands.insert_resource(allsettings);
             commands.insert_resource(SettingsLoaded);
+            info!("Settings: ready.");
         } else {
             *iothread = Some(iothr);
         }

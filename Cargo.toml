@@ -39,9 +39,11 @@ release = []
 
 [dependencies]
 directories = "5.0.1"
+enum-iterator = "1.4.1"
 fluent_content = "0.0.5"
-serde = "1.0.163"
-toml = "0.7.4"
+modular-bitfield = "0.11.2"
+serde = "1.0.188"
+toml = "0.7.6"
 unic-langid = "0.9.1"
 
 [dependencies.mw_common]
@@ -63,7 +65,7 @@ git = "https://github.com/IyesGames/iyes_ui"
 features = ["iyes_cli"]
 
 [dependencies.tokio]
-version = "1.28.1"
+version = "1.32.0"
 features = [
     "parking_lot",
     "rt",
@@ -71,58 +73,61 @@ features = [
 ]
 
 [dependencies.bevy]
-version = "0.10.1"
+version = "0.11.2"
 # default-features = false
 features = [
+    "multi-threaded",
     "android_shared_stdcxx",
     "bevy_asset",
+    "bevy_scene",
     "bevy_core_pipeline",
     "bevy_render",
+    "bevy_gizmos",
     "bevy_sprite",
     "bevy_text",
     "bevy_ui",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_gilrs",
     "bevy_winit",
+    "tonemapping_luts",
     "png",
     "ktx2",
     "zstd",
     "x11",
     "wayland",
+    "bevy_audio",
+    "flac",
 ]
 
 [dependencies.iyes_progress]
-version = "0.8.0"
+version = "0.9.1"
 features = []
 
 [dependencies.bevy_asset_loader]
-version = "0.16.0"
+version = "0.17.0"
 features = [
     "progress_tracking",
     "standard_dynamic_assets",
 ]
 
 [dependencies.bevy_common_assets]
-version = "0.6.0"
+version = "0.7.0"
 features = [
     "ron",
     "toml",
 ]
 
 [dependencies.bevy_fluent]
-version = "0.6.0"
+version = "0.7.0"
 features = []
-
-[dependencies.bevy_ecs_tilemap]
-version = "0.10.0"
-features = []
-
-[dependencies.bevy_prototype_lyon]
-version = "0.8.0"
-features = []
-
-[dependencies.bevy_kira_audio]
-version = "0.15.0"
-default-features = false
-features = [ "flac" ]
 
 [dependencies.bevy_tweening]
-version = "0.7.0"
+version = "0.8.0"
+
+[dependencies.bevy_ecs_tilemap]
+version = "0.11.0"
+
+[dependencies.bevy_prototype_lyon]
+version = "0.9.0"
+
