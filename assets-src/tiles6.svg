@@ -7,7 +7,7 @@
    viewBox="0 0 40 320"
    version="1.1"
    id="svg479"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   inkscape:version="1.2.2 (b0a84865, 2022-12-01)"
    sodipodi:docname="tiles6.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -24,13 +24,13 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showgrid="false"
-     inkscape:zoom="20.134866"
-     inkscape:cx="27.290969"
-     inkscape:cy="56.444379"
-     inkscape:window-width="2556"
-     inkscape:window-height="1390"
+     inkscape:zoom="7.5048417"
+     inkscape:cx="16.589291"
+     inkscape:cy="87.943227"
+     inkscape:window-width="1512"
+     inkscape:window-height="916"
      inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-y="38"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
@@ -343,7 +343,7 @@
     <g
        id="g1207"
        transform="matrix(0.8046024,0,0,0.8046024,33.91884,250.61849)"
-       style="opacity:1">
+       style="opacity:0.333">
       <path
          style="fill:none;stroke:#000000;stroke-width:1.6147;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow2Send);marker-end:url(#Arrow2Sstart)"
          d="m -26.331116,18.829038 16.087579,-6.868857"
