@@ -9,7 +9,7 @@ mod prelude {
     pub use iyes_cli::prelude::*;
     pub use iyes_ui::prelude::*;
     pub use mw_common::prelude::*;
-    pub use mw_proprietary::PROPRIETARY;
+    pub use mw_proprietary_client::PROPRIETARY;
 }
 
 use crate::prelude::*;
@@ -92,7 +92,7 @@ fn main() {
         crate::settings::SettingsPlugin,
     ));
 
-    app.add_plugins(mw_proprietary::MwProprietaryPlugin);
+    app.add_plugins(mw_proprietary_client::MwProprietaryPlugin);
 
     #[cfg(feature = "dev")]
     app.add_plugins(crate::dev::DevPlugin);
