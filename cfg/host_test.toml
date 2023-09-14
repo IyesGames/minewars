@@ -1,0 +1,38 @@
+[general]
+log_file = "host_test.log"
+log_debug = true
+
+[server]
+listen_players = ["0.0.0.0:13370"]
+cert = ["devcerts/host.cert.der", "devcerts/ca.cert.der"]
+key = "devcerts/host.key.der"
+ip_control = "Denylist"
+ip_list = []
+allow_players_unexpected = true
+allow_players_nocert = true
+allow_players_anyip = true
+allow_anysession = true
+allow_spectators = true
+sessions = []
+
+[rpc]
+enable = true
+listen = ["127.0.0.1:13371"]
+cert = ["devcerts/hostrpc.cert.der", "devcerts/ca.cert.der"]
+key = "devcerts/hostrpc.key.der"
+require_client_cert = false
+client_ca = ""
+ip_control = "Denylist"
+ip_list = []
+allow_payloads = ["Minewars", "TomlRules"]
+rpc_method_control = "Denylist"
+rpc_methods_list = []
+
+[hostauth]
+enable = false
+server = "127.0.0.1:13372"
+cert = ["devcerts/hostauth.cert.der", "devcerts/ca.cert.der"]
+key = "devcerts/hostauth.key.der"
+allow_payloads = ["Minewars", "TomlRules"]
+rpc_method_control = "Denylist"
+rpc_methods_list = []
