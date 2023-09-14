@@ -42,8 +42,8 @@ impl Coord for Sq {
     }
 
     fn distance(self, other: Self) -> u16 {
-        let dx = (self.0 as i16 - other.0 as i16).abs() as u16;
-        let dy = (self.1 as i16 - other.1 as i16).abs() as u16;
+        let dy = (self.0 as i16 - other.0 as i16).abs() as u16;
+        let dx = (self.1 as i16 - other.1 as i16).abs() as u16;
 
         dx.max(dy)
     }
@@ -60,14 +60,14 @@ impl Coord for Sq {
         glam::Vec2::new(self.0 as f32, self.1 as f32)
     }
 
-    fn from_f32_clamped((x, y): (f32, f32)) -> Self {
+    fn from_f32_clamped((y, x): (f32, f32)) -> Self {
         let mut rx = x.round();
         let mut ry = y.round();
 
         ry = ry.clamp(-127.0, 127.0);
         rx = rx.clamp(-127.0, 127.0);
 
-        Sq(rx as i8, ry as i8)
+        Sq(ry as i8, rx as i8)
     }
 
     fn iter_n0(self) -> IterNeigh {
@@ -86,7 +86,7 @@ impl Coord for Sq {
         IterRing {
             edge: 0,
             radius: r as i8,
-            cur: Sq(0, -(r as i8)),
+            cur: Sq(-(r as i8), -(r as i8)),
             center: self,
         }
     }
@@ -108,8 +108,8 @@ impl Coord for Sq {
         assert!(c.0 >= -r && c.0 <= r && c.1 >= -r && c.1 <= r);
         let r = r as usize;
         let w = r * 2 + 1;
-        let y = c.1 as usize + r;
-        let x = c.0 as usize + r;
+        let x = c.1 as usize + r;
+        let y = c.0 as usize + r;
         y * w + x
     }
     fn row_len(r: u8, _y: i8) -> usize {
@@ -129,14 +129,14 @@ impl Coord for Sq {
 
 impl TryFrom<(f32, f32)> for Sq {
     type Error = OutOfBoundsError;
-    fn try_from((x, y): (f32, f32)) -> Result<Self, Self::Error> {
+    fn try_from((y, x): (f32, f32)) -> Result<Self, Self::Error> {
         let rx = x.round();
         let ry = y.round();
 
         if ry < -127.0 || ry > 127.0 || rx < -127.0 || rx > 127.0 {
             Err(OutOfBoundsError)
         } else {
-            Ok(Sq(rx as i8, ry as i8))
+            Ok(Sq(ry as i8, rx as i8))
         }
     }
 }
@@ -145,9 +145,9 @@ impl Mul<i8> for Sq {
     type Output = Sq;
 
     fn mul(self, s: i8) -> Sq {
-        let x = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
-        let y = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
-        Sq(x, y)
+        let y = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
+        let x = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
+        Sq(y, x)
     }
 }
 
@@ -161,9 +161,9 @@ impl Mul<u8> for Sq {
     type Output = Sq;
 
     fn mul(self, s: u8) -> Sq {
-        let x = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
-        let y = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
-        Sq(x, y)
+        let y = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
+        let x = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
+        Sq(y, x)
     }
 }
 
@@ -187,14 +187,14 @@ impl From<Sq> for (u8, u8) {
 
 impl From<Sq> for glam::UVec2 {
     fn from(c: Sq) -> Self {
-        let (x, y): (u8, u8) = c.into();
+        let (y, x): (u8, u8) = c.into();
         glam::UVec2::new(x as u32, y as u32)
     }
 }
 
 impl From<Sq> for glam::IVec2 {
     fn from(c: Sq) -> Self {
-        let (x, y): (i8, i8) = c.into();
+        let (y, x): (i8, i8) = c.into();
         glam::IVec2::new(x as i32, y as i32)
     }
 }
@@ -306,28 +306,28 @@ impl Iterator for IterRing {
         let r = self.cur;
         match self.edge {
             0 => {
-                // top->right
+                // bot->right
                 self.cur.0 += 1;
                 if self.cur.0 == self.radius {
                     self.edge += 1;
                 }
             }
             1 => {
-                // right->bot
+                // right->top
                 self.cur.1 += 1;
                 if self.cur.1 == self.radius {
                     self.edge += 1;
                 }
             }
             2 => {
-                // bot->left
+                // top->left
                 self.cur.0 += -1;
                 if self.cur.0 == -self.radius {
                     self.edge += 1;
                 }
             }
             3 => {
-                // left->top
+                // left->bot
                 self.cur.1 += -1;
                 if self.cur.1 == -self.radius {
                     self.edge += 1;

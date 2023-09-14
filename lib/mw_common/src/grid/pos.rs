@@ -18,9 +18,9 @@ impl Mul<i8> for Pos {
     type Output = Pos;
 
     fn mul(self, s: i8) -> Pos {
-        let x = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
-        let y = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
-        Pos(x, y)
+        let y = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
+        let x = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
+        Pos(y, x)
     }
 }
 
@@ -34,9 +34,9 @@ impl Mul<u8> for Pos {
     type Output = Pos;
 
     fn mul(self, s: u8) -> Pos {
-        let x = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
-        let y = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
-        Pos(x, y)
+        let y = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
+        let x = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
+        Pos(y, x)
     }
 }
 
@@ -60,14 +60,14 @@ impl From<Pos> for (u8, u8) {
 
 impl From<Pos> for glam::UVec2 {
     fn from(c: Pos) -> Self {
-        let (x, y): (u8, u8) = c.into();
+        let (y, x): (u8, u8) = c.into();
         glam::UVec2::new(x as u32, y as u32)
     }
 }
 
 impl From<Pos> for glam::IVec2 {
     fn from(c: Pos) -> Self {
-        let (x, y): (i8, i8) = c.into();
+        let (y, x): (i8, i8) = c.into();
         glam::IVec2::new(x as i32, y as i32)
     }
 }

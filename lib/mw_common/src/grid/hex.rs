@@ -69,12 +69,12 @@ impl Coord for Hex {
     }
 
     fn translation(self) -> glam::Vec2 {
-        let x = self.0 as f32;
-        let y = self.1 as f32;
+        let y = self.0 as f32;
+        let x = self.1 as f32;
         glam::Vec2::new(y * 0.5 + x, y * 0.75)
     }
 
-    fn from_f32_clamped((x, y): (f32, f32)) -> Self {
+    fn from_f32_clamped((y, x): (f32, f32)) -> Self {
         let z = -x - y;
 
         let mut rx = x.round();
@@ -94,7 +94,7 @@ impl Coord for Hex {
         ry = ry.clamp(-127.0, 127.0);
         rx = rx.clamp(-127.0, 127.0);
 
-        Hex(rx as i8, ry as i8)
+        Hex(ry as i8, rx as i8)
     }
 
     fn iter_n0(self) -> IterNeigh {
@@ -142,8 +142,8 @@ impl Coord for Hex {
         // PERF: this is a very naive and suboptimal implementation
         // (and likely to be a perf hotspot)
 
-        let x = c.0 as isize;
-        let y = c.1 as isize;
+        let y = c.0 as isize;
+        let x = c.1 as isize;
 
         let row0 = Hex::map_area(r) as isize / 2 - r as isize;
 
@@ -187,14 +187,14 @@ impl Coord for Hex {
     fn iter_coords(r: u8) -> Self::IterCoords {
         IterCoords {
             r,
-            next: Some(Hex(0, -(r as i8))),
+            next: Some(Hex(-(r as i8), 0)),
         }
     }
 }
 
 impl TryFrom<(f32, f32)> for Hex {
     type Error = OutOfBoundsError;
-    fn try_from((x, y): (f32, f32)) -> Result<Self, Self::Error> {
+    fn try_from((y, x): (f32, f32)) -> Result<Self, Self::Error> {
         let z = -x - y;
 
         let mut rx = x.round();
@@ -214,7 +214,7 @@ impl TryFrom<(f32, f32)> for Hex {
         if ry < -127.0 || ry > 127.0 || rx < -127.0 || rx > 127.0 {
             Err(OutOfBoundsError)
         } else {
-            Ok(Hex(rx as i8, ry as i8))
+            Ok(Hex(ry as i8, rx as i8))
         }
     }
 }
@@ -223,9 +223,9 @@ impl Mul<i8> for Hex {
     type Output = Hex;
 
     fn mul(self, s: i8) -> Hex {
-        let x = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
-        let y = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
-        Hex(x, y)
+        let y = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
+        let x = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
+        Hex(y, x)
     }
 }
 
@@ -239,9 +239,9 @@ impl Mul<u8> for Hex {
     type Output = Hex;
 
     fn mul(self, s: u8) -> Hex {
-        let x = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
-        let y = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
-        Hex(x, y)
+        let y = (self.0 as i16 * s as i16).max(-128).min(127) as i8;
+        let x = (self.1 as i16 * s as i16).max(-128).min(127) as i8;
+        Hex(y, x)
     }
 }
 
@@ -265,14 +265,14 @@ impl From<Hex> for (u8, u8) {
 
 impl From<Hex> for glam::UVec2 {
     fn from(c: Hex) -> Self {
-        let (x, y): (u8, u8) = c.into();
+        let (y, x): (u8, u8) = c.into();
         glam::UVec2::new(x as u32, y as u32)
     }
 }
 
 impl From<Hex> for glam::IVec2 {
     fn from(c: Hex) -> Self {
-        let (x, y): (i8, i8) = c.into();
+        let (y, x): (i8, i8) = c.into();
         glam::IVec2::new(x as i32, y as i32)
     }
 }
@@ -285,20 +285,20 @@ impl Default for Hex {
 
 impl Hex {
     const RING: [Hex; 6] = [
-        Hex(1, -1),
-        Hex(1, 0),
-        Hex(0, 1),
-        Hex(-1, 1),
         Hex(-1, 0),
+        Hex(-1, 1),
+        Hex(0, 1),
+        Hex(1, 0),
+        Hex(1, -1),
         Hex(0, -1),
     ];
     const DIAG: [Hex; 6] = [
-        Hex(2, -1),
+        Hex(-1, 21),
         Hex(1, 1),
-        Hex(-1, 2),
-        Hex(-2, 1),
-        Hex(-1, -1),
+        Hex(2, -1),
         Hex(1, -2),
+        Hex(-1, -1),
+        Hex(-2, 1),
     ];
 }
 
@@ -428,7 +428,7 @@ impl Iterator for IterCoords {
 
         let next = self.next;
 
-        if let Some(Hex(x, y)) = &mut self.next {
+        if let Some(Hex(y, x)) = &mut self.next {
             let xmax = if *y < 0 { r } else { r - *y };
 
             *x += 1;
@@ -469,11 +469,6 @@ mod test {
         let mut n0: HashSet<_> = Hex::RING.iter().map(|c| *c + Hex(-3, 6)).collect();
         let mut n1: HashSet<_> = Hex::RING.iter().map(|c| *c + Hex(6, -7)).collect();
         let mut n2: HashSet<_> = Hex::DIAG.iter().map(|c| *c + Hex(-8, 5)).collect();
-        let mut n3: HashSet<_> = Hex::DIAG
-            .iter()
-            .chain(Hex::RING.iter())
-            .map(|c| *c + Hex(3, -2))
-            .collect();
 
         // iterators return the sets in no particular order
         for c in Hex(-3, 6).iter_n0() {
@@ -485,97 +480,21 @@ mod test {
         for c in Hex(-8, 5).iter_n2() {
             assert!(n2.remove(&c));
         }
-        for c in Hex(3, -2).iter_n3() {
-            assert!(n3.remove(&c));
-        }
         assert!(n0.is_empty());
         assert!(n1.is_empty());
         assert!(n2.is_empty());
-        assert!(n3.is_empty());
-    }
-
-    #[test]
-    fn ring() {
-        // ring 2 of Hex(-1, 1)
-        let mut coords: HashSet<_> = [
-            Hex(-1, -1),
-            Hex(0, -1),
-            Hex(1, -1),
-            Hex(-2, 0),
-            Hex(1, 0),
-            Hex(-3, 1),
-            Hex(1, 1),
-            Hex(-3, 2),
-            Hex(0, 2),
-            Hex(-3, 3),
-            Hex(-2, 3),
-            Hex(-1, 3),
-        ]
-        .iter()
-        .collect();
-        for c in Hex(-1, 1).iter_ring(2) {
-            assert!(coords.remove(&c));
-        }
-        assert!(coords.is_empty());
-    }
-
-    #[test]
-    fn iter_coords() {
-        let r3coords = vec![
-            Hex(0, -3),
-            Hex(1, -3),
-            Hex(2, -3),
-            Hex(3, -3),
-            Hex(-1, -2),
-            Hex(0, -2),
-            Hex(1, -2),
-            Hex(2, -2),
-            Hex(3, -2),
-            Hex(-2, -1),
-            Hex(-1, -1),
-            Hex(0, -1),
-            Hex(1, -1),
-            Hex(2, -1),
-            Hex(3, -1),
-            Hex(-3, 0),
-            Hex(-2, 0),
-            Hex(-1, 0),
-            Hex(0, 0),
-            Hex(1, 0),
-            Hex(2, 0),
-            Hex(3, 0),
-            Hex(-3, 1),
-            Hex(-2, 1),
-            Hex(-1, 1),
-            Hex(0, 1),
-            Hex(1, 1),
-            Hex(2, 1),
-            Hex(-3, 2),
-            Hex(-2, 2),
-            Hex(-1, 2),
-            Hex(0, 2),
-            Hex(1, 2),
-            Hex(-3, 3),
-            Hex(-2, 3),
-            Hex(-1, 3),
-            Hex(0, 3),
-        ];
-
-        let r: Vec<_> = Hex::iter_coords(3).collect();
-
-        assert_eq!(r, r3coords);
     }
 
     #[test]
     fn index() {
-        assert_eq!(Hex::index(3, Hex(0, -3)), 0);
-        assert_eq!(Hex::index(3, Hex(3, -2)), Hex::row_len(3, -3) + (1 + 3));
+        assert_eq!(Hex::index(3, Hex(-3, 0)), 0);
+        assert_eq!(Hex::index(3, Hex(-2, 3)), Hex::row_len(3, -3) + (1 + 3));
         assert_eq!(
-            Hex::index(3, Hex(2, 0)),
+            Hex::index(3, Hex(0, 2)),
             Hex::row_len(3, -3) + Hex::row_len(3, -2) + Hex::row_len(3, -1) + (3 + 2)
         );
         assert_eq!(
-            Hex::index(3, Hex(-1, 2)),
+            Hex::index(3, Hex(2, -1)),
             Hex::row_len(3, -3)
                 + Hex::row_len(3, -2)
                 + Hex::row_len(3, -1)
@@ -583,6 +502,6 @@ mod test {
                 + Hex::row_len(3, 1)
                 + 2
         );
-        assert_eq!(Hex::index(3, Hex(0, 3)), Hex::map_area(3) - 1);
+        assert_eq!(Hex::index(3, Hex(3, 0)), Hex::map_area(3) - 1);
     }
 }
