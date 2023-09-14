@@ -14,6 +14,7 @@
     - [Structures](./gameplay/structures.md)
   - [More Ideas to Explore](./ideas.md)
   - [Game Modes](./gamemodes.md)
+  - [Achievement Ideas](./achievements.md)
 - [Project Planning](./mgmt.md)
   - [Monetization Ideas](./mgmt/monetization.md)
   - [Game Settings](./mgmt/settings.md)
