@@ -14,6 +14,8 @@ use crate::prelude::*;
 /// Player ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "bevy", derive(Component))]
+#[derive(Serialize, Deserialize)]
+#[serde(from = "u8", into = "u8")]
 pub enum PlayerId {
     Neutral,
     Player(NonZeroU8),
