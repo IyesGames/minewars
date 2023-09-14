@@ -1,0 +1,60 @@
+[package]
+name = "mw_auth"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+mw_common = { path = "../../lib/mw_common" }
+mw_dataformat = { path = "../../lib/mw_dataformat" }
+mw_proto_auth = { path = "../../lib/mw_proto_auth" }
+mw_proto_hostauth = { path = "../../lib/mw_proto_hostauth" }
+toml = "0.7.8"
+anyhow = "1.0.75"
+ron = "0.8.1"
+
+[dependencies.mw_proprietary_auth]
+git = "https://github.com/IyesGames/minewars-proprietary-shim"
+
+[dependencies.serde]
+version = "1.0.188"
+features = [ "derive" ]
+
+[dependencies.clap]
+version = "4.4.3"
+features = [ "derive" ]
+
+[dependencies.tokio]
+version = "1.32.0"
+features = [
+    "parking_lot",
+    "rt-multi-thread",
+    "io-util",
+    "sync",
+    "time",
+    "net",
+    "fs",
+    "signal",
+    "tracing",
+    "macros",
+]
+
+[dependencies.tracing-subscriber]
+version = "0.3.17"
+features = ["env-filter"]
+
+[dependencies.tracing]
+version = "0.1.37"
+features = ["async-await"]
+
+[dependencies.rustls]
+version = "0.20.8" # must be whatever quinn uses
+default-features = false
+features = []
+
+[dependencies.quinn]
+version = "0.9.3"
+default-features = false
+features = ["runtime-tokio", "tls-rustls"]
+

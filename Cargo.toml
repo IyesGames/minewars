@@ -75,7 +75,13 @@ version = "1.32.0"
 features = [
     "parking_lot",
     "rt",
+    "io-util",
     "sync",
+    "time",
+    "net",
+    "fs",
+    "tracing",
+    "macros",
 ]
 
 [dependencies.bevy]
