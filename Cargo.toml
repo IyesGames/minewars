@@ -7,16 +7,22 @@ readme = "README.md"
 publish = false
 
 # UNCOMMENT for my machine / local development
-[patch."https://github.com/IyesGames/iyes_bevy_extras"]
-iyes_bevy_extras = { path = "../../engine/iyes_bevy_extras" }
-[patch."https://github.com/IyesGames/iyes_cli"]
-iyes_cli = { path = "../../engine/iyes_cli" }
-[patch."https://github.com/IyesGames/iyes_ui"]
-iyes_ui = { path = "../../engine/iyes_ui" }
+# [patch."https://github.com/IyesGames/iyes_bevy_extras"]
+# iyes_bevy_extras = { path = "../../engine/iyes_bevy_extras" }
+# [patch."https://github.com/IyesGames/iyes_cli"]
+# iyes_cli = { path = "../../engine/iyes_cli" }
+# [patch."https://github.com/IyesGames/iyes_ui"]
+# iyes_ui = { path = "../../engine/iyes_ui" }
+
+# PROPRIETARY BUILDS
+# [patch."https://github.com/IyesGames/minewars-proprietary-shim"]
+# mw_proprietary_client = { path = "../minewars-proprietary/client" }
+# mw_proprietary_host = { path = "../minewars-proprietary/host" }
+# mw_proprietary_auth = { path = "../minewars-proprietary/auth" }
 
 [workspace]
 resolver = "2"
-members = ["proprietary", "lib/*"]
+members = ["lib/*", "bin/*"]
 
 # dev: Enable max optimizations for dependencies, but not for our code
 [profile.dev.package."*"]
@@ -50,8 +56,8 @@ unic-langid = "0.9.1"
 path = "lib/mw_common"
 features = [ "bevy" ]
 
-[dependencies.mw_proprietary]
-path = "proprietary"
+[dependencies.mw_proprietary_client]
+git = "https://github.com/IyesGames/minewars-proprietary-shim"
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
