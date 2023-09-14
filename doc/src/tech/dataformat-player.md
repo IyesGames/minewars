@@ -55,15 +55,14 @@ The `flags` field is encoded as follows:
 |----------|----------------------------|
 |`----0---`| Game uses a hexagonal grid |
 |`----1---`| Game uses a square grid    |
-|`xxxx-xxx`|(reserved bits)             |
+|`xxx--xxx`|(reserved bits)             |
 
 The player/city counts are encoded as follows:
 
-|Bits      |Meaning                     |
-|----------|----------------------------|
-|`----xxxx`| Number of cities/regions   |
-|`-xxx----`| Number of Players          |
-|`x-------`|(reserved bits)             |
+|Bits      |Meaning                       |
+|----------|------------------------------|
+|`----xxxx`| Number of cities/regions - 1 |
+|`xxxx----`| Number of Players            |
 
 #### Game Parameters
 
@@ -90,33 +89,19 @@ If compressed length < uncompressed length, the data is LZ4 compressed.
 
 If compressed length == uncompressed length, the data is raw/uncompressed.
 
-The map is encoded as one byte per tile:
+First, the map data is encoded as one byte per tile:
 
 |Bits      |Meaning                     |
 |----------|----------------------------|
-|`----xxxx`| Tile Kind                  |
-|`xxxx----`| Region ID                  |
+|`-----xxx`| Tile Kind                  |
+|`-xxx----`| Item Kind                  |
 
-Tile Kind:
- - `0000`: Water
- - `0010`: Mountain
- - `0011`: Forest
- - `0100`: Destroyed Land
- - `0101`: Destroyed Land + Decoy
- - `0110`: Destroyed Land + Mine
- - `0111`: Destroyed Land + Flashbang
- - `1000`: Regular Land
- - `1001`: Regular Land + Decoy
- - `1010`: Regular Land + Mine
- - `1011`: Regular Land + Flashbang
- - `1100`: Fertile Land
- - `1101`: Fertile Land + Decoy
- - `1110`: Fertile Land + Mine
- - `1111`: Fertile Land + Flashbang
+Tile Kind: same encoding as the "Tile Kind Update" message below.
+Item Kind: same encoding as the "Reveal Item" message below.
 
-The "Land + Item" variants are available, so that spectator streams and replay
-files do not need to start with a long sequence of messages on tick 0 to reveal
-all initial item locations on the map. In regular gameplay, these will be unused.
+The Item Kind is only used for spectator streams and replay files, so that they
+don't need to start with a long sequence of "Reveal Item" messages at tick 0
+for all the initial items on the map. In player streams, this field should be 0.
 
 If any starting Structures must be encoded (say for a custom game mode / scenario),
 initialize them using regular gameplay messages at tick 0.
@@ -143,6 +128,9 @@ Hex example:
 
 (`0` is the starting position, assuming +X points right and +Y points up)
 
+After the map data, regions are encoded the same way: one byte per tile, in
+concentric ring order. The byte is the city/region ID for that tile.
+
 ## Gameplay Messages
 
 Updates for the player are encoded as a raw uncompressed block of data
@@ -154,33 +142,63 @@ by magic bits in that first byte (similar to opcodes in CPU instruction set
 encodings). The first byte may also have bit-fields embedding data into it,
 for some message types.
 
+### Message Classes
+
+This affects how messages should be sent over the network transport protocol.
+It is valid (though suboptimal) to play the game over a single TCP stream
+(reliable, ordered delivery of all messages). However, for optimal performance,
+a protocol like QUIC, that allows more granular control of ordering and
+reliability, should be used.
+
+There are five classes of messages: PvP, Notification, Personal, Background, Unreliable.
+
+PvP messages are all game updates that are part of a player's interaction with
+the game world and other players. Reliable, ordered, elevated (highest)
+priority.
+
+Notification messages inform the client about important events, but are not
+directly part of moment-to-moment gameplay. Reliable, ordered, medium priority.
+
+Personal messages are all game updates that are part of game mechanics internal
+within a player's own territory. Things that only directly affect them.
+Reliable, ordered, lower priority.
+
+Background messages are things that are not an interactive part of gameplay.
+Reliable, unordered, lowest priority.
+
+Unreliable messages are realtime things that are fine to miss. Can be sent as
+datagrams. They can also be omitted from replay files / spectation.
+
 ### Opcode Summary
 
 Quick table summarizing the opcodes of all the message types. A few are left
 unused, reserved for future use.
 
-|Bits      |Message Kind         |
-|----------|-------------------  |
-|`00000000`| Tremor              |
-|`00000001`| Smoke               |
-|`0000001-`| --                  |
-|`000001--`| --                  |
-|`00001---`| --                  |
-|`00010000`| Construction Update |
-|`00010---`| Player Update       |
-|`00011---`| Digit Update        |
-|`00100000`| Structure Gone      |
-|`0010----`| Structure HP        |
-|`00110---`| Explosions          |
-|`00111---`| Decoys Broken       |
-|`0100----`| Construction Queued |
-|`0101----`| Reveal Structure    |
-|`0110----`| City Status         |
-|`01110---`| Tile Kind Update    |
-|`011110--`| --                  |
-|`011111--`| Reveal Item         |
-|`1000----`| Capture + Digits    |
-|`1-------`| Ownership Updates   |
+|Bits      |Message Kind         |Class                           |
+|----------|---------------------|---                             |
+|`00000000`| Player Update       | Notification                   |
+|`00000001`| Tremor              | Background                     |
+|`00000010`| Smoke Start         | PvP                            |
+|`00000011`| Smoke End           | PvP                            |
+|`00000100`| City MoneyInfo      | Unreliable                     |
+|`00000101`| City Spending       | Personal                       |
+|`00000110`| City ResInfo        | Personal                       |
+|`00000111`| City TradeInfo      | Personal                       |
+|`00001---`| --                  |                                |
+|`00010---`| --                  |                                |
+|`00011---`| --                  |                                |
+|`00100000`| Structure Gone      | PvP, Personal (cancel pending) |
+|`0010----`| Structure HP        | PvP                            |
+|`0011----`| Explosions          | PvP                            |
+|`0100----`| Construction Queued | Personal                       |
+|`01001111`| Construction Update | Unreliable                     |
+|`0101----`| Reveal Structure    | PvP                            |
+|`01011111`| --                  |                                |
+|`0110----`| Digits (single)     | PvP                            |
+|`01110---`| Reveal Item         | PvP (foreign), Personal (own)  |
+|`01111---`| Tile Kind Update    | PvP                            |
+|`1000----`| Digits (multi)      | PvP                            |
+|`1-------`| Ownership Updates   | PvP                            |
 
 The patterns must be checked in the correct order, so that more specific
 bit sequences are matched first.
@@ -188,57 +206,6 @@ bit sequences are matched first.
 ### Messages Documentation
 
 Here is the complete list of game update messages and their encodings:
-
-#### Tremor
-
-Some explosion occurred at an unknown location. Client should shake the screen lightly.
-
-Assembly:
-```
-SHAKE
-```
-
-Encoding:
-
-|Bits      |Meaning         |
-|----------|----------------|
-|`00000000`| (opcode)       |
-
-#### Smoke
-
-A tile was smoked.
-
-Assembly:
-```
-SMOKE y,x
-```
-
-Encoding:
-
-|Bits      |Meaning         |
-|----------|----------------|
-|`00000001`| (opcode)       |
-
-Followed by the coordinate of the tile.
-
-#### Construction Update
-
-Update on the progress of a pending structure.
-
-Assembly:
-```
-BUILD y,x current rate
-```
-
-|Bits      |Meaning         |
-|----------|----------------|
-|`00010000`| (opcode)       |
-
-Followed by the coordinates of the tile.
-
-Followed by `u16` indicating current accumulated units.
-
-Followed by `u16` indicating rate of construction.
 
 #### Player Update
 
@@ -253,41 +220,152 @@ Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`00010---`| (opcode)       |
-|`-----xxx`| PlayerId       |
+|`00000000`| (opcode)       |
 
-PlayerId must not be `000`.
-
-The next byte specifies what happened:
+The next byte:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`00000000`| Disconnected   |
-|`00000001`| Eliminated     |
-|`00000010`| Stunned/Killed |
-|`00000011`| Blinded        |
-|`00000110`| Un-Stunned     |
-|`00000111`| Un-Blinded     |
-|`00001000`| Kicked         |
-|...       | (reserved)     |
+|`xxxx----`| PlayerId       |
+|`----xxxx`| Status         |
 
-#### Digit Update
+PlayerId must not be zero.
 
-Update the value of the Minesweeper digit at a specific (single) tile.
+The Status frield specifies what happened:
+
+|Bits  |Meaning         |
+|------|----------------|
+|`0000`| Joined         |
+|`0001`| (reserved)     |
+|`0010`| Stunned/Killed |
+|`0011`| Un-Stunned     |
+|`0100`| Blinded        |
+|`0101`| Un-Blinded     |
+|`0110`| Protected      |
+|`0111`| Un-Protected   |
+|`1000`| Eliminated     |
+|`1001`| Surrendered    |
+|`1010`| Disconnected   |
+|`1011`| Kicked         |
+|`1100`| (reserved)     |
+|`1101`| (reserved)     |
+|`1110`| Friendly-Chat  |
+|`1111`| All-Chat       |
+
+#### Tremor
+
+Some explosion occurred at an unknown location. Client should shake the screen lightly.
 
 Assembly:
 ```
-DIGIT d/y,x
+SHAKE
 ```
 
 Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`00011---`| (opcode)       |
+|`00000001`| (opcode)       |
+
+#### Smoke Start
+
+A tile was smoked.
+
+Assembly:
+```
+SMOKE y,x
+```
+
+Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00000010`| (opcode)       |
+
+Followed by the coordinate of the tile.
+
+#### Smoke End
+
+A tile is no longer smoked.
+
+Assembly:
+```
+UNSMOKE y,x
+```
+
+Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00000011`| (opcode)       |
+
+Followed by the coordinate of the tile.
+
+#### Construction Update
+
+Update on the progress of a pending structure.
+
+Assembly:
+```
+BUILD y,x current rate
+```
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`01001111`| (opcode)       |
+
+Followed by the coordinates of the tile.
+
+Followed by `u16` indicating current accumulated units.
+
+Followed by `u16` indicating rate of construction.
+
+#### Digits (+ Implied Capture)
+
+The specified tiles are owned by the player and display the given Minesweeper digit.
+
+Can be used to capture tiles, if the tile is not owned by the player.
+
+Can be used to update digits on owned tiles, when they change.
+
+Assembly:
+```
+DIGITS d/y,x ...
+DIGITS d*/y,x ...
+```
+
+Compact (single) Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`0110----`| (opcode)       |
+|`----x---`| Asterisk       |
 |`-----xxx`| Digit Value    |
 
 Followed by the coordinate of the tile.
+
+Multi-tile Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`1000----`| (opcode)       |
+|`----xxxx`| Tile Count - 1 |
+
+Followed by the coordinates of the tiles.
+
+Followed by the digit for each tile, two digits packed into one byte (note
+big endian):
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`x-------`| asterisk N     |
+|`-xxx----`| digit N        |
+|`----x---`| asterisk N+1   |
+|`-----xxx`| digit N+1      |
+
+(this encoding allows them to be easily read when inspecting a hex dump)
+
+For an odd number of tiles, the final digit is ignored (should be encoded as zero).
 
 #### Structure Gone
 
@@ -369,6 +447,8 @@ The Item Kind is:
  - `0011`: Tower
  - other values reserved
 
+Must not be `1111`.
+
 Followed by tile coordinate.
 
 Followed by `u16` indicating total points required to complete construction.
@@ -398,27 +478,85 @@ The Item Kind is:
  - `0011`: Tower
  - other values reserved
 
+Must not be `1111`.
+
 Followed by tile coordinate.
 
-#### City Update
+#### City MoneyInfo
 
-Update on the stats of a City.
+Reports how much money a city has.
 
 Assembly:
 ```
-CIT i res money income
+CITMONEY i money [income]
 ```
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`0110----`| (opcode)       |
-|`----xxxx`| City ID        |
+|`00000100`| (opcode)       |
 
-Followed by `u16` indicating total resources.
+Followed by:
+ - `u8`: City ID
+ - `u32`: current money
+ - [`u16`: current income rate]
 
-Followed by `u32` indicating current money.
+The top bit (bit 31) of money indicates whether the
+income is reported too. The income field is only
+present if this bit is `1`.
 
-Followed by `u16` indicating current income rate.
+The remaining 31 bits are used for the money value.
+
+#### City Spending
+
+Reports that a city has spent a given sum of money.
+
+Assembly:
+```
+CITSPEND i spent
+```
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00000101`| (opcode)       |
+
+Followed by:
+ - `u8`: City ID
+ - `u16`: the amount of money spent
+
+#### City ResInfo
+
+Update on the resources of a city.
+
+Assembly:
+```
+CITRES i res
+```
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00000110`| (opcode)       |
+
+Followed by:
+ - `u8`: City ID
+ - `u16`: the amount of resources
+
+#### City TradeInfo
+
+Update on the export/import policy of a city.
+
+Assembly:
+```
+CITTRADE export import
+```
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00000111`| (opcode)       |
+
+Followed by:
+ - `u8`: City ID
+ - `u8`: Export rate
+ - `u8`: Import rate
 
 #### Tile Kind Update
 
@@ -433,7 +571,7 @@ Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`01110---`| (opcode)       |
+|`01111---`| (opcode)       |
 |`-----xxx`| Tile Kind      |
 
 The Tile Kind is:
@@ -463,14 +601,15 @@ Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`111111--`| (opcode)       |
-|`------xx`| Item Kind      |
+|`01110---`| (opcode)       |
+|`-----xxx`| Item Kind      |
 
 The Item Kind is:
- - `00`: None
- - `01`: Decoy
- - `10`: Mine
- - `11`: Flashbang
+ - `000`: None
+ - `001`: Decoy
+ - `010`: Mine
+ - `011`: Flashbang
+ - `1--`: (reserved)
 
 Followed by tile coordinate.
 
@@ -488,49 +627,13 @@ Encoding:
 |Bits      |Meaning         |
 |----------|----------------|
 |`1-------`| (opcode)       |
-|`-xxx----`| PlayerId       |
-|`----xxxx`| Tile Count - 1 |
+|`-xxxx---`| PlayerId       |
+|`-----xxx`| Tile Count - 1 |
 
-The PlayerId must not be `000`.
+The PlayerId must not be zero.
 
 Followed by the coordinates of the tiles.
 
 If any of the tiles are of a clustered tile kind (mountain, forest), it is assumed
 that the ownership update applies to the entire cluster. There is no need to list
 every tile coordinate of the cluster.
-
-#### Capture + Digits
-
-This is a more-efficient combined encoding to be used for when the player is
-capturing land tiles. It can be used instead of separate "Ownership Change"
-and "Digit Change" messages.
-
-The specified tiles are now owned by the player (to whom this is addressed),
-and the specified digits are to be shown on them.
-
-Assembly:
-```
-DIGITS d/y,x ...
-```
-
-Encoding:
-
-|Bits      |Meaning         |
-|----------|----------------|
-|`1000----`| (opcode)       |
-|`----xxxx`| Tile Count - 1 |
-
-Followed by the coordinates of the tiles.
-
-Followed by the digit for each tile, two digits packed into one byte (note
-big endian):
-
-|Bits      |Meaning         |
-|----------|----------------|
-|`-xxx----`| digit N        |
-|`-----xxx`| digit N+1      |
-
-(this encoding allows them to be easily read when inspecting a hex dump)
-
-For an odd number of tiles, the final digit is to be encoded as zero.
-

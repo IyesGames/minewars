@@ -78,20 +78,23 @@ Homogenous frames are frames where every participant gets the same data. The dat
 only encoded once and assumed to apply to all participating streams.
 
 Homogenous frames have the following structure:
- - `u8`: time delta (time since the previous frame in the stream)
- - `u8`: participation mask
+ - `u16`: Header
+ - `u8`/`u16`: participation mask
  - `u8`: length of data payload in bytes - 1
  - [ ... data payload ... ]
 
-The participation mask is as follows:
+The top bit (bit 15) in the Header must be `1`, indicating that this is a Homogenous
+Frame. The remaining 15 bits represent the time delta since the previous frame, in
+milliseconds, and must not be all-ones (the max value is reserved for Keepalive Frames).
 
-|Bits      |Meaning                                                  |
-|----------|---------------------------------------------------------|
-|`1-------`| identifies this frame as Homogenous                     |
-|`-xxxxxx-`| bitmask indicating which PlayerIds the frame applies to |
-|`-------x`| does the frame also apply to the global spectator view? |
+The participation mask is a bitmask indicating which PlayerIds the frame applies to.
+Bit 0 represents the global spectator view.
+
+The size of the participation mask is determined by the "max player id" bit in the
+Initialization Sequence.
 
 The data payload is the [player protocol update messages](./dataformat-player.md#gameplay-messages).
+All of the players listed in the participation mask must receive the entire identical data payload.
 
 ### Heterogenous Frames
 
@@ -99,21 +102,23 @@ Heterogenous frames are freams where each participant gets different data. The d
 for each participating stream is included in the frame.
 
 Heterogenous frames have the following structure:
- - `u8`: time delta (time since the previous frame in the stream)
- - `u8`: participation mask
+ - `u16`: Header
+ - `u8`/`u16`: participation mask
  - `[u8]`: lengths of each player view's portion of the data payload (as many as specified in the participation mask)
  - [ ... data payload ... ]
 
-The participation mask is as follows:
+The top bit (bit 15) in the Header must be `0`, indicating that this is a Heterogenous
+Frame. The remaining 15 bits represent the time delta since the previous frame, in
+milliseconds, and must not be all-ones (the max value is reserved for Keepalive Frames).
 
-|Bits      |Meaning                                                          |
-|----------|-----------------------------------------------------------------|
-|`0-------`| identifies this frame as Heterogenous                           |
-|`-xxxxxx-`| bitmask indicating which PlayerIds the frame contains data for  |
-|`-------x`| does the frame also contain data for the global spectator view? |
+The participation mask is a bitmask indicating which PlayerIds the frame applies to.
+Bit 0 represents the global spectator view.
 
-The data payload is the global spectator view + each player's view,
-concatenated together.
+The size of the participation mask is determined by the "max player id" bit in the
+Initialization Sequence.
+
+The data payload is the global spectator view + each player's view (in the order
+of the bits in the participation mask), concatenated together.
 
 Each view's data is the [player protocol update
 messages](./dataformat-player.md#gameplay-messages) for that view.
@@ -127,13 +132,13 @@ Keepalive frames are to be used if the time delta since the last frame is too
 long to be represented in a single frame header. It is an empty frame with no
 data payload, just used to advance time.
 
-It is encoded as a frame with an all-zero participation mask.
+It is encoded as a frame with the time delta field being all-ones (the maximum
+value). The topmost bit is unimportant/ignored.
 
 Keepalive frames have the following structure:
- - `u8`: time delta (time since the previous frame in the stream)
- - `u8`: participation mask == `x0000000`
+ - `u16`: `-111111111111111`
 
-Note: there is no data payload length field in the header.
+Note: there is no participation mask, no data length field, no data payload
 
 ## The Global Spectator View
 
@@ -149,8 +154,9 @@ The initialization sequence encodes mine positions inside the map data.
 
 The global spectator view is controlled using the same update message format
 as player views, but some message types are used differently:
- - "Digit Update" is not to be used; ignore if encountered
- - "Capture + Digits" is not to be used
+ - "Digit Update" and "Capture + Digits" must have the tile owner inferred
+   from the participation mask. The mask must encode only one PlayerID
+   (other than bit 0 for the spectator stream).
 
 ## Compression Dictionary
 
@@ -159,8 +165,8 @@ frames. It is to be generated from the data in the initialization sequence.
 
 It is constructed by concatenating the following data:
 
- - Every land coordinate on the map, in sorted order.
  - Every mountain coordinate on the map, in sorted order.
+ - Every land coordinate on the map, in sorted order.
 
 All permutations of a given sample pattern are to be concatenated, before
 moving onto the next pattern.
