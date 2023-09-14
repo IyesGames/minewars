@@ -1,6 +1,7 @@
 # Summary
 
 - [Overview](./overview.md)
+ - [Open-Source Builds](./foss.md)
 - [Game Design](./game-design.md)
   - [Target Audience](./audience.md)
   - [Gameplay and Rules](./gameplay.md)
