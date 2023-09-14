@@ -1,0 +1,36 @@
+name: build & deploy book
+
+on:
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: "latest"
+
+      - name: Build mdbook
+        run: cd doc && mdbook build
+
+      - name: Deploy mdbook to Github pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.BOOK_DEPLOY_KEY }}
+          external_repository: IyesGames/iyesgames.github.io
+          publish_dir: ./doc/book
+          destination_dir: ./minewars/book
