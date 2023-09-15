@@ -28,4 +28,5 @@ pub mod bevy;
 
 pub mod algo;
 pub mod grid;
+pub mod game;
 pub mod plid;
