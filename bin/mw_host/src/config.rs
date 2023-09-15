@@ -1,9 +1,7 @@
-use std::{path::PathBuf, net::IpAddr};
-use std::net::SocketAddr;
-use std::collections::HashSet;
+use crate::prelude::*;
 
+use mw_common::net::ControlListMode;
 use mw_proto_hostrpc::RpcMethodName;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone)]
 #[derive(Serialize, Deserialize)]
@@ -119,16 +117,6 @@ pub struct RpcConfig {
     pub rpc_method_control: ControlListMode,
     /// List of RPC methods to be restricted
     pub rpc_methods_list: HashSet<RpcMethodName>,
-}
-
-/// How to interpret a list of restrictions for security
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
-pub enum ControlListMode {
-    /// Everything else, except for what is in the list, is allowed
-    Denylist,
-    /// Only what is in the list is allowed
-    Allowlist,
 }
 
 /// Payload formats that can be accepted over our various protocols.

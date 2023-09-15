@@ -1,18 +1,15 @@
 pub mod prelude {
-    pub use std::sync::Arc;
+    pub use mw_common::prelude::*;
     pub use crate::config::Config;
     pub use tracing::{error, warn, info, debug, trace};
-    pub use anyhow::{Result as AnyResult, Error as AnyError, bail, Context};
 }
 
 use clap::Parser;
-use tracing_subscriber::filter::LevelFilter;
 
 use crate::prelude::*;
 
 mod cli;
 mod config;
-mod util;
 mod hostauth;
 mod rpc;
 mod server;

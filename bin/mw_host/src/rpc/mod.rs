@@ -1,11 +1,9 @@
-use std::{net::SocketAddr, marker::PhantomData};
+use crate::prelude::*;
 
+use mw_common::net::*;
 use mw_proto_hostrpc::{RpcMethodName, RpcError};
 use quinn::Endpoint;
 use rustls::{RootCertStore, ServerConfig, server::AllowAnyAuthenticatedClient};
-use serde::Deserialize;
-
-use crate::{prelude::*, util::{load_key, load_cert, check_list}};
 
 pub async fn rpc_main(
     mut config: Arc<Config>,
@@ -104,7 +102,7 @@ async fn rpc_handle_connection(
     connecting: quinn::Connecting,
 ) -> AnyResult<()> {
     let addr_remote = connecting.remote_address();
-    if !check_list(config.rpc.ip_control, &config.rpc.ip_list.temporary_todo_unwrap(), &addr_remote.ip()) {
+    if !check_list(config.rpc.ip_control, config.rpc.ip_list.temporary_todo_unwrap(), &addr_remote.ip()) {
         info!("Ignoring incoming RPC connection from banned IP: {}", addr_remote);
         return Ok(());
     }

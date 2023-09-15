@@ -1,5 +1,3 @@
-use std::net::SocketAddr;
-
 use crate::prelude::*;
 
 pub async fn hostauth_main(

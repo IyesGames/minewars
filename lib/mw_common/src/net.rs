@@ -1,8 +1,16 @@
-use std::{path::Path, collections::HashSet, hash::Hash};
+use crate::prelude::*;
 
 use rustls::{Certificate, PrivateKey};
 
-use crate::config::ControlListMode;
+/// How to interpret a list of restrictions for security
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize)]
+pub enum ControlListMode {
+    /// Everything else, except for what is in the list, is allowed
+    Denylist,
+    /// Only what is in the list is allowed
+    Allowlist,
+}
 
 pub async fn load_cert(path: &Path) -> Result<Certificate, tokio::io::Error> {
     let bytes = tokio::fs::read(path).await?;
@@ -24,4 +32,3 @@ pub fn check_list<T: Eq + Hash>(mode: ControlListMode, list: &HashSet<T>, value:
         }
     }
 }
-

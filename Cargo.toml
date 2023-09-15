@@ -54,7 +54,7 @@ unic-langid = "0.9.1"
 
 [dependencies.mw_common]
 path = "lib/mw_common"
-features = [ "bevy" ]
+features = [ "bevy", "net" ]
 
 [dependencies.mw_proprietary_client]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
@@ -69,20 +69,6 @@ git = "https://github.com/IyesGames/iyes_cli"
 [dependencies.iyes_ui]
 git = "https://github.com/IyesGames/iyes_ui"
 features = ["iyes_cli"]
-
-[dependencies.tokio]
-version = "1.32.0"
-features = [
-    "parking_lot",
-    "rt",
-    "io-util",
-    "sync",
-    "time",
-    "net",
-    "fs",
-    "tracing",
-    "macros",
-]
 
 [dependencies.bevy]
 version = "0.11.2"
