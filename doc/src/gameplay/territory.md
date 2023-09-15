@@ -135,11 +135,12 @@ puzzle, but rewards the player with money and keeps the land intact.
 
 ### Cities
 
-To capture a city, the player must surround the city, by capturing every
-land tile adjacent to the city's tile.
+To capture a city, the player must surround the city, by capturing every land
+tile adjacent to the city's tile. The player must then hold all adjacent tiles
+for a duration of **5.0 sec**.
 
 The city remains owned by the player until another player does the same
-(captures every adjacent land tile).
+(captures every adjacent land tile and maintains ownership for duration).
 
 See the **Economy** section for further implications of capturing cities.
 
