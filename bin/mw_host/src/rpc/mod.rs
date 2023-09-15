@@ -2,8 +2,7 @@ use crate::prelude::*;
 
 use mw_common::net::*;
 use mw_proto_hostrpc::{RpcMethodName, RpcError};
-use quinn::Endpoint;
-use rustls::{RootCertStore, ServerConfig, server::AllowAnyAuthenticatedClient};
+use rustls::ServerConfig;
 
 pub async fn rpc_main(
     mut config: Arc<Config>,
@@ -18,10 +17,14 @@ pub async fn rpc_main(
         let (listener_kill_tx, _) = tokio::sync::broadcast::channel(1);
 
         if config.rpc.enable {
-            match load_rpc_crypto(&config).await {
+            match load_server_crypto(
+                &config.rpc.cert,
+                &config.rpc.key,
+                config.rpc.require_client_cert,
+                &config.rpc.client_ca,
+            ).await {
                 Ok(crypto) => {
                     info!("RPC crypto (certs and keys) loaded.");
-                    let crypto = Arc::new(crypto);
                     for addr in config.rpc.listen.iter() {
                         let jh = tokio::spawn(rpc_listener(config.clone(), listener_kill_tx.subscribe(), crypto.clone(), *addr));
                         jhs_listeners.push(jh);
@@ -62,7 +65,7 @@ async fn rpc_listener(
     crypto: Arc<ServerConfig>,
     addr: SocketAddr,
 ) {
-    let endpoint = match setup_rpc_endpoint(&config, crypto, addr) {
+    let endpoint = match setup_quic_server(crypto, addr) {
         Ok(endpoint) => endpoint,
         Err(e) => {
             error!("Failed to create QUIC Endpoint: {}", e);
@@ -181,40 +184,4 @@ fn rpc_handle_request(
     let r: Result<(), _> = Err(RpcError::Unsupported);
     ron::ser::to_writer(buf, &r)?;
     Ok(())
-}
-
-fn setup_rpc_endpoint(
-    _config: &Config,
-    crypto: Arc<ServerConfig>,
-    addr: SocketAddr,
-) -> AnyResult<Endpoint> {
-    let config = quinn::ServerConfig::with_crypto(crypto);
-    let endpoint = Endpoint::server(config, addr)?;
-    Ok(endpoint)
-}
-
-async fn load_rpc_crypto(config: &Config) -> AnyResult<ServerConfig> {
-    let server_key = load_key(&config.rpc.key).await?;
-
-    let mut server_chain = Vec::with_capacity(config.rpc.cert.len());
-    for path in config.rpc.cert.iter() {
-        let cert = load_cert(&path).await?;
-        server_chain.push(cert);
-    }
-
-    let crypto = rustls::ServerConfig::builder()
-        .with_safe_defaults();
-
-    let crypto = if config.rpc.require_client_cert {
-        let client_ca = load_cert(&config.rpc.client_ca).await?;
-        let mut roots = RootCertStore::empty();
-        roots.add(&client_ca)?;
-        crypto.with_client_cert_verifier(AllowAnyAuthenticatedClient::new(roots))
-    } else {
-        crypto.with_no_client_auth()
-    };
-
-    let crypto = crypto.with_single_cert(server_chain, server_key)?;
-
-    Ok(crypto)
 }

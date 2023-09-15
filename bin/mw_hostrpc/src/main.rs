@@ -1,10 +1,7 @@
-use std::{net::{IpAddr, SocketAddr}, path::PathBuf, sync::Arc};
-use anyhow::Result as AnyResult;
-
 use mw_common::prelude::*;
+use mw_common::net::*;
 
 use clap::Parser;
-use rustls::{Certificate, RootCertStore};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -19,17 +16,9 @@ struct Args {
 async fn connect_sendrpc(args: Args) -> AnyResult<()> {
     use mw_proto_hostrpc::methods::kill_session::KillSession;
 
-    let ca_bytes = tokio::fs::read(&args.ca_server).await?;
-    let ca = Certificate(ca_bytes);
-    let mut roots = RootCertStore::empty();
-    roots.add(&ca)?;
-    let crypto = rustls::ClientConfig::builder()
-        .with_safe_defaults()
-        .with_root_certificates(roots)
-        .with_no_client_auth();
-    let config = quinn::ClientConfig::new(Arc::new(crypto));
-    let mut endpoint = quinn::Endpoint::client("0.0.0.0:0".parse().unwrap())?;
-    endpoint.set_default_client_config(config);
+    let crypto = load_client_crypto(&args.ca_server, false, &[""], "").await?;
+    let endpoint = setup_quic_client(crypto, "0.0.0.0:0".parse().unwrap())?;
+
     let conn = endpoint.connect(SocketAddr::new(args.server, args.port), "auth.iyes.games")?.await?;
     let (mut tx, rx) = conn.open_bi().await?;
     let mut buf = vec![];
