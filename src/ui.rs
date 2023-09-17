@@ -1,137 +1,94 @@
-use crate::{prelude::*, assets::UiAssets, locale::{L10nKey, L10nResolveSet}};
+use crate::prelude::*;
+
+mod console;
+mod hud;
+mod menu;
+mod notify;
+mod tooltip;
+mod widget;
 
 pub struct UiPlugin;
-
-mod mainmenu;
-mod hud;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            self::console::UiConsolePlugin,
             self::hud::HudPlugin,
-            self::mainmenu::MainMenuPlugin,
+            self::menu::MenuPlugin,
+            self::notify::NotifyPlugin,
+            self::tooltip::TooltipPlugin,
+            self::widget::WidgetsPlugin,
         ));
         app.add_systems(Update, (
-            butt_interact_visual,
-            butt_interact_infotext.before(L10nResolveSet),
+            ui_root_resize.run_if(rc_ui_root_needs_resize),
         ));
     }
 }
 
+/// Marker for the camera that displays our UI
 #[derive(Component)]
-struct InfoAreaText;
+struct UiCamera;
 
+/// Marker for UI root entity / top-level container
+///
+/// We spawn all UI under a custom root with absolute positioning,
+/// so we can enforce settings like ultrawide dead space.
 #[derive(Component)]
-struct InfoText(String);
+struct UiRoot;
 
-fn spawn_button(
-    commands: &mut Commands,
-    uiassets: &UiAssets,
-    behavior: OnClick,
-    text: &'static str,
-    info_text: &'static str,
-    enabled: bool,
-) -> Entity {
-    let color_init = if enabled {
-        Color::rgb(0.24, 0.24, 0.25)
-    } else {
-        Color::rgb(0.16, 0.15, 0.15)
+fn ui_root_resize(
+    settings: Res<AllSettings>,
+    mut q_root: Query<&mut Style, With<UiRoot>>,
+    q_cam: Query<&Camera, With<UiCamera>>,
+) {
+    let Some(size) = q_cam.get_single().ok()
+        .and_then(|cam| cam.logical_viewport_size())
+    else {
+        return;
     };
 
-    let color_text = if enabled {
-        Color::WHITE
-    } else {
-        Color::rgb(0.48, 0.44, 0.42)
+    // detect ultrawide (anything > 16:9)
+    let uw_width_threshold = size.y * 16.0 / 9.0;
+    let uw_extra_width = size.x - uw_width_threshold;
+
+    let width = uw_width_threshold + uw_extra_width * settings.ui.ultrawide_use_extra_width_ratio;
+    let width = width.min(size.x) * settings.ui.underscan_ratio;
+    let height = size.y * settings.ui.underscan_ratio;
+
+    let lr = ((size.x - width) / 2.0).floor();
+    let tb = ((size.y - height) / 2.0).floor();
+
+    for mut root_style in &mut q_root {
+        root_style.left = Val::Px(lr);
+        root_style.right = Val::Px(lr);
+        root_style.top = Val::Px(tb);
+        root_style.bottom = Val::Px(tb);
+    }
+}
+
+/// Run condition for `ui_root_resize`
+fn rc_ui_root_needs_resize(
+    settings: Option<Res<AllSettings>>,
+    q_cam: Query<&Camera, With<UiCamera>>,
+    mut last_size: Local<Option<Vec2>>,
+) -> bool {
+    let Some(settings) = settings else {
+        return false;
     };
 
-    let butt = commands.spawn((
-        behavior,
-        InfoText(info_text.to_owned()),
-        ButtonBundle {
-            background_color: BackgroundColor(color_init),
-            style: Style {
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                padding: UiRect::all(Val::Px(4.0)),
-                margin: UiRect::all(Val::Px(4.0)),
-                flex_grow: 1.0,
-                flex_shrink: 0.0,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-    )).id();
+    let Ok(camera) = q_cam.get_single() else {
+        return false;
+    };
 
-    let text = commands.spawn((
-        L10nKey(text.to_owned()),
-        TextBundle {
-            text: Text::from_section(
-                text,
-                TextStyle {
-                    color: color_text,
-                    font_size: 32.0,
-                    font: uiassets.font.clone(),
-                },
-            ),
-            ..Default::default()
-        },
-    )).id();
-
-    commands.entity(butt).push_children(&[text]);
-
-    if !enabled {
-        commands.entity(butt).insert(UiDisabled);
+    let viewport_size = camera.logical_viewport_size();
+    if viewport_size.is_none() {
+        return false;
     }
 
-    butt
+    let size_changed = viewport_size != *last_size;
+    *last_size = viewport_size;
+
+    let settings_changed = settings.is_changed();
+
+    settings_changed || size_changed
 }
-
-fn butt_interact_infotext(
-    q_butt: Query<(&Interaction, &InfoText), Changed<Interaction>>,
-    mut q_info: Query<&mut L10nKey, With<InfoAreaText>>,
-) {
-    let mut newtext = None;
-    let mut clear = false;
-    for (interaction, infotext) in &q_butt {
-        match interaction {
-            Interaction::None => {
-                clear = true;
-            }
-            _ => {
-                newtext = Some(&infotext.0);
-            }
-        }
-    }
-    if clear || newtext.is_some() {
-        for mut infol10n in &mut q_info {
-            if let Some(newtext) = newtext {
-                infol10n.0 = String::from(newtext);
-            } else {
-                infol10n.0 = String::new();
-            }
-        }
-    }
-}
-
-fn butt_interact_visual(
-    mut query: Query<(
-        &Interaction, &mut BackgroundColor,
-    ), (
-        Changed<Interaction>, With<Button>, Without<UiDisabled>,
-    )>,
-) {
-    for (interaction, mut color) in query.iter_mut() {
-        match interaction {
-            Interaction::Pressed => {
-                *color = BackgroundColor(Color::rgb(0.24, 0.24, 0.25));
-            }
-            Interaction::Hovered => {
-                *color = BackgroundColor(Color::rgb(0.20, 0.20, 0.25));
-            }
-            Interaction::None => {
-                *color = BackgroundColor(Color::rgb(0.24, 0.24, 0.25));
-            }
-        }
-    }
-}
-

@@ -96,6 +96,7 @@ features = [
     "wayland",
     "bevy_audio",
     "flac",
+    "serialize",
 ]
 
 [dependencies.iyes_progress]

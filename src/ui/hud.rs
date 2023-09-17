@@ -1,6 +1,8 @@
 use crate::{prelude::*, assets::UiAssets, ui};
 
-pub struct HudPlugin;
+use super::tooltip::InfoAreaText;
+
+pub(super) struct HudPlugin;
 
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
@@ -572,7 +574,7 @@ fn setup_hud(
         },
     )).id();
     let info_text = commands.spawn((
-        ui::InfoAreaText,
+        InfoAreaText,
         // L10nKey(String::new()),
         TextBundle {
             text: Text::from_section(

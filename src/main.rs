@@ -10,6 +10,7 @@ mod prelude {
     pub use iyes_ui::prelude::*;
     pub use mw_common::prelude::*;
     pub use mw_proprietary_client::PROPRIETARY;
+    pub use crate::settings::AllSettings;
 }
 
 use crate::prelude::*;

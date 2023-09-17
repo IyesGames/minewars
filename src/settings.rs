@@ -4,17 +4,25 @@ pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
     fn build(&self, app: &mut App) {
+        app.configure_set(Update, NeedsSettingsSet.run_if(resource_exists::<AllSettings>()));
         app.add_systems(Update,
             load_or_init_settings
                 .run_if(not(resource_exists::<SettingsLoaded>())));
+        app.add_systems(Update, (
+            loadscreen_wait_settings.track_progress().run_if(in_state(AppState::AssetsLoading)),
+        ));
     }
 }
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NeedsSettingsSet;
 
 #[derive(Resource, Serialize, Deserialize, Default, Clone)]
 #[serde(default)]
 pub struct AllSettings {
     pub gameplay: GameplaySettings,
     pub camera: CameraSettings,
+    pub ui: UiSettings,
     pub ui_hud: UiHudSettings,
     pub player_colors: PlayerPaletteSettings,
 }
@@ -55,14 +63,42 @@ impl Default for GameplaySettings {
     }
 }
 
+/// General UI Settings
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct UiSettings {
+    pub text_scale: f32,
+    pub underscan_ratio: f32,
+    pub ultrawide_use_extra_width_ratio: f32,
+    pub color_text: Color,
+    pub color_text_inactive: Color,
+    pub color_menu_button: Color,
+    pub color_menu_button_inactive: Color,
+    pub color_menu_button_selected: Color,
+}
+
+impl Default for UiSettings {
+    fn default() -> Self {
+        UiSettings {
+            text_scale: 1.0,
+            underscan_ratio: 1.0,
+            ultrawide_use_extra_width_ratio: 0.0,
+            color_text: Color::rgb(0.84, 0.86, 0.88),
+            color_text_inactive: Color::rgb(0.48, 0.44, 0.42),
+            color_menu_button: Color::rgb(0.24, 0.24, 0.25),
+            color_menu_button_inactive: Color::rgb(0.16, 0.15, 0.15),
+            color_menu_button_selected: Color::rgb(0.20, 0.20, 0.25),
+        }
+    }
+}
+
 /// Settings for the in-game UI (HUD)
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct UiHudSettings {
-    bottom_layout_reverse: bool,
-    citylist: bool,
-    citylist_show_unowned: bool,
-    ultrawide_dead_space_pct: f32,
+    pub bottom_layout_reverse: bool,
+    pub citylist: bool,
+    pub citylist_show_unowned: bool,
 }
 
 impl Default for UiHudSettings {
@@ -71,7 +107,6 @@ impl Default for UiHudSettings {
             bottom_layout_reverse: false,
             citylist: true,
             citylist_show_unowned: true,
-            ultrawide_dead_space_pct: 0.0,
         }
     }
 }
@@ -221,5 +256,11 @@ fn do_write_settings(
         error!("Failed to write default settings to user prefs file: {}", e);
     }
     info!("Settings written to: {:?}", file);
+}
+
+fn loadscreen_wait_settings(
+    settings: Option<Res<AllSettings>>,
+) -> Progress {
+    settings.is_some().into()
 }
 
