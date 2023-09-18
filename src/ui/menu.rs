@@ -3,6 +3,7 @@ use crate::{prelude::*, locale::L10nKey, assets::UiAssets, settings::NeedsSettin
 use super::tooltip::InfoText;
 
 mod mainmenu;
+mod offline;
 
 pub(super) struct MenuPlugin;
 
@@ -10,6 +11,7 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             mainmenu::MainMenuPlugin,
+            offline::OfflineMenuPlugin,
         ));
         app.add_systems(Update, (
             menu_butt_interact_visual.in_set(NeedsSettingsSet),
@@ -122,6 +124,23 @@ fn menu_butt_interact_visual(
             }
         }
     }
+}
+
+fn spawn_menu_row(
+    commands: &mut Commands,
+    children: &[Entity],
+) -> Entity {
+    commands.spawn((
+        NodeBundle {
+            background_color: BackgroundColor(Color::NONE),
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Stretch,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).push_children(children).id()
 }
 
 fn spawn_top_bar(

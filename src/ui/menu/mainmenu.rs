@@ -246,7 +246,7 @@ fn spawn_mainmenu(
         &mut commands,
         &*uiassets,
         &*settings,
-        OnClick::new(),
+        OnClick::new().cli("menu_offline"),
         "menu-button-offline",
         "menu-tooltip-offline",
         true,
@@ -279,19 +279,11 @@ fn spawn_mainmenu(
         true,
     );
 
-    commands
-        .entity(row1)
-        .push_children(&[butt_playofficial, butt_watch, butt_playlan]);
-    commands
-        .entity(row2)
-        .push_children(&[butt_playoffline]);
-    commands
-        .entity(row3)
-        .push_children(&[butt_settings, butt_credits, butt_exit]);
-
-    commands.entity(rows_wrapper).push_children(&[row1, row2, row3]);
-    commands.entity(wrapper).push_children(&[img_logo, rows_wrapper]);
-    commands.entity(container).push_children(&[wrapper]);
+    let rows = &[
+        spawn_menu_row(&mut commands, &[butt_playofficial, butt_watch, butt_playlan]),
+        spawn_menu_row(&mut commands, &[butt_playoffline]),
+        spawn_menu_row(&mut commands, &[butt_settings, butt_credits, butt_exit]),
+    ];
 
     #[cfg(feature = "dev")]
     {
@@ -304,8 +296,12 @@ fn spawn_mainmenu(
             "menu-tooltip-dev",
             true,
         );
-        commands.entity(row2).push_children(&[butt_dev]);
+        commands.entity(rows[1]).push_children(&[butt_dev]);
     }
+
+    commands.entity(rows_wrapper).push_children(rows);
+    commands.entity(wrapper).push_children(&[img_logo, rows_wrapper]);
+    commands.entity(container).push_children(&[wrapper]);
 }
 
 /// Ensure the main menu is spawned whenever there is no other menu displayed
