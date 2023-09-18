@@ -10,6 +10,7 @@ pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
+        app.register_clicommand_noargs("menu_mainmenu", spawn_mainmenu);
         app.add_systems(OnEnter(AppState::MainMenu), setup_mainmenu_layout);
         app.add_systems(Update, (
             spawn_mainmenu
@@ -121,10 +122,22 @@ fn spawn_mainmenu(
     settings: Res<AllSettings>,
     logo: Res<crate::assets::TitleLogo>,
     q_container: Query<Entity, With<MenuContainer>>,
+    q_extras: Query<Entity, With<MenuTopBarExtras>>,
+    mut q_title: Query<&mut L10nKey, With<MenuTitleText>>,
 ) {
     let Ok(container) = q_container.get_single() else {
+        error!("Menu Container Entity not found!");
         return;
     };
+
+    // clear any previous menu
+    commands.entity(container).despawn_descendants();
+    if let Ok(topbar) = q_extras.get_single() {
+        commands.entity(topbar).despawn_descendants();
+    }
+    if let Ok(mut title) = q_title.get_single_mut() {
+        title.0 = "".into();
+    }
 
     let wrapper = commands.spawn((
         NodeBundle {
