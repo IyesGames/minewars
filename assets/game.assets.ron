@@ -1,23 +1,15 @@
 ({
-    "game.tilemap.tiles6": File (
-        path: "tilemap/tiles6.ktx2"
-    ),
-    "game.tilemap.tiles4": File (
-        path: "tilemap/tiles4.ktx2"
+    "game.tilemap.sprites": TextureAtlas (
+        path: "tilemap/sprites.ktx2",
+        tile_size_x: 128.,
+        tile_size_y: 128.,
+        rows: 10,
+        columns: 10,
     ),
     "game.tilemap.roads6": File (
         path: "tilemap/roads6.ktx2"
     ),
     "game.tilemap.roads4": File (
         path: "tilemap/roads4.ktx2"
-    ),
-    "game.tilemap.digits": File (
-        path: "tilemap/digits.ktx2"
-    ),
-    "game.tilemap.gents": File (
-        path: "tilemap/gents.ktx2"
-    ),
-    "game.tilemap.flags": File (
-        path: "tilemap/flags.ktx2"
     ),
 })

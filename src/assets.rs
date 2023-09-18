@@ -63,20 +63,12 @@ pub struct TitleLogo {
 
 #[derive(AssetCollection, Resource)]
 pub struct GameAssets {
-    #[asset(key = "game.tilemap.tiles6")]
-    pub tiles6: Handle<Image>,
+    #[asset(key = "game.tilemap.sprites")]
+    pub sprites: Handle<TextureAtlas>,
     #[asset(key = "game.tilemap.roads6")]
     pub roads6: Handle<Image>,
-    #[asset(key = "game.tilemap.tiles4")]
-    pub tiles4: Handle<Image>,
     #[asset(key = "game.tilemap.roads4")]
     pub roads4: Handle<Image>,
-    #[asset(key = "game.tilemap.digits")]
-    pub digits: Handle<Image>,
-    #[asset(key = "game.tilemap.gents")]
-    pub gents: Handle<Image>,
-    #[asset(key = "game.tilemap.flags")]
-    pub flags: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]
