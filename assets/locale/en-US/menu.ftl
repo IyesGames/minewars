@@ -1,6 +1,7 @@
 menu-title-offline = Offline Menu
 
 menu-button-back = Back
+menu-tooltip-back = Return to the previous menu.
 
 menu-button-play-official = Play MineWars
 menu-button-watch = Watch

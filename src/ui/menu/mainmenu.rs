@@ -120,6 +120,7 @@ fn spawn_mainmenu(
     mut commands: Commands,
     uiassets: Res<UiAssets>,
     settings: Res<AllSettings>,
+    mut stack: ResMut<MenuStack>,
     logo: Res<crate::assets::TitleLogo>,
     q_container: Query<Entity, With<MenuContainer>>,
     q_extras: Query<Entity, With<MenuTopBarExtras>>,
@@ -138,6 +139,8 @@ fn spawn_mainmenu(
     if let Ok(mut title) = q_title.get_single_mut() {
         title.0 = "".into();
     }
+    stack.0.clear();
+    stack.0.push("menu_mainmenu".into());
 
     let wrapper = commands.spawn((
         NodeBundle {

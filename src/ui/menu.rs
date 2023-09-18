@@ -9,12 +9,15 @@ pub(super) struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
+        app.register_clicommand_noargs("menu_back", cli_menu_back);
+        app.init_resource::<MenuStack>();
         app.add_plugins((
             mainmenu::MainMenuPlugin,
             offline::OfflineMenuPlugin,
         ));
         app.add_systems(Update, (
             menu_butt_interact_visual.in_set(NeedsSettingsSet),
+            butt_back_showhide.run_if(resource_changed::<MenuStack>())
         ));
     }
 }
@@ -38,6 +41,43 @@ struct MenuTopBarExtras;
 /// Marker for menu buttons
 #[derive(Component)]
 struct MenuButton;
+
+/// The Back Button
+#[derive(Component)]
+struct MenuBackButton;
+
+/// Used for the "Back" button
+///
+/// Stores CLI strings to be run when clicked.
+#[derive(Resource, Default)]
+struct MenuStack(Vec<String>);
+
+fn cli_menu_back(
+    mut commands: Commands,
+    mut stack: ResMut<MenuStack>,
+) {
+    // the topmost entry is the current menu, so we gotta pop twice
+    stack.0.pop();
+    if let Some(cli) = stack.0.pop() {
+        commands.run_clicommand(&cli);
+    }
+}
+
+fn butt_back_showhide(
+    mut q_butt_back: Query<&mut Style, With<MenuBackButton>>,
+    stack: Res<MenuStack>,
+) {
+    use bevy::prelude::Display;
+    if stack.0.len() > 1 {
+        for mut butt_style in &mut q_butt_back {
+            butt_style.display = Display::Flex;
+        }
+    } else {
+        for mut butt_style in &mut q_butt_back {
+            butt_style.display = Display::None;
+        }
+    }
+}
 
 fn spawn_menu_butt(
     commands: &mut Commands,
@@ -190,6 +230,11 @@ fn spawn_top_bar(
     let midside = commands.spawn((
         NodeBundle {
             style: Style {
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
                 flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
@@ -215,6 +260,18 @@ fn spawn_top_bar(
         },
     )).id();
 
+    let butt_back = spawn_menu_butt(
+        commands,
+        uiassets,
+        settings,
+        OnClick::new().cli("menu_back"),
+        "menu-button-back",
+        "menu-tooltip-back",
+        true,
+    );
+    commands.entity(butt_back).insert(MenuBackButton);
+
+    commands.entity(leftside).push_children(&[butt_back]);
     commands.entity(midside).push_children(&[title_text]);
     commands.entity(top_bar).push_children(&[leftside, midside, rightside]);
 

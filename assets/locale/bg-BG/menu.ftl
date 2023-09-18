@@ -1,6 +1,7 @@
 menu-title-offline = Меню за без Интернет
 
 menu-button-back = Назад
+menu-tooltip-back = Върни се към предишното меню.
 
 menu-button-play-official = Играй MineWars
 menu-button-watch = Гледай

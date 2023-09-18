@@ -16,6 +16,7 @@ fn spawn_menu_offline(
     mut commands: Commands,
     uiassets: Res<UiAssets>,
     settings: Res<AllSettings>,
+    mut stack: ResMut<MenuStack>,
     q_container: Query<Entity, With<MenuContainer>>,
     q_extras: Query<Entity, With<MenuTopBarExtras>>,
     mut q_title: Query<&mut L10nKey, With<MenuTitleText>>,
@@ -33,6 +34,7 @@ fn spawn_menu_offline(
     if let Ok(mut title) = q_title.get_single_mut() {
         title.0 = "menu-title-offline".into();
     }
+    stack.0.push("menu_offline".into());
 
     let wrapper = commands.spawn((
         NodeBundle {
