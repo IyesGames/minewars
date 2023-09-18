@@ -103,7 +103,7 @@ fn resolve_l10n(
         if let Some(string) = l10n.content(&key.0) {
             text.sections[0].value = string;
         } else {
-            text.sections[0].value = String::new();
+            text.sections[0].value = key.0.clone();
         }
     };
 
