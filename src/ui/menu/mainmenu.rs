@@ -4,7 +4,7 @@ use crate::ui::{UiCamera, UiRoot};
 use crate::locale::L10nKey;
 use crate::assets::UiAssets;
 
-use super::{MenuContainer, MenuTopBar, spawn_menu_butt};
+use super::*;
 
 pub struct MainMenuPlugin;
 
@@ -46,20 +46,6 @@ fn setup_mainmenu_layout(
                 flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::SpaceBetween,
                 align_items: AlignItems::Stretch,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-    )).id();
-
-    let top_bar = commands.spawn((
-        MenuTopBar,
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::SpaceBetween,
-                align_items: AlignItems::Center,
-                padding: UiRect::all(Val::Px(4.0)),
                 ..Default::default()
             },
             ..Default::default()
@@ -118,6 +104,8 @@ fn setup_mainmenu_layout(
             ..Default::default()
         },
     )).id();
+
+    let top_bar = spawn_top_bar(&mut commands, &settings, &uiassets);
 
     commands.entity(info_bar)
         .push_children(&[info_text]);
