@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+pub mod form;
+
 pub(super) struct WidgetsPlugin;
 
 impl Plugin for WidgetsPlugin {
