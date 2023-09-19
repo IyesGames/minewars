@@ -14,7 +14,7 @@ impl Plugin for UiConsolePlugin {
 }
 
 #[derive(Component)]
-struct UiConsole;
+pub struct UiConsole;
 #[derive(Component)]
 struct UiConsolePrompt(Entity);
 #[derive(Component)]
@@ -28,8 +28,6 @@ fn toggle_console(
     kbd: Res<Input<KeyCode>>,
     query_existing: Query<Entity, With<UiConsole>>,
     ui_assets: Option<Res<UiAssets>>,
-    // mut input_switch: ResMut<InputSwitch>,
-    // appstate: Res<State<AppState>>,
 ) {
     if kbd.just_pressed(KeyCode::Grave) {
         if query_existing.is_empty() {
