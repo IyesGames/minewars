@@ -11,7 +11,6 @@ impl Plugin for OfflineMenuPlugin {
     }
 }
 
-/// Creates the contents of the main menu.
 fn spawn_menu_offline(
     mut commands: Commands,
     uiassets: Res<UiAssets>,
@@ -40,7 +39,7 @@ fn spawn_menu_offline(
         NodeBundle {
             style: Style {
                 flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::SpaceEvenly,
+                justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..Default::default()
             },
@@ -55,6 +54,24 @@ fn spawn_menu_offline(
         OnClick::new(),
         "menu-button-play-tutorial",
         "menu-tooltip-play-tutorial",
+        PROPRIETARY,
+    );
+    let butt_playground = spawn_menu_butt(
+        &mut commands,
+        &*uiassets,
+        &*settings,
+        OnClick::new(),
+        "menu-button-playground",
+        "menu-tooltip-playground",
+        PROPRIETARY,
+    );
+    let butt_replay = spawn_menu_butt(
+        &mut commands,
+        &*uiassets,
+        &*settings,
+        OnClick::new(),
+        "menu-button-replay",
+        "menu-tooltip-replay",
         PROPRIETARY,
     );
     let butt_play_ms_single = spawn_menu_butt(
@@ -78,6 +95,8 @@ fn spawn_menu_offline(
 
     let rows = &[
         spawn_menu_row(&mut commands, &[butt_tutorial]),
+        spawn_menu_row(&mut commands, &[butt_playground]),
+        spawn_menu_row(&mut commands, &[butt_replay]),
         spawn_menu_row(&mut commands, &[butt_play_ms_single]),
         spawn_menu_row(&mut commands, &[butt_editor]),
     ];
