@@ -25,6 +25,23 @@ pub struct AllSettings {
     pub ui: UiSettings,
     pub ui_hud: UiHudSettings,
     pub player_colors: PlayerPaletteSettings,
+    pub net: NetSettings,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct NetSettings {
+    pub last_host_addr: SocketAddr,
+    pub last_host_sessionid: u32,
+}
+
+impl Default for NetSettings {
+    fn default() -> Self {
+        NetSettings {
+            last_host_addr: "127.0.0.1:13370".parse().unwrap(),
+            last_host_sessionid: 0,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]

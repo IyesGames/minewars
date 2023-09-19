@@ -240,7 +240,7 @@ fn spawn_mainmenu(
         &mut commands,
         &*uiassets,
         &*settings,
-        OnClick::new(),
+        OnClick::new().cli("menu_lan_join"),
         "menu-button-play-lan",
         "menu-tooltip-play-lan",
         true,

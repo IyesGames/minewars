@@ -30,3 +30,16 @@ menu-tooltip-playground = Започни MineWars игра, където ти у
 menu-tooltip-replay = Гледай запазен файл със запис от игра.
 menu-tooltip-play-ms-single = Класическата игра. MineWars вариант. ;)
 menu-tooltip-editor = Създай си своя ръчно-направена карта за MineWars!
+
+menu-title-lan-join = Влез в сървър
+menu-button-lan-setup = Създай нов
+menu-tooltip-lan-setup = Настрой и пусни свой сървър.
+
+menu-lan-join-label-serverip = Адрес на сървъра:
+menu-lan-join-label-sessionid = Номер на сесията:
+menu-button-lan-connect = Свържи се!
+menu-tooltip-lan-connect = Свържи се към зададения сървър и влез в играта!
+
+menu-title-lan-setup = Създай сървър
+menu-button-lan-join = Влез в друг
+menu-tooltip-lan-join = Свържи се към съществуващ сървър.

@@ -2,6 +2,7 @@ use crate::{prelude::*, locale::L10nKey, assets::UiAssets, settings::NeedsSettin
 
 use super::tooltip::InfoText;
 
+mod lan;
 mod mainmenu;
 mod offline;
 
@@ -14,6 +15,7 @@ impl Plugin for MenuPlugin {
         app.add_plugins((
             mainmenu::MainMenuPlugin,
             offline::OfflineMenuPlugin,
+            lan::LanMenuPlugin,
         ));
         app.add_systems(Update, (
             menu_butt_interact_visual.in_set(NeedsSettingsSet),

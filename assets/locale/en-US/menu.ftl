@@ -32,3 +32,16 @@ menu-tooltip-playground = Enter an offline MineWars game where you control all p
 menu-tooltip-replay = Watch a saved replay file.
 menu-tooltip-play-ms-single = The classic game. MineWars Edition. ;)
 menu-tooltip-editor = Create your own custom handcrafted map for MineWars!
+
+menu-title-lan-join = Join Existing Server
+menu-button-lan-setup = Create New
+menu-tooltip-lan-setup = Set up your own server instead.
+
+menu-lan-join-label-serverip = Server IP Address:
+menu-lan-join-label-sessionid = Session ID:
+menu-button-lan-connect = Connect!
+menu-tooltip-lan-connect = Connect to the specified server and start playing!
+
+menu-title-lan-setup = Create New Server
+menu-button-lan-join = Join Existing
+menu-tooltip-lan-join = Connect to an existing server instead.
