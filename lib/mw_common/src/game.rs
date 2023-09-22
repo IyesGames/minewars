@@ -91,8 +91,9 @@ pub enum ProdState {
 
 /// All the various structures that can be built
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Enum, Sequence)]
+#[derive(Enum, FromPrimitive, ToPrimitive, BitfieldSpecifier, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
+#[bits = 2]
 pub enum StructureKind {
     Road,
     Barricade,
