@@ -66,6 +66,7 @@ Given that this is a multiplayer game, and there are many parts to it
    - `mw_datatool`: CLI tool for working with the MineWars data format
  - `lib/`: supporting libraries:
    - `mw_common`: common code used everywhere
+   - `mw_app`: supporting client-side code between open-source and proprietary
    - `mw_dataformat`: co/dec for the format used for gameplay data
      (both replay/scenario files and over-the-wire gameplay)
    - `mw_proto_host`: protocol between the client/player and Host server

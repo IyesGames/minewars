@@ -56,6 +56,9 @@ unic-langid = "0.9.1"
 path = "lib/mw_common"
 features = [ "bevy", "net" ]
 
+[dependencies.mw_app]
+path = "lib/mw_app"
+
 [dependencies.mw_proprietary_client]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
 

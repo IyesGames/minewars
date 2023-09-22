@@ -1,17 +1,18 @@
 [package]
-name = "mw_common"
+name = "mw_app"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[features]
-bevy = [ "dep:bevy" ]
-net = [ "dep:rustls", "dep:tokio", "dep:quinn"]
+[dependencies.mw_common]
+path = "../mw_common"
+features = [ "bevy" ]
 
 [dependencies]
 anyhow = "1.0.75"
 derive_more = "0.99.17"
+directories = "5.0.1"
 enum-iterator = "1.4.1"
 enum-map = "2.6.1"
 glam = "0.24.1"
@@ -31,7 +32,6 @@ features = [ "derive" ]
 [dependencies.bevy]
 version = "0.11.2"
 default-features = false
-optional = true
 features = [
 	"bevy_asset",
 	"bevy_core_pipeline",
@@ -41,21 +41,6 @@ features = [
 	"bevy_ui",
 ]
 
-[dependencies.tokio]
-version = "1.32.0"
-optional = true
-features = [
-    "full",
-]
-
-[dependencies.rustls]
-version = "0.20.8" # must be whatever quinn uses
-optional = true
-default-features = false
-features = []
-
-[dependencies.quinn]
-version = "0.9.3"
-optional = true
-default-features = false
-features = ["runtime-tokio", "tls-rustls"]
+[dependencies.iyes_bevy_extras]
+git = "https://github.com/IyesGames/iyes_bevy_extras"
+features = ["2d"]

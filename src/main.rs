@@ -9,6 +9,7 @@ mod prelude {
     pub use iyes_cli::prelude::*;
     pub use iyes_ui::prelude::*;
     pub use mw_common::prelude::*;
+    pub use mw_app::prelude::*;
     pub use mw_proprietary_client::PROPRIETARY;
     pub use crate::settings::AllSettings;
 }
@@ -71,7 +72,7 @@ fn main() {
     });
     app.add_plugins(bevy_plugins);
 
-    app.add_plugins(MwCommonPlugin);
+    app.add_plugins(mw_app::MwCommonPlugin);
 
     // external plugins
     app.add_plugins((

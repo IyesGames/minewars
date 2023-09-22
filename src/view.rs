@@ -28,11 +28,14 @@
 //! that are used for actual gameplay and graphics purposes.
 
 use bevy::render::extract_resource::ExtractResource;
-use mw_common::{plid::PlayerId, game::{ItemKind, TileKind, MapDescriptor, StructureKind}, grid::{Coord, MapData, Topology, Hex, Sq}};
 use modular_bitfield::prelude::*;
 
+use mw_common::grid::*;
+use mw_common::plid::*;
+use mw_common::game::*;
+use mw_app::map::*;
+
 use crate::prelude::*;
-use crate::map::*;
 
 pub struct GameViewPlugin;
 
@@ -75,11 +78,6 @@ pub struct Views(Vec<Entity>);
 /// The currently active view -- what is displayed to the user.
 #[derive(Resource, ExtractResource, Clone)]
 pub struct PlidViewing(PlayerId);
-
-/// The plid that the user controls. This is not necessarily the same
-/// as `PlidViewing`.
-#[derive(Resource)]
-pub struct PlidPlayingAs(PlayerId);
 
 /// The per-tile data of a view.
 ///

@@ -2,7 +2,10 @@
 //!
 //! These are the entities that represent the map tiles of the view that
 //! is currently activated.
-use crate::{game::{TileKind, ItemKind, CitId, StructureKind}, grid::{Pos, MapData, Coord}, plid::PlayerId};
+
+use mw_common::grid::*;
+use mw_common::plid::*;
+use mw_common::game::*;
 
 use crate::prelude::*;
 
@@ -10,8 +13,20 @@ pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
+        for topo in enum_iterator::all::<Topology>() {
+            app.configure_set(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
+        }
     }
 }
+
+pub fn map_topology_is(topo: Topology) -> impl FnMut(Option<Res<MapDescriptor>>) -> bool {
+    move |desc: Option<Res<MapDescriptor>>| {
+        desc.map(|desc| desc.topology == topo).unwrap_or(false)
+    }
+}
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct MapTopologySet(pub Topology);
 
 #[derive(Resource)]
 struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);

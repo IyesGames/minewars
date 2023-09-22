@@ -22,10 +22,9 @@ pub mod prelude {
     pub use std::path::{Path, PathBuf};
     pub use std::hash::Hash;
     pub use std::fmt::{Display, Debug};
+    pub use std::marker::PhantomData;
     pub use thiserror::Error;
     pub use tracing::{debug, error, info, trace, warn};
-    #[cfg(feature = "bevy")]
-    pub use crate::bevy::*;
     #[cfg(feature = "net")]
     pub use tokio;
     #[cfg(feature = "net")]
@@ -34,8 +33,6 @@ pub mod prelude {
     pub use quinn;
 }
 
-#[cfg(feature = "bevy")]
-pub mod bevy;
 #[cfg(feature = "net")]
 pub mod net;
 
