@@ -1,6 +1,8 @@
 use crate::{prelude::*, grid::Topology, game::MapDescriptor};
 use iyes_bevy_extras::prelude::*;
 
+pub mod map;
+
 /// State type: Which "screen" is the app in?
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Default, States)]
 #[derive(Reflect)]
@@ -44,7 +46,7 @@ pub fn map_topology_is(topo: Topology) -> impl FnMut(Option<Res<MapDescriptor>>)
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct MapTopologySet(Topology);
+pub struct MapTopologySet(pub Topology);
 
 pub struct MwCommonPlugin;
 
@@ -61,5 +63,6 @@ impl Plugin for MwCommonPlugin {
         for topo in enum_iterator::all::<Topology>() {
             app.configure_set(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
         }
+        app.add_plugins(map::MapPlugin);
     }
 }

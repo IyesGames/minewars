@@ -1,0 +1,220 @@
+//! ECS representation of MineWars map state
+//!
+//! These are the entities that represent the map tiles of the view that
+//! is currently activated.
+use crate::{game::{TileKind, ItemKind, CitId, StructureKind}, grid::{Pos, MapData, Coord}, plid::PlayerId};
+
+use crate::prelude::*;
+
+pub struct MapPlugin;
+
+impl Plugin for MapPlugin {
+    fn build(&self, app: &mut App) {
+    }
+}
+
+#[derive(Resource)]
+struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);
+
+#[derive(Resource)]
+struct ItemIndex(pub HashMap<Pos, Entity>);
+
+#[derive(Resource)]
+struct CitIndex {
+    pub by_pos: HashMap<Pos, Entity>,
+    pub by_id: Vec<Entity>,
+}
+
+/// Map coordinate of a given tile.
+///
+/// This uses our own grid coord types (Pos <-> {Hex, Sq}).
+///
+/// Renderer agnostic. `bevy_ecs_tilemap` `TilePos` will be added
+/// by that renderer's impl.
+#[derive(Component)]
+pub struct MwTilePos(pub Pos);
+
+/// Map region (cit association) of a tile
+#[derive(Component)]
+pub struct TileRegion(pub u8);
+
+/// Plid who owns the tile
+#[derive(Component)]
+pub struct TileOwner(pub PlayerId);
+
+/// Any minesweeper digit to be displayed on the tile.
+///
+/// The `u8` is the digit value (`0` means no digit).
+/// The `bool` is whether to display an asterisk.
+#[derive(Component)]
+pub struct TileDigit(pub u8, pub bool);
+
+/// Any Road connections to neighboring tiles.
+///
+/// If the tile has no road, this is zero.
+///
+/// Otherwise, the value is a bitmask with a bit representing
+/// each adjacent tile that also has a road.
+///
+/// This representation allows efficiently rendering roads correctly.
+#[derive(Component)]
+pub struct TileRoads(pub u8);
+
+/// Is there any "game entity" on a land tile?
+#[derive(Component)]
+pub enum TileGent {
+    /// Tile has nothing on it
+    Empty,
+    /// Tile contains a City
+    Cit(CitId),
+    /// Tile contains an item
+    Item(ItemKind),
+    /// Tile contains a non-road structure
+    /// (ignore roads, represent them using `TileRoads` instead)
+    Structure(StructureKind),
+}
+
+/// Visibility level of the given tile
+/// (see MW game design docs)
+#[derive(Component)]
+pub enum TileVisLevel {
+    Fog,
+    Limited,
+    Full,
+}
+
+/// Components common to all map tiles
+#[derive(Bundle)]
+pub struct MapTileBundle {
+    pub kind: TileKind,
+    pub pos: MwTilePos,
+}
+
+/// Components common to all playable map tiles
+#[derive(Bundle)]
+pub struct PlayableTileBundle {
+    pub tile: MapTileBundle,
+    pub region: TileRegion,
+    pub owner: TileOwner,
+    pub vis: TileVisLevel,
+}
+
+/// Components of land tiles
+#[derive(Bundle)]
+pub struct LandTileBundle {
+    pub tile: PlayableTileBundle,
+    pub digit: TileDigit,
+    pub gent: TileGent,
+    pub roads: TileRoads,
+}
+
+/// Components of resource clusters (mountain, forest)
+#[derive(Bundle)]
+pub struct ResClusterTileBundle {
+    pub tile: PlayableTileBundle,
+}
+
+/// Trigger a recompute of `TileVisLevel`.
+///
+/// For a specific tile position, or for the whole map if None.
+#[derive(Event)]
+pub struct RecomputeVisEvent(pub Option<Pos>);
+
+#[derive(Component)]
+pub struct CitBundle {
+    pub regid: CitRegion,
+    pub owner: CitOwner,
+    pub res: CitRes,
+}
+
+#[derive(Component)]
+pub struct CitRegion(pub u8);
+
+#[derive(Component)]
+pub struct CitOwner(pub PlayerId);
+
+#[derive(Component)]
+pub struct CitRes {
+    pub money: u32,
+    pub income: u16,
+    pub res: u16,
+}
+
+/// Helper code to setup all the map-related ECS stuff.
+///
+/// This is not a standalone system, because we can have map data
+/// that comes from different sources (server, file, procgen) and
+/// we want to be able to initialize the tilemap from any of them.
+pub fn setup_map<C: Coord, D>(
+    world: &mut World,
+    mapdata: MapData<C, D>,
+    cits: &[Pos],
+    f_tilekind: impl Fn(&D) -> TileKind,
+    f_regid: impl Fn(&D) -> u8,
+) {
+    let mut tile_index = MapTileIndex::<C>(
+        MapData::new(mapdata.size(), Entity::PLACEHOLDER)
+    );
+
+    let mut cit_index = CitIndex {
+        by_id: Vec::with_capacity(cits.len()),
+        by_pos: Default::default(),
+    };
+
+    let item_index = ItemIndex(Default::default());
+
+    for (c, d) in mapdata.iter() {
+        let tilekind = f_tilekind(d);
+        let b_base = MapTileBundle {
+            kind: tilekind,
+            pos: MwTilePos(c.into()),
+        };
+        let e_tile = if tilekind.ownable() {
+            let b_playable = PlayableTileBundle {
+                tile: b_base,
+                region: TileRegion(f_regid(d)),
+                owner: TileOwner(PlayerId::Neutral),
+                vis: TileVisLevel::Full,
+            };
+            if tilekind.is_land() {
+                world.spawn(LandTileBundle {
+                    tile: b_playable,
+                    digit: TileDigit(0, false),
+                    gent: TileGent::Empty,
+                    roads: TileRoads(0),
+                }).id()
+            } else if tilekind.is_rescluster() {
+                world.spawn(ResClusterTileBundle {
+                    tile: b_playable,
+                }).id()
+            } else {
+                world.spawn(b_playable).id()
+            }
+        } else {
+            world.spawn(b_base).id()
+        };
+        tile_index.0[c] = e_tile;
+    }
+
+    for (i, cit_pos) in cits.iter().enumerate() {
+        let e_cit = world.spawn(
+            CitBundle {
+                regid: CitRegion(i as u8),
+                owner: CitOwner(PlayerId::Neutral),
+                res: CitRes {
+                    money: 0,
+                    income: 0,
+                    res: 0,
+                },
+            },
+        ).id();
+        cit_index.by_id.push(e_cit);
+        cit_index.by_pos.insert(*cit_pos, e_cit);
+        world.entity_mut(tile_index.0[(*cit_pos).into()])
+            .insert(TileGent::Cit(i as u8));
+    }
+
+    world.insert_resource(tile_index);
+    world.insert_resource(cit_index);
+    world.insert_resource(item_index);
+}
