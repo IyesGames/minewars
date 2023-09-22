@@ -20,12 +20,21 @@ pub struct NeedsSettingsSet;
 #[derive(Resource, Serialize, Deserialize, Default, Clone)]
 #[serde(default)]
 pub struct AllSettings {
+    pub renderer: MwRenderer,
     pub gameplay: GameplaySettings,
     pub camera: CameraSettings,
     pub ui: UiSettings,
     pub ui_hud: UiHudSettings,
     pub player_colors: PlayerPaletteSettings,
     pub net: NetSettings,
+}
+
+#[derive(Resource, Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize)]
+pub enum MwRenderer {
+    Sprites,
+    #[default]
+    Tilemap,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
