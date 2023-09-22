@@ -40,6 +40,7 @@ pub mod bevy;
 pub mod net;
 
 pub mod algo;
+pub mod driver;
 pub mod grid;
 pub mod plid;
 pub mod game;
