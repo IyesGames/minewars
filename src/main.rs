@@ -25,6 +25,7 @@ mod screens {
 }
 mod settings;
 mod ui;
+mod view;
 
 #[cfg(feature = "dev")]
 mod dev;
@@ -93,6 +94,7 @@ fn main() {
         crate::ui::UiPlugin,
         crate::settings::SettingsPlugin,
         crate::input::InputPlugin,
+        crate::view::GameViewPlugin,
     ));
 
     app.add_plugins(mw_proprietary_client::MwProprietaryPlugin);
