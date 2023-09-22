@@ -63,15 +63,15 @@ impl PartialEq<PlayerId> for u8 {
     }
 }
 
-/// Bitmask to mux player IDs: can support a game with up to 7 players
+/// Bitmask to mux player IDs: can support a game with up to 15 players
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct Plids(u8);
+pub struct Plids(u16);
 
 impl Plids {
-    const MAX_PLID: u8 = 7;
+    const MAX_PLID: u8 = 15;
 
     pub fn all(with_spect: bool) -> Self {
-        Self(!((!with_spect) as u8))
+        Self(!((!with_spect) as u16))
     }
 
     pub fn spect() -> Self {
