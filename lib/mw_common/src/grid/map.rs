@@ -141,6 +141,16 @@ impl<C: Coord, D> MapData<C, D> {
         Ok(())
     }
 
+    pub fn get(&self, c: C) -> Option<&D> {
+        let i = C::index(self.size, c);
+        self.data.get(i)
+    }
+
+    pub fn get_mut(&mut self, c: C) -> Option<&mut D> {
+        let i = C::index(self.size, c);
+        self.data.get_mut(i)
+    }
+
     pub fn data(&self) -> &[D] {
         &self.data
     }
@@ -167,12 +177,25 @@ impl<C: Coord, D> MapData<C, D> {
             .into_iter()
             .map(move |c| (c, c + offset, &self[c + offset]))
     }
+
+    pub fn get_ringmask(&self, c: C, mut f: impl FnMut(&D) -> bool) -> u8 {
+        let mut r = 0;
+        for c2 in c.iter_n1() {
+            r = r << 1;
+            if let Some(d) = self.get(c2) {
+                if f(d) {
+                    r |= 1;
+                }
+            }
+        }
+        r
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::hex::Hex;
+    use crate::grid::hex::Hex;
 
     fn rings_hex() -> MapData<Hex, u8> {
         let mut map = MapData::new(3, 0);
