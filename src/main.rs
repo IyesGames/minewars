@@ -17,6 +17,7 @@ use crate::prelude::*;
 
 mod assets;
 mod cli;
+mod input;
 mod locale;
 mod screens {
     pub mod loading;
@@ -91,6 +92,7 @@ fn main() {
         crate::cli::CliPlugin,
         crate::ui::UiPlugin,
         crate::settings::SettingsPlugin,
+        crate::input::InputPlugin,
     ));
 
     app.add_plugins(mw_proprietary_client::MwProprietaryPlugin);
