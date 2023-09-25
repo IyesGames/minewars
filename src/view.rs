@@ -30,6 +30,7 @@
 use bevy::render::extract_resource::ExtractResource;
 use modular_bitfield::prelude::*;
 
+use mw_app::player::PlayersIndex;
 use mw_common::grid::*;
 use mw_common::plid::*;
 use mw_common::game::*;
@@ -71,13 +72,9 @@ impl Plugin for GameViewPlugin {
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ViewSwitchSet;
 
-/// Index of all the views in the current gameplay session.
-#[derive(Resource, ExtractResource, Clone)]
-pub struct Views(Vec<Entity>);
-
 /// The currently active view -- what is displayed to the user.
 #[derive(Resource, ExtractResource, Clone)]
-pub struct PlidViewing(PlayerId);
+pub struct PlidViewing(pub PlayerId);
 
 /// The per-tile data of a view.
 ///
@@ -90,7 +87,7 @@ pub struct PlidViewing(PlayerId);
 /// or just kept live in ECS entities and hidden (like explosion effects, etc),
 /// some can be recomputed (vis levels, roads).
 #[bitfield]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct ViewTileData {
     pub owner: B4,
     pub digit: B3,
@@ -103,13 +100,12 @@ pub struct ViewTileData {
 
 /// The map data of a view
 #[derive(Component, Clone)]
-pub struct ViewMapData<C: Coord>(MapData<C, ViewTileData>);
+pub struct ViewMapData<C: Coord>(pub MapData<C, ViewTileData>);
 
 /// Bundle for a view entity
 #[derive(Bundle)]
 pub struct ViewBundle<C: Coord> {
-    plid: PlayerId,
-    mapdata: ViewMapData<C>,
+    pub mapdata: ViewMapData<C>,
 }
 
 /// Marker for entities that should be discarded on view switch.
@@ -144,14 +140,14 @@ fn switch_view_showhide(
 
 fn switch_view_update_map_tiles<C: Coord>(
     viewing: Res<PlidViewing>,
-    views: Res<Views>,
+    players: Res<PlayersIndex>,
     q_view: Query<&ViewMapData<C>>,
     mut q_maptile: Query<(&MwTilePos, &mut TileKind, &mut TileOwner)>,
     mut evw_visrecompute: EventWriter<RecomputeVisEvent>,
 ) {
     evw_visrecompute.send(RecomputeVisEvent(None));
 
-    let e_view = views.0[viewing.0.i()];
+    let e_view = players.0[viewing.0.i()];
     let Ok(viewdata) = q_view.get(e_view) else {
         error!("View for {:?} does not exist!", viewing.0);
         return;
@@ -166,11 +162,11 @@ fn switch_view_update_map_tiles<C: Coord>(
 
 fn switch_view_update_map_digits<C: Coord>(
     viewing: Res<PlidViewing>,
-    views: Res<Views>,
+    players: Res<PlayersIndex>,
     q_view: Query<&ViewMapData<C>>,
     mut q_maptile: Query<(&MwTilePos, &mut TileDigit)>,
 ) {
-    let e_view = views.0[viewing.0.i()];
+    let e_view = players.0[viewing.0.i()];
     let Ok(viewdata) = q_view.get(e_view) else {
         error!("View for {:?} does not exist!", viewing.0);
         return;
@@ -184,11 +180,11 @@ fn switch_view_update_map_digits<C: Coord>(
 
 fn switch_view_update_map_gents<C: Coord>(
     viewing: Res<PlidViewing>,
-    views: Res<Views>,
+    players: Res<PlayersIndex>,
     q_view: Query<&ViewMapData<C>>,
     mut q_maptile: Query<(&MwTilePos, &mut TileGent)>,
 ) {
-    let e_view = views.0[viewing.0.i()];
+    let e_view = players.0[viewing.0.i()];
     let Ok(viewdata) = q_view.get(e_view) else {
         error!("View for {:?} does not exist!", viewing.0);
         return;
@@ -216,11 +212,11 @@ fn switch_view_update_map_gents<C: Coord>(
 
 fn switch_view_update_map_roads<C: Coord>(
     viewing: Res<PlidViewing>,
-    views: Res<Views>,
+    players: Res<PlayersIndex>,
     q_view: Query<&ViewMapData<C>>,
     mut q_maptile: Query<(&MwTilePos, &mut TileRoads)>,
 ) {
-    let e_view = views.0[viewing.0.i()];
+    let e_view = players.0[viewing.0.i()];
     let Ok(viewdata) = q_view.get(e_view) else {
         error!("View for {:?} does not exist!", viewing.0);
         return;
