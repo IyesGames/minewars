@@ -142,11 +142,19 @@ impl<C: Coord, D> MapData<C, D> {
     }
 
     pub fn get(&self, c: C) -> Option<&D> {
+        // FIXME
+        if c.ring() >= self.size {
+            return None;
+        }
         let i = C::index(self.size, c);
         self.data.get(i)
     }
 
     pub fn get_mut(&mut self, c: C) -> Option<&mut D> {
+        // FIXME
+        if c.ring() >= self.size {
+            return None;
+        }
         let i = C::index(self.size, c);
         self.data.get_mut(i)
     }

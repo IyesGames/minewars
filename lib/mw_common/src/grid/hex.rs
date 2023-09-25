@@ -147,8 +147,8 @@ impl Coord for Hex {
 
         let row0 = Hex::map_area(r) as isize / 2 - r as isize;
 
-        let xmin = Self::xmin(r, c.1) as isize;
-        let xmax = Self::xmax(r, c.1) as isize;
+        let xmin = Self::xmin(r, c.0) as isize;
+        let xmax = Self::xmax(r, c.0) as isize;
 
         let r = r as isize;
 
