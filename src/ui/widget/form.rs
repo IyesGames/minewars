@@ -62,7 +62,7 @@ pub fn create_form_layout(
                     TextStyle {
                         font: uiassets.font.clone(),
                         font_size: 24.0 * settings.ui.text_scale,
-                        color: settings.ui.color_text,
+                        color: settings.ui.color_text.into(),
                     },
                 ),
                 ..Default::default()

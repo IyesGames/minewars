@@ -99,7 +99,7 @@ fn setup_mainmenu_layout(
                 TextStyle {
                     font: uiassets.font2_light.clone(),
                     font_size: 24.0 * settings.ui.text_scale,
-                    color: settings.ui.color_text,
+                    color: settings.ui.color_text.into(),
                 },
             ),
             ..Default::default()

@@ -107,7 +107,7 @@ fn spawn_menu_butt(
         behavior,
         InfoText(info_text.to_owned()),
         ButtonBundle {
-            background_color: BackgroundColor(color_init),
+            background_color: BackgroundColor(color_init.into()),
             style: Style {
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
@@ -127,7 +127,7 @@ fn spawn_menu_butt(
             text: Text::from_section(
                 text,
                 TextStyle {
-                    color: color_text,
+                    color: color_text.into(),
                     font_size: 32.0 * settings.ui.text_scale,
                     font: uiassets.font.clone(),
                 },
@@ -156,13 +156,13 @@ fn menu_butt_interact_visual(
     for (interaction, mut color) in query.iter_mut() {
         match interaction {
             Interaction::Pressed => {
-                *color = BackgroundColor(settings.ui.color_menu_button_selected);
+                *color = BackgroundColor(settings.ui.color_menu_button_selected.into());
             }
             Interaction::Hovered => {
-                *color = BackgroundColor(settings.ui.color_menu_button_selected);
+                *color = BackgroundColor(settings.ui.color_menu_button_selected.into());
             }
             Interaction::None => {
-                *color = BackgroundColor(settings.ui.color_menu_button);
+                *color = BackgroundColor(settings.ui.color_menu_button.into());
             }
         }
     }
@@ -255,7 +255,7 @@ fn spawn_top_bar(
                 TextStyle {
                     font: uiassets.font_bold.clone(),
                     font_size: 40.0 * settings.ui.text_scale,
-                    color: settings.ui.color_text,
+                    color: settings.ui.color_text.into(),
                 },
             ),
             ..Default::default()

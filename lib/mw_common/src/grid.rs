@@ -22,6 +22,7 @@ use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use enum_iterator::Sequence;
 use enum_map::Enum;
 use thiserror::Error;
+use serde::{Serialize, Deserialize};
 
 pub mod hex;
 pub mod map;
@@ -35,6 +36,7 @@ pub use sq::Sq;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(Enum, Sequence)]
+#[derive(Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Topology {
     Hex,

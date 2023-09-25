@@ -74,14 +74,14 @@ fn textfield_focus_visual(
         if interaction.is_changed() {
             match *interaction {
                 Interaction::Pressed => {
-                    *color = BackgroundColor(settings.ui.color_menu_button_selected);
+                    *color = BackgroundColor(settings.ui.color_menu_button_selected.into());
                 }
                 Interaction::Hovered => {
-                    *color = BackgroundColor(settings.ui.color_menu_button_selected);
+                    *color = BackgroundColor(settings.ui.color_menu_button_selected.into());
                 }
                 Interaction::None => {
                     if focus.0 != Some(e) {
-                        *color = BackgroundColor(settings.ui.color_menu_button);
+                        *color = BackgroundColor(settings.ui.color_menu_button.into());
                     }
                 }
             }
@@ -91,7 +91,7 @@ fn textfield_focus_visual(
         // de-focus any previously focused field
         if let Some(oldfocus) = *oldfocus {
             if let Ok((_, _, mut color, textinput)) = q_textfield.get_mut(oldfocus) {
-                *color = BackgroundColor(settings.ui.color_menu_button);
+                *color = BackgroundColor(settings.ui.color_menu_button.into());
                 if let Ok(mut text) = q_text.get_mut(textinput.e_text) {
                     // hack to keep field thickness/height:
                     //  - delete the cursor (middle part) if field has text
@@ -107,9 +107,9 @@ fn textfield_focus_visual(
         // focus any newly focused field
         if let Some(newfocus) = focus.0 {
             if let Ok((_, _, mut color, textinput)) = q_textfield.get_mut(newfocus) {
-                *color = BackgroundColor(settings.ui.color_menu_button_selected);
+                *color = BackgroundColor(settings.ui.color_menu_button_selected.into());
                 if let Ok(mut text) = q_text.get_mut(textinput.e_text) {
-                    text.sections[1].style.color = settings.ui.color_text;
+                    text.sections[1].style.color = settings.ui.color_text.into();
                     text.sections[1].value = "|".into();
                     // for ease of editing, move cursor to end
                     let strtmp = text.sections[2].value.clone();
@@ -234,7 +234,7 @@ pub fn spawn_textfield(
     };
 
     let text_style = TextStyle {
-        color: color_text,
+        color: color_text.into(),
         font_size: 24.0 * settings.ui.text_scale,
         font: uiassets.font.clone(),
     };
@@ -271,7 +271,7 @@ pub fn spawn_textfield(
         },
         Interaction::default(),
         NodeBundle {
-            background_color: BackgroundColor(color_init),
+            background_color: BackgroundColor(color_init.into()),
             style: Style {
                 justify_content: JustifyContent::FlexStart,
                 align_items: AlignItems::Center,

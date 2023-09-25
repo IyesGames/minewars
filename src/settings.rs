@@ -1,3 +1,5 @@
+use mw_game_minesweeper::MinesweeperSettings;
+
 use crate::prelude::*;
 
 pub struct SettingsPlugin;
@@ -27,6 +29,8 @@ pub struct AllSettings {
     pub ui_hud: UiHudSettings,
     pub player_colors: PlayerPaletteSettings,
     pub net: NetSettings,
+    pub mapgen: MapGenSettings,
+    pub game_minesweeper: MinesweeperSettings,
 }
 
 #[derive(Resource, Debug, Default, Clone, PartialEq, Eq)]
@@ -44,15 +48,6 @@ pub struct NetSettings {
     pub last_host_sessionid: u32,
 }
 
-impl Default for NetSettings {
-    fn default() -> Self {
-        NetSettings {
-            last_host_addr: "127.0.0.1:13370".parse().unwrap(),
-            last_host_sessionid: 0,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct CameraSettings {
@@ -62,6 +57,69 @@ pub struct CameraSettings {
     pub edge_pan: bool,
     pub edge_pan_speed: f32,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct GameplaySettings {
+    pub show_skulls: bool,
+}
+
+/// General UI Settings
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct UiSettings {
+    pub text_scale: f32,
+    pub underscan_ratio: f32,
+    pub ultrawide_use_extra_width_ratio: f32,
+    pub color_text: Lcha,
+    pub color_text_inactive: Lcha,
+    pub color_menu_button: Lcha,
+    pub color_menu_button_inactive: Lcha,
+    pub color_menu_button_selected: Lcha,
+}
+
+/// Settings for the in-game UI (HUD)
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct UiHudSettings {
+    pub bottom_layout_reverse: bool,
+    pub citylist: bool,
+    pub citylist_show_unowned: bool,
+}
+
+/// The color palette to use for different players
+///
+/// Indexed by player ID (0 = neutral)
+#[derive(Serialize, Deserialize, Clone)]
+pub struct PlayerPaletteSettings {
+    pub visible: [Lcha; 8],
+    pub fog: Lcha,
+    pub pending: [Lcha; 8],
+}
+
+/// Parameters for local map generation
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MapGenSettings {
+    pub size: u8,
+    pub topology: mw_common::grid::Topology,
+    pub style: MapGenStyle,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MapGenStyle {
+    Flat,
+    MineWars,
+}
+
+impl Default for NetSettings {
+    fn default() -> Self {
+        NetSettings {
+            last_host_addr: "127.0.0.1:13370".parse().unwrap(),
+            last_host_sessionid: 0,
+        }
+    }
+}
+
 
 impl Default for CameraSettings {
     fn default() -> Self {
@@ -75,12 +133,6 @@ impl Default for CameraSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(default)]
-pub struct GameplaySettings {
-    pub show_skulls: bool,
-}
-
 impl Default for GameplaySettings {
     fn default() -> Self {
         GameplaySettings {
@@ -89,42 +141,19 @@ impl Default for GameplaySettings {
     }
 }
 
-/// General UI Settings
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(default)]
-pub struct UiSettings {
-    pub text_scale: f32,
-    pub underscan_ratio: f32,
-    pub ultrawide_use_extra_width_ratio: f32,
-    pub color_text: Color,
-    pub color_text_inactive: Color,
-    pub color_menu_button: Color,
-    pub color_menu_button_inactive: Color,
-    pub color_menu_button_selected: Color,
-}
-
 impl Default for UiSettings {
     fn default() -> Self {
         UiSettings {
             text_scale: 1.0,
             underscan_ratio: 1.0,
             ultrawide_use_extra_width_ratio: 0.0,
-            color_text: Color::rgb(0.84, 0.86, 0.88),
-            color_text_inactive: Color::rgb(0.48, 0.44, 0.42),
-            color_menu_button: Color::rgb(0.24, 0.24, 0.25),
-            color_menu_button_inactive: Color::rgb(0.16, 0.15, 0.15),
-            color_menu_button_selected: Color::rgb(0.20, 0.20, 0.25),
+            color_text: Lcha(0.96, 0.125, 80.0),
+            color_text_inactive: Lcha(0.9, 0.125, 80.0),
+            color_menu_button: Lcha(0.25, 0.125, 280.0),
+            color_menu_button_inactive: Lcha(0.125, 0.125, 20.0),
+            color_menu_button_selected: Lcha(0.2, 0.2, 280.0),
         }
     }
-}
-
-/// Settings for the in-game UI (HUD)
-#[derive(Serialize, Deserialize, Clone)]
-#[serde(default)]
-pub struct UiHudSettings {
-    pub bottom_layout_reverse: bool,
-    pub citylist: bool,
-    pub citylist_show_unowned: bool,
 }
 
 impl Default for UiHudSettings {
@@ -137,7 +166,7 @@ impl Default for UiHudSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub struct Lcha(f32, f32, f32);
 
 impl From<Color> for Lcha {
@@ -151,21 +180,11 @@ impl From<Lcha> for Color {
     fn from(value: Lcha) -> Self {
         Color::Lcha {
             lightness: value.0,
-            chroma: value.0,
-            hue: value.0,
+            chroma: value.1,
+            hue: value.2,
             alpha: 1.0,
         }
     }
-}
-
-/// The color palette to use for different players
-///
-/// Indexed by player ID (0 = neutral)
-#[derive(Serialize, Deserialize, Clone)]
-pub struct PlayerPaletteSettings {
-    pub visible: [Lcha; 8],
-    pub fog: Lcha,
-    pub pending: [Lcha; 8],
 }
 
 impl Default for PlayerPaletteSettings {
@@ -192,6 +211,20 @@ impl Default for PlayerPaletteSettings {
                 Lcha(0.75, 0.25, 30.0),
             ],
             fog: Lcha(0.5, 0.0, 00.0),
+        }
+    }
+}
+
+impl Default for MapGenSettings {
+    fn default() -> Self {
+        MapGenSettings {
+            size: 24,
+            topology: mw_common::grid::Topology::Hex,
+            style: if PROPRIETARY {
+                MapGenStyle::MineWars
+            } else {
+                MapGenStyle::Flat
+            },
         }
     }
 }
