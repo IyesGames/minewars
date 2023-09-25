@@ -59,6 +59,10 @@ features = [ "bevy", "net" ]
 [dependencies.mw_app]
 path = "lib/mw_app"
 
+[dependencies.mw_game_minesweeper]
+path = "lib/mw_game_minesweeper"
+features = ["bevy"]
+
 [dependencies.mw_proprietary_client]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
 

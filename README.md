@@ -73,6 +73,7 @@ Given that this is a multiplayer game, and there are many parts to it
    - `mw_proto_auth`: protocol between the client/player and Auth server
    - `mw_proto_hostrpc`: RPC protocol for the Host server
    - `mw_proto_hostauth`: protocol between Host and Auth
+   - `mw_game_minesweeper`: the various Minesweeper game modes (not MineWars)
  - `cfg/`: example config files and certificates for testing/development
 
 Needless to say, everything is very WIP. Some of those crates don't have much

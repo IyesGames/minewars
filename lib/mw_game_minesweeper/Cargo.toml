@@ -1,0 +1,33 @@
+[package]
+name = "mw_game_minesweeper"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+bevy = [
+    "mw_common/bevy",
+    "dep:mw_app",
+    "dep:bevy",
+]
+
+[dependencies.mw_common]
+path = "../mw_common"
+
+[dependencies.mw_app]
+path = "../mw_app"
+optional = true
+
+[dependencies.serde]
+version = "1.0.188"
+features = [ "derive" ]
+
+[dependencies]
+modular-bitfield = "0.11.2"
+rand = "0.8.5"
+
+[dependencies.bevy]
+version = "0.11.2"
+optional = true
+default-features = false
