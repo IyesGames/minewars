@@ -19,6 +19,7 @@ use crate::prelude::*;
 mod assets;
 mod camera;
 mod cli;
+mod game;
 mod gfx2d;
 mod input;
 mod locale;
@@ -100,6 +101,7 @@ fn main() {
         crate::camera::MwCameraPlugin,
         crate::view::GameViewPlugin,
         crate::gfx2d::Gfx2dPlugin,
+        crate::game::GameplayPlugin,
     ));
 
     app.add_plugins(mw_proprietary_client::MwProprietaryPlugin);
