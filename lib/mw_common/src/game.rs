@@ -9,11 +9,12 @@ use crate::grid::*;
 pub type CitId = u8;
 
 /// The possibilities of what can be on a given tile
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[derive(Enum, FromPrimitive, ToPrimitive, BitfieldSpecifier, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 #[bits = 2]
 pub enum ItemKind {
+    #[default]
     Safe,
     Mine,
     Decoy,
@@ -21,13 +22,14 @@ pub enum ItemKind {
 }
 
 /// The base variant of a map tile
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[derive(Enum, FromPrimitive, ToPrimitive, BitfieldSpecifier, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 #[bits = 3]
 pub enum TileKind {
     Water,
     Foundation,
+    #[default]
     Regular,
     Fertile,
     Forest,
@@ -90,11 +92,12 @@ pub enum ProdState {
 }
 
 /// All the various structures that can be built
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[derive(Enum, FromPrimitive, ToPrimitive, BitfieldSpecifier, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 #[bits = 2]
 pub enum StructureKind {
+    #[default]
     Road,
     Barricade,
     WatchTower,

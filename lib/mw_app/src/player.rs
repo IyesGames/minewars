@@ -43,3 +43,16 @@ pub struct PlayerBundle {
     pub state: PlayerState,
     pub cits: PlayerOwnsCits,
 }
+
+#[derive(Bundle)]
+pub struct SpectatorPlidBundle {
+    plid: PlayerPlid,
+}
+
+impl Default for SpectatorPlidBundle {
+    fn default() -> Self {
+        Self {
+            plid: PlayerPlid(PlayerId::Neutral),
+        }
+    }
+}

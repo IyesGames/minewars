@@ -13,8 +13,10 @@ pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<RecomputeVisEvent>();
         for topo in enum_iterator::all::<Topology>() {
             app.configure_set(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
+            app.configure_set(Update, NeedsMapSet.run_if(resource_exists::<MapDescriptor>()));
         }
     }
 }
@@ -28,11 +30,14 @@ pub fn map_topology_is(topo: Topology) -> impl FnMut(Option<Res<MapDescriptor>>)
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MapTopologySet(pub Topology);
 
-#[derive(Resource)]
-struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NeedsMapSet;
 
 #[derive(Resource)]
-struct ItemIndex(pub HashMap<Pos, Entity>);
+pub struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);
+
+#[derive(Resource)]
+pub struct ItemIndex(pub HashMap<Pos, Entity>);
 
 #[derive(Resource)]
 struct CitIndex {
@@ -162,7 +167,7 @@ pub struct CitRes {
 /// we want to be able to initialize the tilemap from any of them.
 pub fn setup_map<C: Coord, D>(
     world: &mut World,
-    mapdata: MapData<C, D>,
+    mapdata: &MapData<C, D>,
     cits: &[Pos],
     f_tilekind: impl Fn(&D) -> TileKind,
     f_regid: impl Fn(&D) -> u8,
@@ -232,4 +237,8 @@ pub fn setup_map<C: Coord, D>(
     world.insert_resource(tile_index);
     world.insert_resource(cit_index);
     world.insert_resource(item_index);
+    world.insert_resource(MapDescriptor {
+        size: mapdata.size(),
+        topology: C::TOPOLOGY,
+    });
 }
