@@ -8,6 +8,7 @@ pub mod appstate;
 
 pub mod map;
 pub mod player;
+pub mod view;
 
 pub mod bevyhost;
 
@@ -20,6 +21,7 @@ impl Plugin for MwCommonPlugin {
         app.add_plugins((
             appstate::AppStatesPlugin,
             map::MapPlugin,
+            view::GameViewPlugin,
         ));
     }
 }

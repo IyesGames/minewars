@@ -30,13 +30,13 @@
 use bevy::render::extract_resource::ExtractResource;
 use modular_bitfield::prelude::*;
 
-use mw_app::player::PlayersIndex;
 use mw_common::grid::*;
 use mw_common::plid::*;
 use mw_common::game::*;
-use mw_app::map::*;
 
 use crate::prelude::*;
+use crate::map::*;
+use crate::player::PlayersIndex;
 
 pub struct GameViewPlugin;
 

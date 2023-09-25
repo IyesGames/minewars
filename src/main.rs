@@ -29,7 +29,6 @@ mod screens {
 }
 mod settings;
 mod ui;
-mod view;
 
 #[cfg(feature = "dev")]
 mod dev;
@@ -98,7 +97,6 @@ fn main() {
         crate::settings::SettingsPlugin,
         crate::input::InputPlugin,
         crate::camera::MwCameraPlugin,
-        crate::view::GameViewPlugin,
         crate::gfx2d::Gfx2dPlugin,
         crate::game::GameplayPlugin,
     ));
