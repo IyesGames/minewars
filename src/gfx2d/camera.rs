@@ -2,7 +2,7 @@ use bevy::{input::mouse::{MouseMotion, MouseWheel, MouseScrollUnit}, window::Pri
 use bevy_tweening::*;
 use mw_common::{game::MapDescriptor, grid::*};
 
-use crate::{prelude::*, camera::GameCamera};
+use crate::{prelude::*, camera::*};
 
 use super::Gfx2dSet;
 
@@ -11,33 +11,25 @@ pub struct Gfx2dCameraPlugin;
 impl Plugin for Gfx2dCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(iyes_bevy_extras::d2::WorldCursorPlugin);
-        app.init_resource::<GridCursor>();
         app.add_systems(OnEnter(AppState::InGame), setup_game_camera.in_set(Gfx2dSet::Any));
-        app.configure_sets(Update, (
-            CameraControlSet
-                .after(iyes_bevy_extras::d2::WorldCursorSet)
-                .run_if(in_state(AppState::InGame)),
-            GridCursorSet
-                .after(iyes_bevy_extras::d2::WorldCursorSet)
-                .run_if(in_state(AppState::InGame)),
-        ));
         app.add_systems(Update, (
             camera_control_pan_mousedrag,
             camera_control_zoom_mousewheel,
-        ).in_set(CameraControlSet));
-        app.add_systems(Update, grid_cursor.in_set(GridCursorSet));
+        )
+         .in_set(CameraControlSet)
+         .in_set(Gfx2dSet::Any)
+         .after(iyes_bevy_extras::d2::WorldCursorSet)
+        );
+        app.add_systems(Update, (
+            grid_cursor,
+        )
+         .in_set(GridCursorSet)
+         .in_set(Gfx2dSet::Any)
+         .after(iyes_bevy_extras::d2::WorldCursorSet)
+        );
         app.add_systems(Update, component_animator_system::<OrthographicProjection>);
     }
 }
-
-#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
-pub struct CameraControlSet;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct GridCursorSet;
-
-#[derive(Resource, Default)]
-pub struct GridCursor(pub Pos);
 
 fn setup_game_camera(
     world: &mut World,

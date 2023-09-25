@@ -6,6 +6,8 @@ use modular_bitfield::prelude::*;
 use crate::prelude::*;
 use crate::grid::*;
 
+pub mod event;
+
 pub type CitId = u8;
 
 /// The possibilities of what can be on a given tile

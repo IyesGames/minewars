@@ -2,6 +2,7 @@
 //!
 //! Allows offline gameplay without a server.
 
+use crate::GameEventSet;
 use crate::player::PlidPlayingAs;
 use crate::prelude::*;
 
@@ -56,10 +57,10 @@ where
             (
                 cancel_scheds::<G>,
             ).in_set(BevyHostSet::PostGame),
-            drain_out_events::<G, EvOut>.in_set(BevyHostSet::EvOut),
+            drain_out_events::<G, EvOut>.in_set(BevyHostSet::EvOut).in_set(GameEventSet),
         ).in_set(BevyHostSet::All)
-         .run_if(in_state(AppState::InGame))
-         .run_if(in_state(SessionKind::BevyHost))
+         .in_set(InGameSet(None))
+         .in_set(InStateSet(SessionKind::BevyHost))
          .run_if(resource_exists::<BevyHost<G>>())
         );
     }

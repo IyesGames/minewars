@@ -1,18 +1,12 @@
-mod prelude {
-    pub use mw_common::prelude::*;
-    pub use mw_common::grid::*;
-    pub use mw_common::plid::*;
-    pub use mw_common::algo::*;
-}
-
-#[cfg(feature = "bevy")]
-pub mod bevy_stuff;
+use mw_common::prelude::*;
+use mw_common::grid::*;
+use mw_common::plid::*;
+use mw_common::algo::*;
+use mw_common::game::*;
+use mw_common::game::event::*;
+use mw_common::driver::*;
 
 use modular_bitfield::prelude::*;
-use rand::prelude::*;
-use mw_common::{game::{ItemKind, TileKind}, driver::{Game, Host}};
-
-use crate::prelude::*;
 
 /// Settings that can be configured for a session of the Minesweeper game mode
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,6 +36,7 @@ impl Default for MinesweeperSettings {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "bevy", derive(Event))]
 pub enum MinesweeperInputAction {
     ExploreTile {
         pos: Pos,
@@ -49,29 +44,6 @@ pub enum MinesweeperInputAction {
     SetFlag {
         pos: Pos,
         flag: bool,
-    },
-}
-
-#[derive(Debug, Clone)]
-pub enum PlayerEvent {
-    Exploded {
-        pos: Pos,
-        lives_remain: u8,
-    },
-    Eliminated,
-}
-
-#[derive(Debug, Clone)]
-pub enum MinesweeperEvent {
-    Player(PlayerEvent),
-    TileOwner {
-        pos: Pos,
-        plid: PlayerId,
-    },
-    SetFlag {
-        pos: Pos,
-        /// Neutral means remove flag. Other values mean that the plid placed a flag.
-        plid: PlayerId,
     },
 }
 
@@ -127,12 +99,30 @@ struct TileData {
 impl<C: Coord> Game for GameMinesweeper<C> {
     type InitData = ();
     type InputAction = MinesweeperInputAction;
-    type OutEvent = MinesweeperEvent;
+    type OutEvent = MwEv;
     type SchedEvent = ();
 
     fn init<H: Host<Self>>(&mut self, host: &mut H, initdata: Self::InitData) {
     }
     fn input<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction) {
+        match action {
+            MinesweeperInputAction::ExploreTile { pos } => {
+                host.msg(Plids::all(true), MwEv::Map {
+                    pos,
+                    ev: MapEv::Owner {
+                        plid,
+                    }
+                });
+            }
+            MinesweeperInputAction::SetFlag { pos, flag } => {
+                host.msg(Plids::all(true), MwEv::Map {
+                    pos,
+                    ev: MapEv::Flag {
+                        plid: if flag { plid } else { PlayerId::Neutral },
+                    }
+                });
+            }
+        }
     }
     fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent) {
     }

@@ -16,8 +16,12 @@ use crate::prelude::*;
 
 pub struct MwCommonPlugin;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct GameEventSet;
+
 impl Plugin for MwCommonPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<mw_common::game::event::GameEvent>();
         app.add_plugins((
             appstate::AppStatesPlugin,
             map::MapPlugin,

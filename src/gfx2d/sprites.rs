@@ -1,4 +1,6 @@
 use crate::assets::GameAssets;
+use crate::camera::GridCursor;
+use crate::camera::GridCursorSet;
 use crate::prelude::*;
 
 use mw_common::grid::*;
@@ -8,8 +10,6 @@ use mw_app::map::*;
 use super::Gfx2dSet;
 use super::Gfx2dTileSetupSet;
 use super::TilemapInitted;
-use super::camera::GridCursor;
-use super::camera::GridCursorSet;
 
 pub struct Gfx2dSpritesPlugin;
 
@@ -103,11 +103,11 @@ fn cursor_sprite<C: Coord>(
     xf.translation = Vec3::new(trans.x * width, trans.y * height, super::zpos::CURSOR);
 }
 
-fn setup_base_tile<C: Coord>(
+fn setup_base_tile<C: MapTileIndexCoord>(
     world: &mut World,
 ) {
     let texture_atlas = world.resource::<GameAssets>().sprites.clone();
-    let index = world.remove_resource::<MapTileIndex<C>>().unwrap();
+    let index = world.remove_resource::<MapTileIndex>().unwrap();
     let (sprite_index, width, height) = match C::TOPOLOGY {
         Topology::Hex => (
             super::sprite::TILES6 + super::sprite::TILE_WATER,
@@ -118,7 +118,7 @@ fn setup_base_tile<C: Coord>(
             super::sprite::WIDTH4, super::sprite::HEIGHT4,
         ),
     };
-    for (c, &e) in index.0.iter() {
+    for (c, &e) in C::get_mapdata(&index).iter() {
         let trans = c.translation();
         world.entity_mut(e).insert(SpriteSheetBundle {
             texture_atlas: texture_atlas.clone(),

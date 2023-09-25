@@ -1,11 +1,12 @@
+use crate::camera::GridCursor;
+use crate::input::GameInputSet;
 use crate::prelude::*;
 use crate::settings::MapGenStyle;
-use crate::view::PlidViewing;
-use crate::view::ViewBundle;
-use crate::view::ViewMapData;
-use crate::view::ViewTileData;
+use mw_app::map::MapTileIndexCoord;
+use mw_app::view::*;
 use mw_app::bevyhost::*;
 use mw_app::player::*;
+use mw_common::game::event::GameEvent;
 use mw_game_minesweeper::*;
 use mw_common::grid::*;
 use mw_common::plid::*;
@@ -17,34 +18,23 @@ impl Plugin for MinesweeperGameplayPlugin {
     fn build(&self, app: &mut App) {
         app.register_clicommand_noargs("minesweeper_singleplayer", cli_minesweeper_singleplayer);
         app.add_event::<MinesweeperInputAction>();
-        app.add_event::<MinesweeperOutEvent>();
         app.add_plugins((
             BevyMwHostPlugin::<
                 GameMinesweeper<Hex>,
                 MinesweeperInputAction,
-                MinesweeperOutEvent,
+                GameEvent,
             >::new(),
             BevyMwHostPlugin::<
                 GameMinesweeper<Sq>,
                 MinesweeperInputAction,
-                MinesweeperOutEvent,
+                GameEvent,
             >::new(),
         ));
-    }
-}
-
-#[derive(Event, Debug, Clone)]
-pub struct MinesweeperOutEvent {
-    plid: PlayerId,
-    ev: MinesweeperEvent,
-}
-
-impl From<(PlayerId, MinesweeperEvent)> for MinesweeperOutEvent {
-    fn from(value: (PlayerId, MinesweeperEvent)) -> Self {
-        Self {
-            plid: value.0,
-            ev: value.1,
-        }
+        app.add_systems(Update, (
+            minesweeper_input
+                .in_set(InGameSet(Some(GameMode::Minesweeper)))
+                .in_set(GameInputSet),
+        ));
     }
 }
 
@@ -70,7 +60,7 @@ fn cli_minesweeper_singleplayer(world: &mut World) {
     }
 }
 
-fn setup_minesweeper_singleplayer_flatmap<C: Coord>(world: &mut World) {
+fn setup_minesweeper_singleplayer_flatmap<C: MapTileIndexCoord>(world: &mut World) {
     let mut minesweeper_settings = world.resource::<AllSettings>().game_minesweeper.clone();
     minesweeper_settings.n_plids = 1;
     let mapgen_settings = world.resource::<AllSettings>().mapgen.clone();
@@ -101,7 +91,27 @@ fn setup_minesweeper_singleplayer_flatmap<C: Coord>(world: &mut World) {
     world.insert_resource(PlidPlayingAs(1.into()));
     world.insert_resource(PlidViewing(1.into()));
 
+    world.resource_mut::<NextState<GameMode>>().set(GameMode::Minesweeper);
     world.resource_mut::<NextState<AppState>>().set(AppState::InGame);
     world.resource_mut::<NextState<SessionKind>>().set(SessionKind::BevyHost);
+}
+
+// TODO: replace this with something more elaborate?
+fn minesweeper_input(
+    crs: Res<GridCursor>,
+    btn: Res<Input<MouseButton>>,
+    mut evw: EventWriter<MinesweeperInputAction>,
+) {
+    if btn.just_pressed(MouseButton::Left) {
+        evw.send(MinesweeperInputAction::ExploreTile {
+            pos: crs.0,
+        });
+    }
+    if btn.just_pressed(MouseButton::Middle) {
+        evw.send(MinesweeperInputAction::SetFlag {
+            flag: true,
+            pos: crs.0,
+        });
+    }
 }
 

@@ -9,10 +9,13 @@ use mw_common::game::*;
 
 use crate::prelude::*;
 
+mod update;
+
 pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(update::MapUpdatePlugin);
         app.add_event::<RecomputeVisEvent>();
         for topo in enum_iterator::all::<Topology>() {
             app.configure_set(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
@@ -33,8 +36,69 @@ pub struct MapTopologySet(pub Topology);
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NeedsMapSet;
 
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MapUpdateSet {
+    TileKind,
+    TileOwner,
+    TileDigit,
+    TileGent,
+    TileRoads,
+}
+
 #[derive(Resource)]
-pub struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);
+pub enum MapTileIndex {
+    Hex(MapData<Hex, Entity>),
+    Sq(MapData<Sq, Entity>),
+}
+
+impl MapTileIndex {
+    pub fn get_pos(&self, pos: Pos) -> Entity {
+        match self {
+            MapTileIndex::Hex(map) => map[pos.into()],
+            MapTileIndex::Sq(map) => map[pos.into()],
+        }
+    }
+    fn set_e(&mut self, pos: Pos, e: Entity) {
+        match self {
+            MapTileIndex::Hex(map) => {
+                map[pos.into()] = e
+            },
+            MapTileIndex::Sq(map) => {
+                map[pos.into()] = e
+            },
+        }
+    }
+}
+
+pub trait MapTileIndexCoord: Coord {
+    fn new_maptileindex(size: u8) -> MapTileIndex;
+    fn get_mapdata(index: &MapTileIndex) -> &MapData<Self, Entity>;
+}
+
+impl MapTileIndexCoord for Hex {
+    fn new_maptileindex(size: u8) -> MapTileIndex {
+        MapTileIndex::Hex(MapData::new(size, Entity::PLACEHOLDER))
+    }
+    fn get_mapdata(index: &MapTileIndex) -> &MapData<Self, Entity> {
+        if let MapTileIndex::Hex(data) = index {
+            &data
+        } else {
+            panic!("MapTileIndex is not Hex");
+        }
+    }
+}
+impl MapTileIndexCoord for Sq {
+    fn new_maptileindex(size: u8) -> MapTileIndex {
+        MapTileIndex::Sq(MapData::new(size, Entity::PLACEHOLDER))
+    }
+    fn get_mapdata(index: &MapTileIndex) -> &MapData<Self, Entity> {
+        if let MapTileIndex::Sq(data) = index {
+            &data
+        } else {
+            panic!("MapTileIndex is not Sq");
+        }
+    }
+}
 
 #[derive(Resource)]
 pub struct ItemIndex(pub HashMap<Pos, Entity>);
@@ -165,16 +229,14 @@ pub struct CitRes {
 /// This is not a standalone system, because we can have map data
 /// that comes from different sources (server, file, procgen) and
 /// we want to be able to initialize the tilemap from any of them.
-pub fn setup_map<C: Coord, D>(
+pub fn setup_map<C: Coord + MapTileIndexCoord, D>(
     world: &mut World,
     mapdata: &MapData<C, D>,
     cits: &[Pos],
     f_tilekind: impl Fn(&D) -> TileKind,
     f_regid: impl Fn(&D) -> u8,
 ) {
-    let mut tile_index = MapTileIndex::<C>(
-        MapData::new(mapdata.size(), Entity::PLACEHOLDER)
-    );
+    let mut tile_index = C::new_maptileindex(mapdata.size());
 
     let mut cit_index = CitIndex {
         by_id: Vec::with_capacity(cits.len()),
@@ -213,7 +275,7 @@ pub fn setup_map<C: Coord, D>(
         } else {
             world.spawn(b_base).id()
         };
-        tile_index.0[c] = e_tile;
+        tile_index.set_e(c.into(), e_tile);
     }
 
     for (i, cit_pos) in cits.iter().enumerate() {
@@ -230,7 +292,7 @@ pub fn setup_map<C: Coord, D>(
         ).id();
         cit_index.by_id.push(e_cit);
         cit_index.by_pos.insert(*cit_pos, e_cit);
-        world.entity_mut(tile_index.0[(*cit_pos).into()])
+        world.entity_mut(tile_index.get_pos(*cit_pos))
             .insert(TileGent::Cit(i as u8));
     }
 

@@ -13,6 +13,15 @@ pub struct MwCameraPlugin;
 
 impl Plugin for MwCameraPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<CameraJumpTo>();
+        app.add_event::<ScreenShakeEvent>();
+        app.init_resource::<GridCursor>();
+        app.configure_sets(Update, (
+            CameraControlSet
+                .in_set(InGameSet(None)),
+            GridCursorSet
+                .in_set(InGameSet(None)),
+        ));
     }
 }
 
@@ -31,3 +40,12 @@ pub enum ScreenShakeEvent {
     Medium,
     Strong,
 }
+
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
+pub struct CameraControlSet;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct GridCursorSet;
+
+#[derive(Resource, Default)]
+pub struct GridCursor(pub Pos);
