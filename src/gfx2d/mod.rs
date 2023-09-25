@@ -1,3 +1,5 @@
+use mw_app::map::NeedsMapSet;
+
 use crate::{prelude::*, settings::MwRenderer};
 
 pub mod camera;
@@ -8,10 +10,15 @@ pub struct Gfx2dPlugin;
 
 impl Plugin for Gfx2dPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins((
+            camera::Gfx2dCameraPlugin,
+            sprites::Gfx2dSpritesPlugin,
+            tilemap::Gfx2dTilemapPlugin,
+        ));
         app.configure_sets(Update, (
-            Gfx2dSet::Any.run_if(rc_gfx2d_any),
-            Gfx2dSet::Sprites.run_if(rc_gfx2d_sprites),
-            Gfx2dSet::Tilemap.run_if(rc_gfx2d_tilemap),
+            Gfx2dSet::Any.in_set(NeedsMapSet).run_if(rc_gfx2d_any),
+            Gfx2dSet::Sprites.in_set(NeedsMapSet).run_if(rc_gfx2d_sprites),
+            Gfx2dSet::Tilemap.in_set(NeedsMapSet).run_if(rc_gfx2d_tilemap),
         ));
     }
 }
@@ -23,25 +30,37 @@ pub enum Gfx2dSet {
     Tilemap,
 }
 
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct Gfx2dTileSetupSet;
+
+#[derive(Resource)]
+pub struct TilemapInitted;
+
 fn rc_gfx2d_any(
-    settings: Res<AllSettings>,
+    settings: Option<Res<AllSettings>>,
 ) -> bool {
-    settings.renderer == MwRenderer::Tilemap || settings.renderer == MwRenderer::Sprites
+    settings.map(|s| s.renderer == MwRenderer::Tilemap || s.renderer == MwRenderer::Sprites).unwrap_or(false)
 }
 
 fn rc_gfx2d_sprites(
-    settings: Res<AllSettings>,
+    settings: Option<Res<AllSettings>>,
 ) -> bool {
-    settings.renderer == MwRenderer::Sprites
+    settings.map(|s| s.renderer == MwRenderer::Sprites).unwrap_or(false)
 }
 
 fn rc_gfx2d_tilemap(
-    settings: Res<AllSettings>,
+    settings: Option<Res<AllSettings>>,
 ) -> bool {
-    settings.renderer == MwRenderer::Sprites
+    settings.map(|s| s.renderer == MwRenderer::Tilemap).unwrap_or(false)
 }
 
 mod sprite {
+    pub const WIDTH6: f32 = 112.0;
+    pub const HEIGHT6: f32 = 128.0;
+
+    pub const WIDTH4: f32 = 112.0;
+    pub const HEIGHT4: f32 = 112.0;
+
     pub const STRIDE: usize = 10;
 
     pub const DIG: usize = 0 * STRIDE;
