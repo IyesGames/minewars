@@ -82,7 +82,6 @@ fn main() {
         bevy_tweening::TweeningPlugin,
         bevy_fluent::FluentPlugin,
         ProgressPlugin::new(AppState::AssetsLoading).continue_to(AppState::SplashIyes),
-        iyes_bevy_extras::d2::WorldCursorPlugin,
         iyes_ui::UiExtrasPlugin,
     ));
 

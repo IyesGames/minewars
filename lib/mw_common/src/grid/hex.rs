@@ -74,7 +74,7 @@ impl Coord for Hex {
         glam::Vec2::new(y * 0.5 + x, y * 0.75)
     }
 
-    fn from_f32_clamped((y, x): (f32, f32)) -> Self {
+    fn from_f32_clamped((x, y): (f32, f32)) -> Self {
         let z = -x - y;
 
         let mut rx = x.round();

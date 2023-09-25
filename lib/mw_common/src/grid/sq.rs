@@ -60,7 +60,7 @@ impl Coord for Sq {
         glam::Vec2::new(self.0 as f32, self.1 as f32)
     }
 
-    fn from_f32_clamped((y, x): (f32, f32)) -> Self {
+    fn from_f32_clamped((x, y): (f32, f32)) -> Self {
         let mut rx = x.round();
         let mut ry = y.round();
 

@@ -8,6 +8,8 @@ use mw_app::map::*;
 use super::Gfx2dSet;
 use super::Gfx2dTileSetupSet;
 use super::TilemapInitted;
+use super::camera::GridCursor;
+use super::camera::GridCursorSet;
 
 pub struct Gfx2dSpritesPlugin;
 
@@ -28,7 +30,77 @@ impl Plugin for Gfx2dSpritesPlugin {
             )
                 .run_if(resource_exists::<TilemapInitted>()),
         ).in_set(Gfx2dSet::Sprites));
+        app.add_systems(OnEnter(AppState::InGame), (
+            setup_cursor,
+        ));
+        app.add_systems(Update, (
+            (
+                cursor_sprite::<Hex>
+                    .in_set(MapTopologySet(Topology::Hex)),
+                cursor_sprite::<Sq>
+                    .in_set(MapTopologySet(Topology::Sq)),
+            )
+                .after(GridCursorSet),
+        ).in_set(Gfx2dSet::Any));
     }
+}
+
+#[derive(Component)]
+struct CursorSprite;
+
+#[derive(Bundle)]
+struct CursorSpriteBundle {
+    sprite: SpriteSheetBundle,
+    pos: MwTilePos,
+    marker: CursorSprite,
+}
+
+fn setup_cursor(
+    mut commands: Commands,
+    gass: Res<GameAssets>,
+    mapdesc: Res<MapDescriptor>,
+) {
+    let i = match mapdesc.topology {
+        Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_CURSOR,
+        Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_CURSOR,
+    };
+    commands.spawn((
+        CursorSpriteBundle {
+            sprite: SpriteSheetBundle {
+                sprite: TextureAtlasSprite {
+                    index: i,
+                    ..Default::default()
+                },
+                texture_atlas: gass.sprites.clone(),
+                transform: Transform::from_xyz(0.0, 0.0, super::zpos::CURSOR),
+                ..Default::default()
+            },
+            pos: MwTilePos(Pos::origin()),
+            marker: CursorSprite,
+        },
+    ));
+}
+
+fn cursor_sprite<C: Coord>(
+    mut q: Query<(&mut Transform, &mut MwTilePos), With<CursorSprite>>,
+    crs: Res<GridCursor>,
+) {
+    if !crs.is_changed() {
+        return;
+    }
+    let (mut xf, mut pos) = q.single_mut();
+    *pos = MwTilePos(crs.0);
+
+    let (width, height) = match C::TOPOLOGY {
+        Topology::Hex => (
+            super::sprite::WIDTH6, super::sprite::HEIGHT6,
+        ),
+        Topology::Sq => (
+            super::sprite::WIDTH4, super::sprite::HEIGHT4,
+        ),
+    };
+    let trans = C::from(crs.0).translation();
+    xf.translation = Vec3::new(trans.x * width, trans.y * height, super::zpos::CURSOR);
 }
 
 fn setup_base_tile<C: Coord>(
@@ -55,7 +127,7 @@ fn setup_base_tile<C: Coord>(
                 index: sprite_index,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(trans.x * width, trans.y * height, 0.0),
+            transform: Transform::from_xyz(trans.x * width, trans.y * height, super::zpos::TILE),
             ..Default::default()
         });
     }

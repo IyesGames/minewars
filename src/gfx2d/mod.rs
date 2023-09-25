@@ -58,8 +58,8 @@ mod sprite {
     pub const WIDTH6: f32 = 112.0;
     pub const HEIGHT6: f32 = 128.0;
 
-    pub const WIDTH4: f32 = 112.0;
-    pub const HEIGHT4: f32 = 112.0;
+    pub const WIDTH4: f32 = 108.0;
+    pub const HEIGHT4: f32 = 108.0;
 
     pub const STRIDE: usize = 10;
 
@@ -95,4 +95,16 @@ mod sprite {
     pub const SMOKE: usize = OVERLAYS + 2;
     pub const STRIKE: usize = OVERLAYS + 3;
     pub const REVEAL: usize = OVERLAYS + 4;
+}
+
+mod zpos {
+    pub const TILE: f32 = 1.0;
+
+    pub const CURSOR: f32 = TILE + 10.0;
+    pub const OVERLAYS: f32 = TILE + 5.0;
+    pub const DIGIT: f32 = TILE + 3.0;
+    pub const GENTS: f32 = TILE + 2.0;
+    pub const ROAD: f32 = TILE + 1.0;
+
+    pub const REGHILIGHT: f32 = TILE - 1.0;
 }
