@@ -37,7 +37,6 @@ codegen-units = 8
 lto = true
 codegen-units = 1
 debug = false
-strip = true
 
 [features]
 dev = ["bevy/filesystem_watcher"]
