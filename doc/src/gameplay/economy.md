@@ -61,7 +61,7 @@ Players may **harvest* tiles (one tile at a time) to instantly claim a large sum
 of resources. They are awarded to the city of the region the tile belongs to.
 
 This is a one-time action. After harvesting, the tile is converted to
-**Destroyed Land** and produces no more resources for the remainder of the game.
+**Foundation** and produces no more resources for the remainder of the game.
 
 The player must own both the tile and the city whose region it belongs to.
 
@@ -77,7 +77,7 @@ from the map's geography.
 Harvest bounties (resource given when harvesting a tile):
  - **Regular Land**: **100** Res
  - **Fertile Land**: **250** Res
- - **Destroyed Land** and **Foundation**: **0** Res
+ - **Destroyed Land** and **Foundation**: not harvestable (**0** Res)
  - **Forest**: **420** Res
  - **Mountain**: **600** Res
 

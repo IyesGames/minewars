@@ -97,7 +97,9 @@ Place a **Structure** on a tile that is owned by the player.
 
 The player must own the city of the region.
 
-The tile kind is immediately changed to **Foundation**.
+The tile is immediately **harvested**. The harvest resource bounty is counted
+towards the construction progress points. The tile kind is immediately changed
+to **Foundation**.
 
 The Structure is not ready immediately. When placed, it is in "pending"
 mode, and the city is set to "construction" mode.
@@ -131,9 +133,7 @@ construction, based on the current state of the region's city).
 
 The player must own the region's city.
 
-The tile kind is changed to **Destroyed Land**.
-
 The amount gained depends on the tile kind.
 
-The tile is converted to **Destroyed Land**, meaning it will have no resources
+The tile kind is changed to **Foundation**, meaning it will give no resources
 for the rest of the game.
