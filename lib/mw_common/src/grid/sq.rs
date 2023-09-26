@@ -57,7 +57,7 @@ impl Coord for Sq {
     }
 
     fn translation(self) -> glam::Vec2 {
-        glam::Vec2::new(self.0 as f32, self.1 as f32)
+        glam::Vec2::new(self.1 as f32, self.0 as f32)
     }
 
     fn from_f32_clamped((x, y): (f32, f32)) -> Self {
