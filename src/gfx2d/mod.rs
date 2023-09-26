@@ -83,6 +83,7 @@ mod sprite {
     pub const TILE_FOREST: usize = 5;
     pub const TILE_DEAD: usize = 6;
     pub const TILE_DEADSKULL: usize = 7;
+    pub const TILE_FOUNDATION: usize = 8;
     pub const GENT_MINE: usize = GENTS + 0;
     pub const GENT_DECOY: usize = GENTS + 1;
     pub const GENT_FLASH: usize = GENTS + 2;

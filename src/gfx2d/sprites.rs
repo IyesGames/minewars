@@ -147,7 +147,7 @@ fn tile_kind(
     for (mut spr, kind) in &mut q {
         spr.index = i_base + match kind {
             TileKind::Water => super::sprite::TILE_WATER,
-            TileKind::Foundation => super::sprite::TILE_LAND,
+            TileKind::Foundation => super::sprite::TILE_FOUNDATION,
             TileKind::Regular => super::sprite::TILE_LAND,
             TileKind::Fertile => super::sprite::TILE_FERTILE,
             TileKind::Forest => super::sprite::TILE_FOREST,
