@@ -23,6 +23,7 @@ mod game;
 mod gfx2d;
 mod input;
 mod locale;
+mod minimap;
 mod screens {
     pub mod loading;
     pub mod splash;
@@ -99,6 +100,7 @@ fn main() {
         crate::camera::MwCameraPlugin,
         crate::gfx2d::Gfx2dPlugin,
         crate::game::GameplayPlugin,
+        crate::minimap::MinimapPlugin,
     ));
 
     app.add_plugins(mw_proprietary_client::MwProprietaryPlugin);

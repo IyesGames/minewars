@@ -85,6 +85,7 @@ pub struct UiHudSettings {
     pub bottom_layout_reverse: bool,
     pub citylist: bool,
     pub citylist_show_unowned: bool,
+    pub minimap_scale: u8,
 }
 
 /// The color palette to use for different players
@@ -162,6 +163,7 @@ impl Default for UiHudSettings {
             bottom_layout_reverse: false,
             citylist: true,
             citylist_show_unowned: true,
+            minimap_scale: 3,
         }
     }
 }

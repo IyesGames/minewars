@@ -1,12 +1,15 @@
-use crate::{prelude::*, assets::UiAssets, ui};
+use bevy::window::PrimaryWindow;
 
-use super::tooltip::InfoAreaText;
+use crate::{prelude::*, assets::UiAssets, ui, minimap::MinimapImage};
+
+use super::{tooltip::InfoAreaText, UiRoot};
 
 pub(super) struct HudPlugin;
 
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::InGame), setup_hud);
+        app.add_systems(Update, minimap_image_scale_fixme.run_if(resource_exists::<MinimapImage>()));
     }
 }
 
@@ -282,7 +285,27 @@ fn spawn_playericon(commands: &mut Commands, uiassets: &UiAssets, color: Color, 
 fn setup_hud(
     mut commands: Commands,
     uiassets: Res<UiAssets>,
+    minimap_image: Res<MinimapImage>,
 ) {
+    let root = commands.spawn((
+        StateDespawnMarker,
+        UiRoot,
+        NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::Stretch,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).id();
+
     let topcenter = commands.spawn((
         NodeBundle {
             style: Style {
@@ -417,13 +440,22 @@ fn setup_hud(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                width: Val::Px(240.0),
-                height: Val::Px(240.0),
+                padding: UiRect::all(Val::Px(4.0)),
                 ..Default::default()
             },
             background_color: BackgroundColor(Color::rgb(0.0, 0.3, 0.0)),
             ..Default::default()
         },
+    )).id();
+    let minimap_image = commands.spawn((
+        ImageBundle {
+            image: UiImage {
+                texture: minimap_image.0.clone(),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        MinimapImageNode,
     )).id();
     let inventory = commands.spawn((
         NodeBundle {
@@ -672,6 +704,7 @@ fn setup_hud(
     commands.entity(topcenter).push_children(&[playerbar]);
     commands.entity(playerbar).push_children(&[player1, player2, player3, player4, player5, player6]);
     commands.entity(notify_area).push_children(&[notify_text]);
+    commands.entity(minimap).push_children(&[minimap_image]);
     commands.entity(bottom).push_children(&[inventory, bot_midarea, minimap]);
     commands.entity(bot_midarea).push_children(&[info_area, toolbar]);
     commands.entity(info_area).push_children(&[info_text]);
@@ -680,4 +713,34 @@ fn setup_hud(
     commands.entity(inventory_contents).push_children(&[inventory_mines, inventory_decoys]);
     commands.entity(inventory_mines).push_children(&[inventory_mines_icon, inventory_mines_text]);
     commands.entity(inventory_decoys).push_children(&[inventory_decoys_icon, inventory_decoys_text]);
+    commands.entity(root).push_children(&[citylist, topcenter, notify_area, bottom]);
+}
+
+#[derive(Component)]
+struct MinimapImageNode;
+
+fn minimap_image_scale_fixme(
+    mut q: Query<&mut Style, With<MinimapImageNode>>,
+    minimap_image: Res<MinimapImage>,
+    mut evr: EventReader<AssetEvent<Image>>,
+    ass_image: Res<Assets<Image>>,
+    uiscale: Res<UiScale>,
+    q_wnd: Query<&Window, With<PrimaryWindow>>,
+) {
+    for ev in evr.iter() {
+        if let AssetEvent::Modified { handle } = ev {
+            if handle == &minimap_image.0 {
+                let img = ass_image.get(&handle).unwrap();
+                let wndscale = q_wnd.single().scale_factor();
+                let w = img.texture_descriptor.size.width as f64;
+                let h = img.texture_descriptor.size.height as f64;
+                let w = w / uiscale.scale / wndscale;
+                let h = h / uiscale.scale / wndscale;
+                for mut style in &mut q {
+                    style.width = Val::Px(w as f32);
+                    style.height = Val::Px(h as f32);
+                }
+            }
+        }
+    }
 }
