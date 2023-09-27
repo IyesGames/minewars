@@ -3,6 +3,9 @@ use crate::camera::GridCursor;
 use crate::camera::GridCursorSet;
 use crate::prelude::*;
 
+use mw_app::player::PlayersIndex;
+use mw_app::view::PlidViewing;
+use mw_app::view::ViewMapData;
 use mw_common::grid::*;
 use mw_common::game::*;
 use mw_app::map::*;
@@ -26,7 +29,10 @@ impl Plugin for Gfx2dSpritesPlugin {
                 .in_set(Gfx2dTileSetupSet)
                 .run_if(not(resource_exists::<TilemapInitted>())),
             (
-                tile_kind,
+                tile_kind::<Hex>
+                    .in_set(MapTopologySet(Topology::Hex)),
+                tile_kind::<Sq>
+                    .in_set(MapTopologySet(Topology::Sq)),
                 tile_owner,
             )
                 .run_if(resource_exists::<TilemapInitted>()),
@@ -104,11 +110,11 @@ fn cursor_sprite<C: Coord>(
     xf.translation = Vec3::new(trans.x * width, trans.y * height, super::zpos::CURSOR);
 }
 
-fn setup_base_tile<C: MapTileIndexCoord>(
+fn setup_base_tile<C: Coord>(
     world: &mut World,
 ) {
     let texture_atlas = world.resource::<GameAssets>().sprites.clone();
-    let index = world.remove_resource::<MapTileIndex>().unwrap();
+    let index = world.remove_resource::<MapTileIndex<C>>().unwrap();
     let (sprite_index, width, height) = match C::TOPOLOGY {
         Topology::Hex => (
             super::sprite::TILES6 + super::sprite::TILE_WATER,
@@ -119,7 +125,7 @@ fn setup_base_tile<C: MapTileIndexCoord>(
             super::sprite::WIDTH4, super::sprite::HEIGHT4,
         ),
     };
-    for (c, &e) in C::get_mapdata(&index).iter() {
+    for (c, &e) in index.0.iter() {
         let trans = c.translation();
         world.entity_mut(e).insert(SpriteSheetBundle {
             texture_atlas: texture_atlas.clone(),
@@ -136,13 +142,13 @@ fn setup_base_tile<C: MapTileIndexCoord>(
     world.insert_resource(TilemapInitted);
 }
 
-fn tile_kind(
-    desc: Res<MapDescriptor>,
+fn tile_kind<C: Coord>(
     mut q: Query<(&mut TextureAtlasSprite, &TileKind, &MwTilePos), Changed<TileKind>>,
-    q_pos: Query<&TileKind>,
-    index: Res<MapTileIndex>,
+    plids: Res<PlayersIndex>,
+    viewing: Res<PlidViewing>,
+    q_view: Query<&ViewMapData<C>>,
 ) {
-    let i_base = match desc.topology {
+    let i_base = match C::TOPOLOGY {
         Topology::Hex => super::sprite::TILES6,
         Topology::Sq => super::sprite::TILES4,
     };
@@ -158,26 +164,15 @@ fn tile_kind(
             TileKind::Destroyed => super::sprite::TILE_DEAD,
         };
         if *kind == TileKind::Water {
-            let a = match desc.topology {
-                // PERF: getting the tile kind via an ECS query is very slow
-                // this should probably get its data from the View instead
-                Topology::Hex => fancytint(
-                    desc.size,
-                    Hex::from(pos.0),
-                    |c| q_pos
-                        .get(index.get_pos(c))
-                        .map(|d| *d)
-                        .unwrap_or(TileKind::Water)
-                ),
-                Topology::Sq => fancytint(
-                    desc.size,
-                    Sq::from(pos.0),
-                    |c| q_pos
-                        .get(index.get_pos(c))
-                        .map(|d| *d)
-                        .unwrap_or(TileKind::Water)
-                ),
-            };
+            let e_plid = plids.0.get(viewing.0.i())
+                .expect("Plid has no entity??");
+            let view = q_view.get(*e_plid)
+                .expect("Plid has no view??");
+            let a =  fancytint(
+                view.0.size(),
+                C::from(pos.0),
+                |c| view.0[c].kind()
+            );
             spr.color.set_a(a);
         } else {
             spr.color.set_a(1.0);

@@ -3,7 +3,6 @@ use crate::input::GameInputSet;
 use crate::prelude::*;
 use crate::settings::MapGenStyle;
 use mw_app::map::MapTileIndex;
-use mw_app::map::MapTileIndexCoord;
 use mw_app::view::*;
 use mw_app::bevyhost::*;
 use mw_app::player::*;
@@ -63,7 +62,7 @@ fn cli_minesweeper_singleplayer(world: &mut World) {
     }
 }
 
-fn setup_minesweeper_singleplayer_flatmap<C: MapTileIndexCoord>(
+fn setup_minesweeper_singleplayer_flatmap<C: Coord>(
     world: &mut World,
     mut minesweeper_settings: MinesweeperSettings,
     map_size: u8

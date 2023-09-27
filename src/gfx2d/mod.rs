@@ -56,7 +56,7 @@ fn rc_gfx2d_tilemap(
 }
 
 /// Generate fancy alpha values for water
-fn fancytint<C: Coord>(map_size: u8, c: C, f_kind: impl Fn(Pos) -> TileKind) -> f32 {
+fn fancytint<C: Coord>(map_size: u8, c: C, f_kind: impl Fn(C) -> TileKind) -> f32 {
     let mut d_edge = 0;
     let mut d_land = 0;
 
@@ -69,7 +69,7 @@ fn fancytint<C: Coord>(map_size: u8, c: C, f_kind: impl Fn(Pos) -> TileKind) -> 
                 if d_land != 0 {
                     break 'outer;
                 }
-            } else if f_kind(c2.into()) != TileKind::Water {
+            } else if f_kind(c2) != TileKind::Water {
                 if d_land == 0 {
                     d_land = r;
                 }
