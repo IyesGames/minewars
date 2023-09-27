@@ -15,7 +15,9 @@ pub mod prelude {
     pub use num;
     pub use num_traits::{FromPrimitive, ToPrimitive};
     pub use num_derive::{FromPrimitive, ToPrimitive};
+    pub use rand;
     pub use rand::prelude::*;
+    pub use rand_pcg;
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
     pub use std::sync::Arc;
     pub use std::net::{IpAddr, SocketAddr};
