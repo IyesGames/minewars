@@ -1,4 +1,5 @@
 use mw_app::map::NeedsMapSet;
+use mw_common::{game::TileKind, grid::*};
 
 use crate::{prelude::*, settings::MwRenderer};
 
@@ -52,6 +53,39 @@ fn rc_gfx2d_tilemap(
     settings: Option<Res<AllSettings>>,
 ) -> bool {
     settings.map(|s| s.renderer == MwRenderer::Tilemap).unwrap_or(false)
+}
+
+/// Generate fancy alpha values for water
+fn fancytint<C: Coord>(map_size: u8, c: C, f_kind: impl Fn(Pos) -> TileKind) -> f32 {
+    let mut d_edge = 0;
+    let mut d_land = 0;
+
+    'outer: for r in 1..=map_size {
+        for c2 in c.iter_ring(r) {
+            if c2.ring() > map_size {
+                if d_edge == 0 {
+                    d_edge = r;
+                }
+                if d_land != 0 {
+                    break 'outer;
+                }
+            } else if f_kind(c2.into()) != TileKind::Water {
+                if d_land == 0 {
+                    d_land = r;
+                }
+                if d_edge != 0 {
+                    break 'outer;
+                }
+            }
+        }
+    }
+
+    if d_land >= d_edge {
+        0.0
+    } else {
+        let x = (d_edge - d_land) as f32 / d_edge as f32;
+        x * x
+    }
 }
 
 mod sprite {

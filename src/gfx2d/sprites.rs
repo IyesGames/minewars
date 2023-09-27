@@ -10,6 +10,7 @@ use mw_app::map::*;
 use super::Gfx2dSet;
 use super::Gfx2dTileSetupSet;
 use super::TilemapInitted;
+use super::fancytint;
 
 pub struct Gfx2dSpritesPlugin;
 
@@ -137,14 +138,16 @@ fn setup_base_tile<C: MapTileIndexCoord>(
 
 fn tile_kind(
     desc: Res<MapDescriptor>,
-    mut q: Query<(&mut TextureAtlasSprite, &TileKind), Changed<TileKind>>,
+    mut q: Query<(&mut TextureAtlasSprite, &TileKind, &MwTilePos), Changed<TileKind>>,
+    q_pos: Query<&TileKind>,
+    index: Res<MapTileIndex>,
 ) {
     let i_base = match desc.topology {
         Topology::Hex => super::sprite::TILES6,
         Topology::Sq => super::sprite::TILES4,
     };
 
-    for (mut spr, kind) in &mut q {
+    for (mut spr, kind, pos) in &mut q {
         spr.index = i_base + match kind {
             TileKind::Water => super::sprite::TILE_WATER,
             TileKind::Foundation => super::sprite::TILE_FOUNDATION,
@@ -153,6 +156,31 @@ fn tile_kind(
             TileKind::Forest => super::sprite::TILE_FOREST,
             TileKind::Mountain => super::sprite::TILE_MTN,
             TileKind::Destroyed => super::sprite::TILE_DEAD,
+        };
+        if *kind == TileKind::Water {
+            let a = match desc.topology {
+                // PERF: getting the tile kind via an ECS query is very slow
+                // this should probably get its data from the View instead
+                Topology::Hex => fancytint(
+                    desc.size,
+                    Hex::from(pos.0),
+                    |c| q_pos
+                        .get(index.get_pos(c))
+                        .map(|d| *d)
+                        .unwrap_or(TileKind::Water)
+                ),
+                Topology::Sq => fancytint(
+                    desc.size,
+                    Sq::from(pos.0),
+                    |c| q_pos
+                        .get(index.get_pos(c))
+                        .map(|d| *d)
+                        .unwrap_or(TileKind::Water)
+                ),
+            };
+            spr.color.set_a(a);
+        } else {
+            spr.color.set_a(1.0);
         }
     }
 }
