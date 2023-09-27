@@ -38,10 +38,13 @@ use crate::prelude::*;
 use crate::map::*;
 use crate::player::PlayersIndex;
 
+mod update;
+
 pub struct GameViewPlugin;
 
 impl Plugin for GameViewPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(update::ViewUpdatePlugin);
         app.configure_set(
             Update,
             ViewSwitchSet.run_if(resource_exists_and_changed::<PlidViewing>())
@@ -64,6 +67,9 @@ impl Plugin for GameViewPlugin {
         ).in_set(ViewSwitchSet));
     }
 }
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ViewUpdateSet;
 
 /// All systems that run whenever a view switch is triggered, are in this set.
 ///
@@ -91,11 +97,12 @@ pub struct PlidViewing(pub PlayerId);
 pub struct ViewTileData {
     pub owner: B4,
     pub digit: B3,
+    pub asterisk: bool,
     pub kind: TileKind,
     pub item: ItemKind,
     pub has_structure: bool,
     pub structure: StructureKind,
-    #[skip] __: B1,
+    // #[skip] __: B1,
 }
 
 /// The map data of a view
