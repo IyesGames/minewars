@@ -340,50 +340,50 @@ fn setup_hud(
             ..Default::default()
         },
     )).id();
-    let citylist = commands.spawn((
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                bottom: Val::Auto,
-                left: Val::Px(0.0),
-                right: Val::Auto,
-                top: Val::Px(0.0),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Stretch,
-                justify_content: JustifyContent::Start,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.3, 0.2, 0.0)),
-            z_index: ZIndex::Global(2),
-            ..Default::default()
-        },
-    )).id();
-    let citylist_owned = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Stretch,
-                justify_content: JustifyContent::Start,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.2, 0.4, 0.0)),
-            ..Default::default()
-        },
-    )).id();
-    let citylist_unowned = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Row,
-                align_items: AlignItems::Start,
-                justify_content: JustifyContent::Start,
-                flex_wrap: FlexWrap::Wrap,
-                align_content: AlignContent::Start,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.2, 0.5, 0.0)),
-            ..Default::default()
-        },
-    )).id();
+    // let citylist = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             position_type: PositionType::Absolute,
+    //             bottom: Val::Auto,
+    //             left: Val::Px(0.0),
+    //             right: Val::Auto,
+    //             top: Val::Px(0.0),
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Stretch,
+    //             justify_content: JustifyContent::Start,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.3, 0.2, 0.0)),
+    //         z_index: ZIndex::Global(2),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let citylist_owned = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Stretch,
+    //             justify_content: JustifyContent::Start,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.2, 0.4, 0.0)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let citylist_unowned = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Row,
+    //             align_items: AlignItems::Start,
+    //             justify_content: JustifyContent::Start,
+    //             flex_wrap: FlexWrap::Wrap,
+    //             align_content: AlignContent::Start,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.2, 0.5, 0.0)),
+    //         ..Default::default()
+    //     },
+    // )).id();
     let playerbar = commands.spawn((
         NodeBundle {
             style: Style {
@@ -443,7 +443,7 @@ fn setup_hud(
                 padding: UiRect::all(Val::Px(4.0)),
                 ..Default::default()
             },
-            background_color: BackgroundColor(Color::rgb(0.0, 0.3, 0.0)),
+            background_color: BackgroundColor(Color::rgb(0.0, 0.0, 0.0)),
             ..Default::default()
         },
     )).id();
@@ -457,125 +457,125 @@ fn setup_hud(
         },
         MinimapImageNode,
     )).id();
-    let inventory = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceBetween,
-                width: Val::Px(200.0),
-                height: Val::Px(140.0),
-                padding: UiRect::all(Val::Px(4.0)),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.0, 0.3, 0.3)),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_text = commands.spawn((
-        // L10nKey(String::new()),
-        TextBundle {
-            text: Text::from_section(
-                "INVENTORY",
-                TextStyle {
-                    font: uiassets.font_bold.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            ),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_contents = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Row,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceEvenly,
-                width: Val::Percent(100.0),
-                height: Val::Auto,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.0, 0.4, 0.3)),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_mines = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.0, 0.5, 0.3)),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_mines_icon = commands.spawn((
-        NodeBundle {
-            style: Style {
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                width: Val::Px(64.0),
-                height: Val::Px(64.0),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.5, 0.3, 0.0)),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_mines_text = commands.spawn((
-        TextBundle {
-            text: Text::from_section(
-                "999",
-                TextStyle {
-                    font: uiassets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            ),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_decoys = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.0, 0.3, 0.5)),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_decoys_icon = commands.spawn((
-        NodeBundle {
-            style: Style {
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                width: Val::Px(64.0),
-                height: Val::Px(64.0),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.5, 0.3, 0.0)),
-            ..Default::default()
-        },
-    )).id();
-    let inventory_decoys_text = commands.spawn((
-        TextBundle {
-            text: Text::from_section(
-                "999",
-                TextStyle {
-                    font: uiassets.font.clone(),
-                    font_size: 32.0,
-                    color: Color::WHITE,
-                },
-            ),
-            ..Default::default()
-        },
-    )).id();
+    // let inventory = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::SpaceBetween,
+    //             width: Val::Px(200.0),
+    //             height: Val::Px(140.0),
+    //             padding: UiRect::all(Val::Px(4.0)),
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.0, 0.3, 0.3)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_text = commands.spawn((
+    //     // L10nKey(String::new()),
+    //     TextBundle {
+    //         text: Text::from_section(
+    //             "INVENTORY",
+    //             TextStyle {
+    //                 font: uiassets.font_bold.clone(),
+    //                 font_size: 32.0,
+    //                 color: Color::WHITE,
+    //             },
+    //         ),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_contents = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Row,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::SpaceEvenly,
+    //             width: Val::Percent(100.0),
+    //             height: Val::Auto,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.0, 0.4, 0.3)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_mines = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.0, 0.5, 0.3)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_mines_icon = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             width: Val::Px(64.0),
+    //             height: Val::Px(64.0),
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.5, 0.3, 0.0)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_mines_text = commands.spawn((
+    //     TextBundle {
+    //         text: Text::from_section(
+    //             "999",
+    //             TextStyle {
+    //                 font: uiassets.font.clone(),
+    //                 font_size: 32.0,
+    //                 color: Color::WHITE,
+    //             },
+    //         ),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_decoys = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.0, 0.3, 0.5)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_decoys_icon = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             width: Val::Px(64.0),
+    //             height: Val::Px(64.0),
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.5, 0.3, 0.0)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let inventory_decoys_text = commands.spawn((
+    //     TextBundle {
+    //         text: Text::from_section(
+    //             "999",
+    //             TextStyle {
+    //                 font: uiassets.font.clone(),
+    //                 font_size: 32.0,
+    //                 color: Color::WHITE,
+    //             },
+    //         ),
+    //         ..Default::default()
+    //     },
+    // )).id();
     let bot_midarea = commands.spawn((
         NodeBundle {
             style: Style {
@@ -688,32 +688,32 @@ fn setup_hud(
         },
     )).id();
 
-    let city1 = spawn_cityentry_unowned(&mut commands, &uiassets, 1);
-    let city2 = spawn_cityentry_owned(&mut commands, &uiassets, 2);
-    let city3 = spawn_cityentry_owned(&mut commands, &uiassets, 3);
-    let city4 = spawn_cityentry_unowned(&mut commands, &uiassets, 4);
-    let city5 = spawn_cityentry_owned(&mut commands, &uiassets, 5);
-    let city6 = spawn_cityentry_owned(&mut commands, &uiassets, 6);
-    let city7 = spawn_cityentry_unowned(&mut commands, &uiassets, 7);
-    let city8 = spawn_cityentry_unowned(&mut commands, &uiassets, 8);
-    let city9 = spawn_cityentry_unowned(&mut commands, &uiassets, 9);
-    let city10 = spawn_cityentry_unowned(&mut commands, &uiassets, 10);
-    commands.entity(citylist_owned).push_children(&[city2, city3, city5, city6]);
-    commands.entity(citylist_unowned).push_children(&[city1, city4, city7, city8, city9, city10]);
-    commands.entity(citylist).push_children(&[citylist_owned, citylist_unowned]);
+    // let city1 = spawn_cityentry_unowned(&mut commands, &uiassets, 1);
+    // let city2 = spawn_cityentry_owned(&mut commands, &uiassets, 2);
+    // let city3 = spawn_cityentry_owned(&mut commands, &uiassets, 3);
+    // let city4 = spawn_cityentry_unowned(&mut commands, &uiassets, 4);
+    // let city5 = spawn_cityentry_owned(&mut commands, &uiassets, 5);
+    // let city6 = spawn_cityentry_owned(&mut commands, &uiassets, 6);
+    // let city7 = spawn_cityentry_unowned(&mut commands, &uiassets, 7);
+    // let city8 = spawn_cityentry_unowned(&mut commands, &uiassets, 8);
+    // let city9 = spawn_cityentry_unowned(&mut commands, &uiassets, 9);
+    // let city10 = spawn_cityentry_unowned(&mut commands, &uiassets, 10);
+    // commands.entity(citylist_owned).push_children(&[city2, city3, city5, city6]);
+    // commands.entity(citylist_unowned).push_children(&[city1, city4, city7, city8, city9, city10]);
+    // commands.entity(citylist).push_children(&[citylist_owned, citylist_unowned]);
     commands.entity(topcenter).push_children(&[playerbar]);
     commands.entity(playerbar).push_children(&[player1, player2, player3, player4, player5, player6]);
     commands.entity(notify_area).push_children(&[notify_text]);
     commands.entity(minimap).push_children(&[minimap_image]);
-    commands.entity(bottom).push_children(&[inventory, bot_midarea, minimap]);
+    commands.entity(bottom).push_children(&[/*inventory, */minimap, bot_midarea]);
     commands.entity(bot_midarea).push_children(&[info_area, toolbar]);
     commands.entity(info_area).push_children(&[info_text]);
     commands.entity(toolbar).push_children(&[tool1, tool2, tool3, tool4]);
-    commands.entity(inventory).push_children(&[inventory_text, inventory_contents]);
-    commands.entity(inventory_contents).push_children(&[inventory_mines, inventory_decoys]);
-    commands.entity(inventory_mines).push_children(&[inventory_mines_icon, inventory_mines_text]);
-    commands.entity(inventory_decoys).push_children(&[inventory_decoys_icon, inventory_decoys_text]);
-    commands.entity(root).push_children(&[citylist, topcenter, notify_area, bottom]);
+    // commands.entity(inventory).push_children(&[inventory_text, inventory_contents]);
+    // commands.entity(inventory_contents).push_children(&[inventory_mines, inventory_decoys]);
+    // commands.entity(inventory_mines).push_children(&[inventory_mines_icon, inventory_mines_text]);
+    // commands.entity(inventory_decoys).push_children(&[inventory_decoys_icon, inventory_decoys_text]);
+    commands.entity(root).push_children(&[/*citylist, */topcenter, notify_area, bottom]);
 }
 
 #[derive(Component)]
