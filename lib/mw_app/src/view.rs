@@ -34,6 +34,8 @@ use mw_common::grid::*;
 use mw_common::plid::*;
 use mw_common::game::*;
 
+use crate::player::PlidPlayable;
+use crate::player::PlidPlayingAs;
 use crate::prelude::*;
 use crate::map::*;
 use crate::player::PlayersIndex;
@@ -49,6 +51,9 @@ impl Plugin for GameViewPlugin {
             Update,
             ViewSwitchSet.run_if(resource_exists_and_changed::<PlidViewing>())
         );
+        app.add_systems(Update, (
+            kbd_viewswitch,
+        ).before(ViewSwitchSet).in_set(NeedsMapSet));
         app.add_systems(Update, (
             switch_view_despawn,
             switch_view_showhide,
@@ -235,5 +240,66 @@ fn switch_view_update_map_roads<C: Coord>(
         } else {
             0
         };
+    }
+}
+
+fn kbd_viewswitch(
+    kbd: Res<Input<KeyCode>>,
+    mut viewing: ResMut<PlidViewing>,
+    mut playingas: ResMut<PlidPlayingAs>,
+    players: Res<PlayersIndex>,
+    q_view: Query<(), Or<(With<ViewMapData<Hex>>, With<ViewMapData<Sq>>)>>,
+    q_plid: Query<(), With<PlidPlayable>>,
+) {
+    let mut newplid = if kbd.just_pressed(KeyCode::F1) {
+        PlayerId::from(1)
+    } else if kbd.just_pressed(KeyCode::F2) {
+        PlayerId::from(2)
+    } else if kbd.just_pressed(KeyCode::F3) {
+        PlayerId::from(3)
+    } else if kbd.just_pressed(KeyCode::F4) {
+        PlayerId::from(4)
+    } else if kbd.just_pressed(KeyCode::F5) {
+        PlayerId::from(5)
+    } else if kbd.just_pressed(KeyCode::F6) {
+        PlayerId::from(6)
+    } else if kbd.just_pressed(KeyCode::F7) {
+        PlayerId::from(7)
+    } else if kbd.just_pressed(KeyCode::F8) {
+        PlayerId::from(8)
+    } else if kbd.just_pressed(KeyCode::F9) {
+        PlayerId::from(9)
+    } else if kbd.just_pressed(KeyCode::F10) {
+        PlayerId::from(10)
+    } else if kbd.just_pressed(KeyCode::F11) {
+        PlayerId::from(11)
+    } else if kbd.just_pressed(KeyCode::F12) {
+        PlayerId::from(12)
+    } else {
+        return;
+    };
+
+    if kbd.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
+        // check if the plid exists and is controllable
+        let Some(e_plid) = players.0.get(newplid.i()) else {
+            return;
+        };
+        if q_plid.get(*e_plid).is_ok() {
+            playingas.0 = newplid;
+            info!("Playing as {:?}", newplid);
+        }
+    } else {
+        // Toggle to spectator if pressing the key of the current plid
+        if viewing.0 == newplid {
+            newplid = PlayerId::Neutral;
+        }
+        // check if the plid and view actually exist
+        let Some(e_plid) = players.0.get(newplid.i()) else {
+            return;
+        };
+        if q_view.get(*e_plid).is_ok() {
+            viewing.0 = newplid;
+            info!("Viewing {:?}", newplid);
+        }
     }
 }

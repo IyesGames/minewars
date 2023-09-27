@@ -2,6 +2,11 @@ use mw_common::plid::PlayerId;
 
 use crate::prelude::*;
 
+/// Marker component for plids that we are in control of
+/// (many/all of them for modes like Playground, only one in normal game)
+#[derive(Component)]
+pub struct PlidPlayable;
+
 /// The plid that the user controls. This is not necessarily the same
 /// as `PlidViewing`.
 #[derive(Resource)]
