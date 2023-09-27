@@ -1,3 +1,5 @@
+tooltip-unavailable-proprietary = Недостъпно в тази версия на играта. Трябва официалната версия.
+
 menu-button-back = Назад
 menu-tooltip-back = Върни се към предишното меню.
 

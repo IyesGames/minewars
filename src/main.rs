@@ -10,9 +10,11 @@ mod prelude {
     pub use iyes_ui::prelude::*;
     pub use mw_common::prelude::*;
     pub use mw_app::prelude::*;
-    pub use mw_proprietary_client::PROPRIETARY;
     pub use crate::settings::AllSettings;
+    pub use crate::PROPRIETARY;
 }
+
+pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 use crate::prelude::*;
 
@@ -103,6 +105,7 @@ fn main() {
         crate::minimap::MinimapPlugin,
     ));
 
+    #[cfg(feature = "proprietary")]
     app.add_plugins(mw_proprietary_client::MwProprietaryPlugin);
 
     #[cfg(feature = "dev")]

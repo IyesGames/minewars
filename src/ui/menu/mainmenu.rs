@@ -224,7 +224,8 @@ fn spawn_mainmenu(
         &*settings,
         OnClick::new(),
         "menu-button-play-official",
-        "menu-tooltip-play-official",
+        if PROPRIETARY { "menu-tooltip-play-official" }
+        else { "tooltip-unavailable-proprietary" },
         PROPRIETARY,
     );
     let butt_watch = spawn_menu_butt(

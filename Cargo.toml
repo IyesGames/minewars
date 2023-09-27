@@ -41,6 +41,7 @@ debug = false
 [features]
 dev = ["bevy/filesystem_watcher"]
 release = []
+proprietary = ["dep:mw_proprietary_client"]
 
 [dependencies]
 directories = "5.0.1"
@@ -64,6 +65,7 @@ features = ["bevy"]
 
 [dependencies.mw_proprietary_client]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
+optional = true
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"

@@ -53,7 +53,8 @@ fn spawn_menu_offline(
         &*settings,
         OnClick::new(),
         "menu-button-play-tutorial",
-        "menu-tooltip-play-tutorial",
+        if PROPRIETARY { "menu-tooltip-play-tutorial" }
+        else { "tooltip-unavailable-proprietary" },
         PROPRIETARY,
     );
     let butt_playground = spawn_menu_butt(
@@ -62,7 +63,8 @@ fn spawn_menu_offline(
         &*settings,
         OnClick::new().cli("offline_playground"),
         "menu-button-playground",
-        "menu-tooltip-playground",
+        if PROPRIETARY { "menu-tooltip-playground" }
+        else { "tooltip-unavailable-proprietary" },
         PROPRIETARY,
     );
     let butt_replay = spawn_menu_butt(

@@ -5,6 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+proprietary = ["dep:mw_proprietary_host"]
+
 [dependencies]
 mw_dataformat = { path = "../../lib/mw_dataformat" }
 mw_proto_host = { path = "../../lib/mw_proto_host" }
@@ -20,6 +23,7 @@ features = [ "net" ]
 
 [dependencies.mw_proprietary_host]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
+optional = true
 
 [dependencies.serde]
 version = "1.0.188"

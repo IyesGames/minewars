@@ -1,3 +1,5 @@
+tooltip-unavailable-proprietary = Unavailable in this build of the game. You need the official version of MineWars.
+
 menu-button-back = Back
 menu-tooltip-back = Return to the previous menu.
 
