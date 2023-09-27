@@ -2,6 +2,7 @@ use crate::camera::GridCursor;
 use crate::input::GameInputSet;
 use crate::prelude::*;
 use crate::settings::MapGenStyle;
+use mw_app::map::MapTileIndex;
 use mw_app::map::MapTileIndexCoord;
 use mw_app::view::*;
 use mw_app::bevyhost::*;
@@ -42,30 +43,34 @@ fn cli_minesweeper_singleplayer(world: &mut World) {
     let mut minesweeper_settings = world.resource::<AllSettings>().game_minesweeper.clone();
     minesweeper_settings.n_plids = 1;
     let mapgen_settings = world.resource::<AllSettings>().mapgen.clone();
-    match mapgen_settings.style {
-        // TODO
-        _ => {
+    match (PROPRIETARY, mapgen_settings.style) {
+        (false, _) | (_, MapGenStyle::Flat) => {
             match mapgen_settings.topology {
                 Topology::Hex => {
-                    setup_minesweeper_singleplayer_flatmap::<Hex>(world);
+                    setup_minesweeper_singleplayer_flatmap::<Hex>(world, minesweeper_settings, mapgen_settings.size);
                 }
                 Topology::Sq => {
-                    setup_minesweeper_singleplayer_flatmap::<Sq>(world);
+                    setup_minesweeper_singleplayer_flatmap::<Sq>(world, minesweeper_settings, mapgen_settings.size);
                 }
             }
         }
-        // MapGenStyle::MineWars => {
-        //     todo!();
-        // }
+        (true, MapGenStyle::MineWars) => {
+            #[cfg(feature = "proprietary")]
+            mw_proprietary_client::setup_minesweeper_singleplayer_mwmap(
+                world, minesweeper_settings, mapgen_settings.size, mapgen_settings.seed,
+            );
+        }
     }
 }
 
-fn setup_minesweeper_singleplayer_flatmap<C: MapTileIndexCoord>(world: &mut World) {
-    let mut minesweeper_settings = world.resource::<AllSettings>().game_minesweeper.clone();
+fn setup_minesweeper_singleplayer_flatmap<C: MapTileIndexCoord>(
+    world: &mut World,
+    mut minesweeper_settings: MinesweeperSettings,
+    map_size: u8
+) {
     minesweeper_settings.n_plids = 1;
-    let mapgen_settings = world.resource::<AllSettings>().mapgen.clone();
 
-    let dummy_map = MapData::<C, ()>::new(mapgen_settings.size, ());
+    let dummy_map = MapData::<C, ()>::new(map_size, ());
     mw_app::map::setup_map(world, &dummy_map, &[], |_| TileKind::Regular, |_| 0);
     let game = GameMinesweeper::<C>::new(minesweeper_settings, &dummy_map, |_| TileKind::Regular);
     world.insert_resource(BevyHost::new(game, ()));
@@ -84,7 +89,7 @@ fn setup_minesweeper_singleplayer_flatmap<C: MapTileIndexCoord>(world: &mut Worl
             state: PlayerState::Alive,
         },
         ViewBundle {
-            mapdata: ViewMapData(MapData::<C, _>::new(mapgen_settings.size, viewtile)),
+            mapdata: ViewMapData(MapData::<C, _>::new(map_size, viewtile)),
         },
     )).id();
     world.insert_resource(PlayersIndex(vec![e_plid0, e_plid1]));

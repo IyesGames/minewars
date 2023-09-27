@@ -104,6 +104,7 @@ pub struct MapGenSettings {
     pub size: u8,
     pub topology: mw_common::grid::Topology,
     pub style: MapGenStyle,
+    pub seed: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
@@ -227,6 +228,7 @@ impl Default for MapGenSettings {
             } else {
                 MapGenStyle::Flat
             },
+            seed: None,
         }
     }
 }
