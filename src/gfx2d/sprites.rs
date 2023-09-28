@@ -32,6 +32,8 @@ impl Plugin for Gfx2dSpritesPlugin {
                     .in_set(MapTopologySet(Topology::Sq)),
                 tile_owner.after(MapUpdateSet::TileOwner),
                 tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
+                tile_gent_sprite_mgr.after(MapUpdateSet::TileGent),
+                explosion_sprite_mgr,
             )
                 .run_if(resource_exists::<TilemapInitted>()),
         ).in_set(Gfx2dSet::Sprites));
@@ -56,6 +58,13 @@ struct CursorSpriteBundle {
     pos: MwTilePos,
     marker: CursorSprite,
 }
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileDigitEntity(Entity);
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileGentEntity(Entity);
 
 fn setup_cursor(
     mut commands: Commands,
@@ -235,6 +244,115 @@ fn tile_digit_sprite_mgr(
                 MwTilePos(coord.0),
             )).id();
             commands.entity(e).insert(TileDigitEntity(e_digit));
+        }
+    }
+}
+
+fn tile_gent_sprite_mgr(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    q_tile: Query<
+        (Entity, &MwTilePos, &TileGent, &Transform, Option<&TileGentEntity>),
+        (With<BaseSprite>, Changed<TileGent>)
+    >,
+    mut q_gent: Query<&mut TextureAtlasSprite, With<GentSprite>>,
+) {
+    for (e, coord, gent, xf, spr_gent) in q_tile.iter() {
+        let mut trans = xf.translation;
+        trans.z += zpos::DIGIT;
+
+        let i_gent = match gent {
+            TileGent::Empty | TileGent::Item(ItemKind::Safe) => {
+                if let Some(spr_gent) = spr_gent {
+                    commands.entity(spr_gent.0).despawn();
+                    commands.entity(e).remove::<TileGentEntity>();
+                }
+                continue;
+            }
+            TileGent::Item(kind) => {
+                match kind {
+                    ItemKind::Mine => super::sprite::GENT_MINE,
+                    ItemKind::Decoy => super::sprite::GENT_DECOY,
+                    ItemKind::Flashbang => super::sprite::GENT_FLASH,
+                    ItemKind::Safe => unreachable!(),
+                }
+            }
+            TileGent::Structure(kind) => {
+                match kind {
+                    StructureKind::Barricade => super::sprite::GENT_WALL,
+                    StructureKind::WatchTower => super::sprite::GENT_TOWER,
+                    StructureKind::Bridge => todo!(),
+                    StructureKind::Road => panic!("Roads must use TileRoads, not TileGent"),
+                }
+            }
+            TileGent::Cit(_) => super::sprite::GENT_CIT,
+        };
+
+        if let Some(spr_gent) = spr_gent {
+            // there is an existing digit entity we can reuse
+            let e_gent = spr_gent.0;
+            let mut sprite = q_gent.get_mut(e_gent).unwrap();
+            sprite.index = i_gent;
+        } else {
+            // create a new gent entity
+            let e_gent = commands.spawn((
+                SpriteSheetBundle {
+                    sprite: TextureAtlasSprite {
+                        index: i_gent,
+                        ..Default::default()
+                    },
+                    texture_atlas: assets.sprites.clone(),
+                    transform: Transform::from_translation(trans),
+                    ..Default::default()
+                },
+                GentSprite,
+                MwTilePos(coord.0),
+            )).id();
+            commands.entity(e).insert(TileGentEntity(e_gent));
+        }
+    }
+}
+
+fn explosion_sprite_mgr(
+    mut commands: Commands,
+    time: Res<Time>,
+    assets: Res<GameAssets>,
+    mut q_expl: Query<(
+        Entity, &TileExplosion, Option<&mut ExplosionSprite>, Option<&mut TextureAtlasSprite>,
+    )>,
+    q_tile: Query<&Transform, With<BaseSprite>>,
+) {
+    for (e, expl, spr_expl, sprite) in &mut q_expl {
+        if let (Some(mut spr_expl), Some(mut sprite)) = (spr_expl, sprite) {
+            // sprite already set up, manage it
+            spr_expl.timer.tick(time.delta());
+            if spr_expl.timer.finished() {
+                commands.entity(e).despawn_recursive();
+            }
+            sprite.color.set_a(spr_expl.timer.percent_left());
+        } else {
+            // we have an entity with no sprite, set up the sprite
+            let xf = q_tile.get(expl.0).unwrap();
+            let mut trans = xf.translation;
+            trans.z += zpos::OVERLAYS;
+            let i_expl = match expl.1 {
+                TileExplosionKind::Normal => super::sprite::EXPLOSION_MINE,
+                TileExplosionKind::Decoy => super::sprite::EXPLOSION_DECOY,
+            };
+            commands.entity(e).insert((
+                ExplosionSprite {
+                    timer: Timer::new(Duration::from_millis(1000), TimerMode::Once),
+                },
+                SpriteSheetBundle {
+                    sprite: TextureAtlasSprite {
+                        index: i_expl,
+                        ..Default::default()
+                    },
+                    texture_atlas: assets.sprites.clone(),
+                    transform: Transform::from_translation(trans),
+                    ..Default::default()
+                },
+            ));
         }
     }
 }

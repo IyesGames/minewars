@@ -8,6 +8,7 @@ use mw_common::plid::*;
 use mw_common::game::*;
 
 use crate::prelude::*;
+use crate::view::VisibleInView;
 
 mod update;
 
@@ -115,6 +116,15 @@ pub enum TileVisLevel {
     Full,
 }
 
+#[derive(Component)]
+pub enum TileExplosionKind {
+    Normal,
+    Decoy,
+}
+
+#[derive(Component)]
+pub struct TileExplosion(pub Entity, pub TileExplosionKind);
+
 /// Components common to all map tiles
 #[derive(Bundle)]
 pub struct MapTileBundle {
@@ -144,6 +154,13 @@ pub struct LandTileBundle {
 #[derive(Bundle)]
 pub struct ResClusterTileBundle {
     pub tile: PlayableTileBundle,
+}
+
+#[derive(Bundle)]
+pub struct ExplosionBundle {
+    pub pos: MwTilePos,
+    pub explosion: TileExplosion,
+    pub view: VisibleInView,
 }
 
 /// Trigger a recompute of `TileVisLevel`.

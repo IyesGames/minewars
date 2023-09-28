@@ -49,12 +49,6 @@ struct GentSprite;
 struct ExplosionSprite {
     timer: Timer,
 }
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-struct TileDigitEntity(Entity);
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-struct TileGentEntity(Entity);
 
 fn rc_gfx2d_any(
     settings: Option<Res<AllSettings>>,

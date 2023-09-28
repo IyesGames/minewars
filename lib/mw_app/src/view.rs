@@ -126,7 +126,7 @@ pub struct DespawnOnViewSwitch;
 
 /// Marker for entities that should be shown in a specific view and hidden in other views.
 #[derive(Component)]
-pub struct VisibleInView(PlayerId);
+pub struct VisibleInView(pub PlayerId);
 
 fn switch_view_despawn(
     mut commands: Commands,
