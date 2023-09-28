@@ -67,6 +67,9 @@ struct CitIndex {
 #[derive(Component)]
 pub struct MwTilePos(pub Pos);
 
+#[derive(Component)]
+pub struct TileAlert(pub Timer);
+
 /// Map region (cit association) of a tile
 #[derive(Component)]
 pub struct TileRegion(pub u8);

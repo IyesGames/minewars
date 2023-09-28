@@ -26,6 +26,9 @@ impl Plugin for MapUpdatePlugin {
                 ).in_set(MapUpdateSet::TileGent),
             ).in_set(MapTopologySet(Topology::Sq)),
         ).in_set(NeedsMapSet).after(GameEventSet).after(ViewSwitchSet));
+        app.add_systems(Update, (
+            alert_timer,
+        ).in_set(NeedsMapSet));
     }
 }
 
@@ -48,6 +51,7 @@ fn event_kind<C: Coord>(
 }
 
 fn event_owner<C: Coord>(
+    mut commands: Commands,
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
     index: Res<MapTileIndex<C>>,
@@ -58,7 +62,13 @@ fn event_owner<C: Coord>(
             continue;
         }
         if let MwEv::Map { pos, ev: MapEv::Owner { plid }} = ev.ev {
-            if let Ok(mut owner) = q_tile.get_mut(index.0[pos.into()]) {
+            let e_tile = index.0[pos.into()];
+            if let Ok(mut owner) = q_tile.get_mut(e_tile) {
+                if owner.0 == viewing.0 && plid != viewing.0 {
+                    commands.entity(e_tile).insert(
+                        TileAlert(Timer::new(Duration::from_millis(1000), TimerMode::Once))
+                    );
+                }
                 owner.0 = plid;
             }
         }
@@ -136,6 +146,19 @@ fn event_explosion<C: Coord>(
                     },
                 ));
             }
+        }
+    }
+}
+
+fn alert_timer(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut q_alert: Query<(Entity, &mut TileAlert)>,
+) {
+    for (e, mut alert) in &mut q_alert {
+        alert.0.tick(time.delta());
+        if alert.0.finished() {
+            commands.entity(e).remove::<TileAlert>();
         }
     }
 }

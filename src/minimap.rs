@@ -1,5 +1,5 @@
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
-use mw_app::map::{MwTilePos, TileOwner, NeedsMapSet, MapUpdateSet};
+use mw_app::map::{MwTilePos, TileOwner, NeedsMapSet, MapUpdateSet, TileAlert};
 use mw_common::{game::{MapDescriptor, TileKind}, grid::Topology};
 
 use crate::{prelude::*, settings::NeedsSettingsSet};
@@ -41,8 +41,8 @@ fn update_minimap(
     mut ass_image: ResMut<Assets<Image>>,
     desc: Res<MapDescriptor>,
     q_tile: Query<
-        (&MwTilePos, Option<&TileOwner>, &TileKind),
-        Or<(Changed<TileOwner>, Changed<TileKind>)>
+        (&MwTilePos, Option<&TileOwner>, &TileKind, Option<&TileAlert>),
+        Or<(Changed<TileOwner>, Changed<TileKind>, With<TileAlert>)>
     >,
 ) {
     if desc.is_changed() || settings.is_changed() {
@@ -77,15 +77,24 @@ fn update_minimap(
         );
     }
 
-    for (pos, owner, kind) in &q_tile {
+    for (pos, owner, kind, alert) in &q_tile {
         let minimap_image = ass_image.get_mut(&minimap_handle.0)
             .expect("minimap image must exist");
         let w = minimap_image.texture_descriptor.size.width as i32;
         let h = minimap_image.texture_descriptor.size.height as i32;
 
-        let rgba = owner
+        let mut rgba = owner
             .map(|o| Color::from(settings.player_colors.visible[o.0.i()]).as_rgba_u8())
             .unwrap_or([0, 0, 0, 0]);
+
+        if let Some(alert) = alert {
+            // FIXME: this can get stuck on white
+            // if the last frame before the TileAlert component was removed
+            // triggers this
+            if alert.0.elapsed_secs().rem_euclid(0.26) < 0.125 {
+                rgba = [255, 255, 255, 255];
+            }
+        }
         match desc.topology {
             Topology::Hex => {
                 let tile_size = settings.ui_hud.minimap_scale.max(2) as i32;
