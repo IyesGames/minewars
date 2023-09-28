@@ -58,16 +58,16 @@ impl Plugin for GameViewPlugin {
             switch_view_despawn,
             switch_view_showhide,
             (
-                switch_view_update_map_tiles::<Hex>,
-                switch_view_update_map_digits::<Hex>,
-                switch_view_update_map_gents::<Hex>,
-                switch_view_update_map_roads::<Hex>,
+                switch_view_update_map_tiles::<Hex>.in_set(MapUpdateSet::TileKind).in_set(MapUpdateSet::TileOwner),
+                switch_view_update_map_digits::<Hex>.in_set(MapUpdateSet::TileDigit),
+                switch_view_update_map_gents::<Hex>.in_set(MapUpdateSet::TileGent),
+                switch_view_update_map_roads::<Hex>.in_set(MapUpdateSet::TileRoads),
             ).in_set(MapTopologySet(Topology::Hex)),
             (
-                switch_view_update_map_tiles::<Sq>,
-                switch_view_update_map_digits::<Sq>,
-                switch_view_update_map_gents::<Sq>,
-                switch_view_update_map_roads::<Sq>,
+                switch_view_update_map_tiles::<Sq>.in_set(MapUpdateSet::TileKind).in_set(MapUpdateSet::TileOwner),
+                switch_view_update_map_digits::<Sq>.in_set(MapUpdateSet::TileDigit),
+                switch_view_update_map_gents::<Sq>.in_set(MapUpdateSet::TileGent),
+                switch_view_update_map_roads::<Sq>.in_set(MapUpdateSet::TileRoads),
             ).in_set(MapTopologySet(Topology::Sq)),
         ).in_set(ViewSwitchSet));
     }

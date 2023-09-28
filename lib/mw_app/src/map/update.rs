@@ -25,7 +25,7 @@ impl Plugin for MapUpdatePlugin {
                     (event_item::<Sq>, event_explosion::<Sq>).chain(),
                 ).in_set(MapUpdateSet::TileGent),
             ).in_set(MapTopologySet(Topology::Sq)),
-        ).in_set(NeedsMapSet).after(GameEventSet));
+        ).in_set(NeedsMapSet).after(GameEventSet).after(ViewSwitchSet));
     }
 }
 
