@@ -186,7 +186,7 @@ fn switch_view_update_map_digits<C: Coord>(
     for (pos, mut digit) in q_maptile.iter_mut() {
         let c: C = pos.0.into();
         let tiledata = &viewdata.0[c];
-        digit.0 = tiledata.owner().into();
+        digit.0 = tiledata.digit().into();
     }
 }
 
