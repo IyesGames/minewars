@@ -10,10 +10,7 @@ use mw_common::grid::*;
 use mw_common::game::*;
 use mw_app::map::*;
 
-use super::Gfx2dSet;
-use super::Gfx2dTileSetupSet;
-use super::TilemapInitted;
-use super::fancytint;
+use super::*;
 
 pub struct Gfx2dSpritesPlugin;
 
@@ -33,7 +30,8 @@ impl Plugin for Gfx2dSpritesPlugin {
                     .in_set(MapTopologySet(Topology::Hex)),
                 tile_kind::<Sq>
                     .in_set(MapTopologySet(Topology::Sq)),
-                tile_owner,
+                tile_owner.after(MapUpdateSet::TileOwner),
+                tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
             )
                 .run_if(resource_exists::<TilemapInitted>()),
         ).in_set(Gfx2dSet::Sprites));
@@ -51,9 +49,6 @@ impl Plugin for Gfx2dSpritesPlugin {
         ).in_set(Gfx2dSet::Any));
     }
 }
-
-#[derive(Component)]
-struct CursorSprite;
 
 #[derive(Bundle)]
 struct CursorSpriteBundle {
@@ -127,23 +122,29 @@ fn setup_base_tile<C: Coord>(
     };
     for (c, &e) in index.0.iter() {
         let trans = c.translation();
-        world.entity_mut(e).insert(SpriteSheetBundle {
-            texture_atlas: texture_atlas.clone(),
-            sprite: TextureAtlasSprite {
-                color: Color::WHITE,
-                index: sprite_index,
+        world.entity_mut(e).insert((
+            BaseSprite,
+            SpriteSheetBundle {
+                texture_atlas: texture_atlas.clone(),
+                sprite: TextureAtlasSprite {
+                    color: Color::WHITE,
+                    index: sprite_index,
+                    ..Default::default()
+                },
+                transform: Transform::from_xyz(trans.x * width, trans.y * height, super::zpos::TILE),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(trans.x * width, trans.y * height, super::zpos::TILE),
-            ..Default::default()
-        });
+        ));
     }
     world.insert_resource(index);
     world.insert_resource(TilemapInitted);
 }
 
 fn tile_kind<C: Coord>(
-    mut q: Query<(&mut TextureAtlasSprite, &TileKind, &MwTilePos), Changed<TileKind>>,
+    mut q: Query<
+        (&mut TextureAtlasSprite, &TileKind, &MwTilePos),
+        (With<BaseSprite>, Changed<TileKind>)
+    >,
     plids: Res<PlayersIndex>,
     viewing: Res<PlidViewing>,
     q_view: Query<&ViewMapData<C>>,
@@ -188,3 +189,53 @@ fn tile_owner(
         spr.color = settings.player_colors.visible[owner.0.i()].into();
     }
 }
+
+fn tile_digit_sprite_mgr(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    q_tile: Query<
+        (Entity, &MwTilePos, &TileDigit, &Transform, Option<&TileDigitEntity>),
+        (With<BaseSprite>, Changed<TileDigit>)
+    >,
+    mut q_digit: Query<&mut TextureAtlasSprite, With<DigitSprite>>,
+) {
+    for (e, coord, digit, xf, spr_digit) in q_tile.iter() {
+        let mut trans = xf.translation;
+        trans.z += zpos::DIGIT;
+
+        let i_dig = if digit.1 {
+            super::sprite::DIGSTAR + digit.0 as usize
+        } else {
+            super::sprite::DIG + digit.0 as usize
+        };
+
+        if let Some(spr_digit) = spr_digit {
+            // there is an existing digit entity we can reuse (or despawn)
+            if digit.0 > 0 {
+                let e_digit = spr_digit.0;
+                let mut sprite = q_digit.get_mut(e_digit).unwrap();
+                sprite.index = i_dig;
+            } else {
+                commands.entity(spr_digit.0).despawn();
+                commands.entity(e).remove::<TileDigitEntity>();
+            }
+        } else if digit.0 > 0 {
+            // create a new digit entity
+            let e_digit = commands.spawn((
+                SpriteSheetBundle {
+                    sprite: TextureAtlasSprite {
+                        index: i_dig,
+                        ..Default::default()
+                    },
+                    texture_atlas: assets.sprites.clone(),
+                    transform: Transform::from_translation(trans),
+                    ..Default::default()
+                },
+                DigitSprite,
+                MwTilePos(coord.0),
+            )).id();
+            commands.entity(e).insert(TileDigitEntity(e_digit));
+        }
+    }
+}
+

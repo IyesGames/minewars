@@ -37,6 +37,25 @@ struct Gfx2dTileSetupSet;
 #[derive(Resource)]
 pub struct TilemapInitted;
 
+#[derive(Component)]
+struct CursorSprite;
+#[derive(Component)]
+struct BaseSprite;
+#[derive(Component)]
+struct DigitSprite;
+#[derive(Component)]
+struct GentSprite;
+#[derive(Component)]
+struct ExplosionSprite {
+    timer: Timer,
+}
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileDigitEntity(Entity);
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileGentEntity(Entity);
+
 fn rc_gfx2d_any(
     settings: Option<Res<AllSettings>>,
 ) -> bool {
