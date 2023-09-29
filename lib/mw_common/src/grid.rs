@@ -76,11 +76,11 @@ pub trait Coord:
     const N2: usize;
     const TOPOLOGY: Topology;
 
-    type IterN0: IntoIterator<Item = Self>;
-    type IterN1: IntoIterator<Item = Self>;
-    type IterN2: IntoIterator<Item = Self>;
-    type IterRing: IntoIterator<Item = Self>;
-    type IterCoords: IntoIterator<Item = Self>;
+    type IterN0: Iterator<Item = Self>;
+    type IterN1: Iterator<Item = Self>;
+    type IterN2: Iterator<Item = Self>;
+    type IterRing: Iterator<Item = Self>;
+    type IterCoords: Iterator<Item = Self>;
 
     fn origin() -> Self;
     fn distance(self, other: Self) -> u16;
