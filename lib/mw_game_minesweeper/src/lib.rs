@@ -41,27 +41,39 @@ pub enum MinesweeperInputAction {
     ExploreTile {
         pos: Pos,
     },
-    SetFlag {
+    ToggleFlag {
         pos: Pos,
-        flag: bool,
     },
+}
+
+#[derive(Clone, Copy)]
+pub struct PlayerData {
+    n_owned: u16,
+    n_lives: u8,
 }
 
 pub struct GameMinesweeper<C: Coord> {
     settings: MinesweeperSettings,
     mapdata: MapData<C, TileData>,
+    playerdata: Vec<PlayerData>,
+    floodq: FloodQ,
 }
 
 impl<C: Coord> GameMinesweeper<C> {
-    pub fn new<D>(settings: MinesweeperSettings, map_src: &MapData<C, D>, f_tilekind: impl Fn(&D) -> TileKind) -> Self {
+    pub fn new<D>(mut settings: MinesweeperSettings, map_src: &MapData<C, D>, f_tilekind: impl Fn(&D) -> TileKind) -> Self {
+        settings.n_lives = settings.n_lives.max(1);
+        settings.n_plids = settings.n_plids.max(1);
+        let playerdata = vec![PlayerData {
+            n_owned: 0,
+            n_lives: settings.n_lives,
+        }; settings.n_plids as usize];
         let mut rng = thread_rng();
         let mapdata = map_src.convert(|_, d| {
             let mut tile = TileData::default();
             tile.set_owner(0);
             tile.set_flag(0);
             let tilekind = f_tilekind(&d);
-            tile.set_land(tilekind.is_land());
-            tile.set_cluster(tilekind.is_rescluster());
+            tile.set_kind(tilekind);
             if tilekind.is_land() {
                 let item = if rng.gen_bool(settings.mine_density as f64 / 255.0) {
                     if rng.gen_bool(settings.prob_decoy as f64 / 255.0) {
@@ -81,6 +93,8 @@ impl<C: Coord> GameMinesweeper<C> {
         Self {
             settings,
             mapdata,
+            playerdata,
+            floodq: Default::default(),
         }
     }
 }
@@ -89,11 +103,10 @@ impl<C: Coord> GameMinesweeper<C> {
 #[derive(Clone, Copy, Default)]
 struct TileData {
     owner: B4,
-    land: bool,
-    cluster: bool,
-    item: ItemKind,
     flag: B4,
-    #[skip] __: B4,
+    item: ItemKind,
+    kind: TileKind,
+    #[skip] __: B3,
 }
 
 impl<C: Coord> Game for GameMinesweeper<C> {
@@ -102,23 +115,25 @@ impl<C: Coord> Game for GameMinesweeper<C> {
     type OutEvent = MwEv;
     type SchedEvent = ();
 
-    fn init<H: Host<Self>>(&mut self, host: &mut H, initdata: Self::InitData) {
+    fn init<H: Host<Self>>(&mut self, host: &mut H, _initdata: Self::InitData) {
     }
     fn input<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction) {
         if u8::from(plid) > self.settings.n_plids || plid == PlayerId::Neutral {
+            return;
+        }
+        if let Some(playerdata) = self.playerdata.get(plid.i()-1) {
+            if playerdata.n_lives == 0 {
+                return;
+            }
+        } else {
             return;
         }
         match action {
             MinesweeperInputAction::ExploreTile { pos } => {
                 self.explore_tile(host, plid, pos.into());
             }
-            MinesweeperInputAction::SetFlag { pos, flag } => {
-                host.msg(Plids::all(true), MwEv::Map {
-                    pos,
-                    ev: MapEv::Flag {
-                        plid: if flag { plid } else { PlayerId::Neutral },
-                    }
-                });
+            MinesweeperInputAction::ToggleFlag { pos } => {
+                self.flag(host, plid, pos.into());
             }
         }
     }
@@ -127,42 +142,168 @@ impl<C: Coord> Game for GameMinesweeper<C> {
 }
 
 impl<C: Coord> GameMinesweeper<C> {
+    fn flag<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
+        if c.ring() > self.mapdata.size() {
+            return;
+        }
+        if !self.mapdata[c].kind().is_land() || self.mapdata[c].owner() != 0 {
+            return;
+        }
+        if self.mapdata[c].flag() == 0 {
+            if c.iter_n1().any(|c2| self.mapdata[c2].owner() == u8::from(plid)) {
+                self.mapdata[c].set_flag(u8::from(plid));
+                host.msg(Plids::all(true), MwEv::Map {
+                    pos: c.into(),
+                    ev: MapEv::Flag {
+                        plid,
+                    }
+                });
+            }
+        } else if self.mapdata[c].flag() == u8::from(plid) {
+            self.mapdata[c].set_flag(0);
+            host.msg(Plids::all(true), MwEv::Map {
+                pos: c.into(),
+                ev: MapEv::Flag {
+                    plid: PlayerId::Neutral,
+                }
+            });
+        }
+    }
     fn explore_tile<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
         if c.ring() > self.mapdata.size() {
             return;
         }
-        if self.mapdata[c].owner() == u8::from(plid) {
+
+        if !self.mapdata[c].kind().is_land() {
             return;
         }
-        if self.mapdata[c].owner() != u8::from(PlayerId::Neutral) {
-            return;
-        }
-        match self.mapdata[c].item() {
-            ItemKind::Safe => {
-                self.capture_tile(host, plid, c);
+
+        // if this is the player's first tile, and it is not adjacent to another player's
+        // territory, guarantee it to be safe (forgive any mine)
+        if let Some(playerdata) = self.playerdata.get(plid.i()-1) {
+            if playerdata.n_owned == 0 {
+                if self.mapdata[c].item() == ItemKind::Mine {
+                    if c.iter_n1().all(|c2| self.mapdata[c2].owner() == 0) {
+                        self.mapdata[c].set_item(ItemKind::Safe);
+                    }
+                }
             }
-            _ => {
-                self.explode_player(host, plid, c);
+        }
+
+        let owner = self.mapdata[c].owner();
+
+        if owner == u8::from(plid) {
+            let (digit, asterisk) = self.compute_digit(plid, c);
+            if digit == 0 {
+                for c2 in c.iter_n1() {
+                    if self.mapdata[c2].owner() == 0 {
+                        self.capture_tile(host, plid, c2, true);
+                    }
+                }
+            }
+            if digit == 1 && asterisk {
+                for c2 in c.iter_n1() {
+                    if self.mapdata[c2].owner() == 0 {
+                        match self.mapdata[c2].item() {
+                            ItemKind::Safe => {
+                                self.capture_tile(host, plid, c2, false);
+                            }
+                            _ => {
+                                self.explode_player(host, plid, c2);
+                            }
+                        }
+                    }
+                }
+            }
+        } else if owner == 0 {
+            match self.mapdata[c].item() {
+                ItemKind::Safe => {
+                    self.capture_tile(host, plid, c, true);
+                }
+                _ => {
+                    self.explode_player(host, plid, c);
+                }
             }
         }
     }
-    fn capture_tile<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
-        self.mapdata[c].set_owner(u8::from(plid));
-        host.msg(Plids::all(true), MwEv::Map {
-            pos: c.into(),
-            ev: MapEv::Owner {
-                plid,
-            },
-        });
-        self.compute_digit(host, plid, c);
+    fn capture_tile<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, mut c: C, recurse: bool) {
+        let mut q = vec![];
+        loop {
+            if let Some(playerdata) = self.playerdata.get_mut(plid.i()-1) {
+                playerdata.n_owned += 1;
+            }
+            self.mapdata[c].set_owner(u8::from(plid));
+            if self.mapdata[c].flag() != 0 {
+                self.mapdata[c].set_flag(0);
+                host.msg(Plids::all(true), MwEv::Map {
+                    pos: c.into(),
+                    ev: MapEv::Flag {
+                        plid: PlayerId::Neutral,
+                    }
+                });
+            }
+            host.msg(Plids::all(true), MwEv::Map {
+                pos: c.into(),
+                ev: MapEv::Owner {
+                    plid,
+                },
+            });
+            let digit = self.compute_send_digit(host, plid, c);
+            for c2 in c.iter_n1() {
+                let kind = self.mapdata[c2].kind();
+                if kind.is_rescluster() {
+                    self.mapdata[c2].set_owner(u8::from(plid));
+                    host.msg(Plids::all(true), MwEv::Map {
+                        pos: c2.into(),
+                        ev: MapEv::Owner {
+                            plid,
+                        },
+                    });
+                    self.floodq.clear();
+                    self.floodq.push_back(c2.into());
+                    flood(&mut self.floodq, |c3, _| {
+                        if self.mapdata[c3].kind() == kind && self.mapdata[c3].owner() != u8::from(plid) {
+                            self.mapdata[c3].set_owner(u8::from(plid));
+                            host.msg(Plids::all(true), MwEv::Map {
+                                pos: c3.into(),
+                                ev: MapEv::Owner {
+                                    plid,
+                                },
+                            });
+                            FloodSelect::Yes
+                        } else {
+                            FloodSelect::No
+                        }
+                    });
+                }
+                if recurse && digit.0 == 0 &&self.mapdata[c2].owner() == 0 {
+                    q.push(c2);
+                }
+            }
+            if let Some(next_c) = q.pop() {
+                c = next_c;
+            } else {
+                break;
+            }
+        }
     }
     fn explode_player<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
+        let mut capture = true;
         match self.mapdata[c].item() {
             ItemKind::Safe => {
                 return;
             },
             // minesweeper mode has no flashes, treat them as decoys
             ItemKind::Decoy | ItemKind::Flashbang => {
+                if self.mapdata[c].flag() != 0 {
+                    self.mapdata[c].set_flag(0);
+                    host.msg(Plids::all(true), MwEv::Map {
+                        pos: c.into(),
+                        ev: MapEv::Flag {
+                            plid: PlayerId::Neutral,
+                        }
+                    });
+                }
                 host.msg(Plids::all(true), MwEv::Map {
                     pos: c.into(),
                     ev: MapEv::Item {
@@ -175,6 +316,15 @@ impl<C: Coord> GameMinesweeper<C> {
                 });
             },
             ItemKind::Mine => {
+                if self.mapdata[c].flag() != 0 {
+                    self.mapdata[c].set_flag(0);
+                    host.msg(Plids::all(true), MwEv::Map {
+                        pos: c.into(),
+                        ev: MapEv::Flag {
+                            plid: PlayerId::Neutral,
+                        }
+                    });
+                }
                 host.msg(Plids::all(true), MwEv::Map {
                     pos: c.into(),
                     ev: MapEv::Item {
@@ -191,20 +341,39 @@ impl<C: Coord> GameMinesweeper<C> {
                         kind: TileKind::Destroyed,
                     },
                 });
+                if let Some(playerdata) = self.playerdata.get_mut(plid.i()-1) {
+                    if playerdata.n_lives > 0 {
+                        playerdata.n_lives -= 1;
+                    }
+                    if playerdata.n_lives == 0 {
+                        host.msg(Plids::all(true), MwEv::Player {
+                            plid,
+                            ev: PlayerEv::Eliminated,
+                        });
+                        capture = false;
+                    }
+                    host.msg(Plids::all(true), MwEv::Player {
+                        plid,
+                        ev: PlayerEv::LivesRemain {
+                            lives: playerdata.n_lives,
+                        },
+                    });
+                }
             },
         }
 
         self.mapdata[c].set_item(ItemKind::Safe);
         for c2 in c.iter_n1() {
             if let Some(tile) = self.mapdata.get(c2) {
-                self.compute_digit(host, tile.owner().into(), c2);
+                self.compute_send_digit(host, tile.owner().into(), c2);
             }
         }
-    }
-    fn compute_digit<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
-        if plid == PlayerId::Neutral {
-            return;
+        // tile is now safe, why not autocapture it
+        if capture {
+            self.capture_tile(host, plid, c, false);
         }
+    }
+    fn compute_digit(&mut self, plid: PlayerId, c: C) -> (u8, bool) {
         let mut digit = 0;
         let mut asterisk = false;
         for c2 in c.iter_n1() {
@@ -222,11 +391,16 @@ impl<C: Coord> GameMinesweeper<C> {
                 }
             }
         }
+        (digit, asterisk)
+    }
+    fn compute_send_digit<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) -> (u8, bool) {
+        let (digit, asterisk) = self.compute_digit(plid, c);
         host.msg(Plids::from(plid), MwEv::Map {
             pos: c.into(),
             ev: MapEv::Digit {
                 digit, asterisk,
             }
         });
+        (digit, asterisk)
     }
 }
