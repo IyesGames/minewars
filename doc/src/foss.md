@@ -56,8 +56,8 @@ You can also integrate a custom anti-cheat solution.
 The code in the GitHub repo *is* what is actually used for official builds. It
 is not a separate stripped-down code dump.
 
-For official builds, we simply replace the stub libraries in the `proprietary`
-folder with code from our private repos, to add in the additional functionality.
+For official builds, we simply replace the `minewars-proprietary-stub` Rust dependency
+with code from our private repos, to add in the additional functionality.
 
 If you make contributions to our open-source repo, your contributions will be
 included in future official updates for the game, too. :) You will be credited
