@@ -56,11 +56,13 @@ pub struct GameMinesweeper<C: Coord> {
     settings: MinesweeperSettings,
     mapdata: MapData<C, TileData>,
     playerdata: Vec<PlayerData>,
+    n_unexplored_tiles: u16,
     floodq: FloodQ,
 }
 
 impl<C: Coord> GameMinesweeper<C> {
     pub fn new<D>(mut settings: MinesweeperSettings, map_src: &MapData<C, D>, f_tilekind: impl Fn(&D) -> TileKind) -> Self {
+        let mut n_unexplored_tiles = 0;
         settings.n_lives = settings.n_lives.max(1);
         settings.n_plids = settings.n_plids.max(1);
         let playerdata = vec![PlayerData {
@@ -77,11 +79,13 @@ impl<C: Coord> GameMinesweeper<C> {
             if tilekind.is_land() {
                 let item = if rng.gen_bool(settings.mine_density as f64 / 255.0) {
                     if rng.gen_bool(settings.prob_decoy as f64 / 255.0) {
+                        n_unexplored_tiles += 1;
                         ItemKind::Decoy
                     } else {
                         ItemKind::Mine
                     }
                 } else {
+                    n_unexplored_tiles += 1;
                     ItemKind::Safe
                 };
                 tile.set_item(item);
@@ -94,6 +98,7 @@ impl<C: Coord> GameMinesweeper<C> {
             settings,
             mapdata,
             playerdata,
+            n_unexplored_tiles,
             floodq: Default::default(),
         }
     }
@@ -235,6 +240,7 @@ impl<C: Coord> GameMinesweeper<C> {
             if let Some(playerdata) = self.playerdata.get_mut(plid.i()-1) {
                 playerdata.n_owned += 1;
             }
+            self.n_unexplored_tiles -= 1;
             self.mapdata[c].set_owner(u8::from(plid));
             if self.mapdata[c].flag() != 0 {
                 self.mapdata[c].set_flag(0);
@@ -289,6 +295,9 @@ impl<C: Coord> GameMinesweeper<C> {
                 break;
             }
         }
+        if self.n_unexplored_tiles == 0 {
+            host.game_over();
+        }
     }
     fn explode_player<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
         let mut capture = true;
@@ -319,6 +328,8 @@ impl<C: Coord> GameMinesweeper<C> {
                 });
             },
             ItemKind::Mine => {
+                // we now have an extra safe/explorable tile
+                self.n_unexplored_tiles += 1;
                 if self.mapdata[c].flag() != 0 {
                     self.mapdata[c].set_flag(0);
                     host.msg(Plids::all(true), MwEv::Map {
