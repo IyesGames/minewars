@@ -9,6 +9,7 @@ use mw_app::view::ViewMapData;
 use mw_common::grid::*;
 use mw_common::game::*;
 use mw_app::map::*;
+use mw_common::plid::PlayerId;
 
 use super::*;
 
@@ -32,6 +33,7 @@ impl Plugin for Gfx2dSpritesPlugin {
                     .in_set(MapTopologySet(Topology::Sq)),
                 tile_owner.after(MapUpdateSet::TileOwner),
                 tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
+                tile_flag_sprite_mgr.after(MapUpdateSet::TileFlag),
                 tile_gent_sprite_mgr.after(MapUpdateSet::TileGent),
                 explosion_sprite_mgr,
             )
@@ -65,6 +67,9 @@ struct TileDigitEntity(Entity);
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 struct TileGentEntity(Entity);
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+struct TileFlagEntity(Entity);
 
 fn setup_cursor(
     mut commands: Commands,
@@ -99,7 +104,9 @@ fn cursor_sprite<C: Coord>(
     if !crs.is_changed() {
         return;
     }
-    let (mut xf, mut pos) = q.single_mut();
+    let Ok((mut xf, mut pos)) = q.get_single_mut() else {
+        return;
+    };
     *pos = MwTilePos(crs.0);
 
     let (width, height) = match C::TOPOLOGY {
@@ -244,6 +251,65 @@ fn tile_digit_sprite_mgr(
                 MwTilePos(coord.0),
             )).id();
             commands.entity(e).insert(TileDigitEntity(e_digit));
+        }
+    }
+}
+
+fn tile_flag_sprite_mgr(
+    settings: Res<AllSettings>,
+    viewing: Res<PlidViewing>,
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    q_tile: Query<
+        (Entity, &MwTilePos, &TileFlag, &Transform, Option<&TileFlagEntity>),
+        (With<BaseSprite>, Changed<TileFlag>)
+    >,
+    mut q_flag: Query<&mut TextureAtlasSprite, With<FlagSprite>>,
+) {
+    for (e, coord, flag, xf, spr_flag) in q_tile.iter() {
+        let mut trans = xf.translation;
+        trans.z += zpos::OVERLAYS;
+
+        let (i_flag, color) = if flag.0 == viewing.0 {
+            (
+                super::sprite::FLAGS + settings.player_colors.flag_style as usize,
+                Color::WHITE,
+            )
+        } else {
+            (
+                super::sprite::FLAGS,
+                settings.player_colors.visible[flag.0.i()].into(),
+            )
+        };
+
+        if let Some(spr_flag) = spr_flag {
+            // there is an existing flag entity we can reuse (or despawn)
+            if flag.0 != PlayerId::Neutral {
+                let e_flag = spr_flag.0;
+                let mut sprite = q_flag.get_mut(e_flag).unwrap();
+                sprite.index = i_flag;
+                sprite.color = color;
+            } else {
+                commands.entity(spr_flag.0).despawn();
+                commands.entity(e).remove::<TileFlagEntity>();
+            }
+        } else if flag.0 != PlayerId::Neutral {
+            // create a new flag entity
+            let e_flag = commands.spawn((
+                SpriteSheetBundle {
+                    sprite: TextureAtlasSprite {
+                        index: i_flag,
+                        color,
+                        ..Default::default()
+                    },
+                    texture_atlas: assets.sprites.clone(),
+                    transform: Transform::from_translation(trans),
+                    ..Default::default()
+                },
+                FlagSprite,
+                MwTilePos(coord.0),
+            )).id();
+            commands.entity(e).insert(TileFlagEntity(e_flag));
         }
     }
 }

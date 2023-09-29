@@ -47,10 +47,11 @@ fn event_map<C: Coord>(
                     tile.set_item(*kind);
                 },
                 MapEv::Flag { plid } => {
-                    // we currently dont store flags in view
-                    // TODO: should we?
+                    tile.set_flag(u8::from(*plid));
                 },
                 MapEv::Explode => {
+                    // clear any item from the tile
+                    tile.set_item(ItemKind::Safe);
                     // explosions should be managed with entity visibility
                 },
                 MapEv::Smoke { state } => {

@@ -13,6 +13,7 @@ impl Plugin for MapUpdatePlugin {
                 event_kind::<Hex>.in_set(MapUpdateSet::TileKind),
                 event_owner::<Hex>.in_set(MapUpdateSet::TileOwner),
                 event_digit::<Hex>.in_set(MapUpdateSet::TileDigit),
+                event_flag::<Hex>.in_set(MapUpdateSet::TileFlag),
                 (
                     (event_item::<Hex>, event_explosion::<Hex>).chain(),
                 ).in_set(MapUpdateSet::TileGent),
@@ -21,6 +22,7 @@ impl Plugin for MapUpdatePlugin {
                 event_kind::<Sq>.in_set(MapUpdateSet::TileKind),
                 event_owner::<Sq>.in_set(MapUpdateSet::TileOwner),
                 event_digit::<Sq>.in_set(MapUpdateSet::TileDigit),
+                event_flag::<Sq>.in_set(MapUpdateSet::TileFlag),
                 (
                     (event_item::<Sq>, event_explosion::<Sq>).chain(),
                 ).in_set(MapUpdateSet::TileGent),
@@ -89,6 +91,24 @@ fn event_digit<C: Coord>(
             if let Ok(mut tiledigit) = q_tile.get_mut(index.0[pos.into()]) {
                 tiledigit.0 = digit;
                 tiledigit.1 = asterisk;
+            }
+        }
+    }
+}
+
+fn event_flag<C: Coord>(
+    mut evr: EventReader<GameEvent>,
+    viewing: Res<PlidViewing>,
+    index: Res<MapTileIndex<C>>,
+    mut q_tile: Query<&mut TileFlag>,
+) {
+    for ev in evr.iter() {
+        if ev.plid != viewing.0 {
+            continue;
+        }
+        if let MwEv::Map { pos, ev: MapEv::Flag { plid }} = ev.ev {
+            if let Ok(mut tileflag) = q_tile.get_mut(index.0[pos.into()]) {
+                tileflag.0 = plid;
             }
         }
     }

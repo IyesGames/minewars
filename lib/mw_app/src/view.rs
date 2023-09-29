@@ -58,13 +58,17 @@ impl Plugin for GameViewPlugin {
             switch_view_despawn,
             switch_view_showhide,
             (
-                switch_view_update_map_tiles::<Hex>.in_set(MapUpdateSet::TileKind).in_set(MapUpdateSet::TileOwner),
+                switch_view_update_map_tilekind::<Hex>.in_set(MapUpdateSet::TileKind),
+                switch_view_update_map_owners::<Hex>.in_set(MapUpdateSet::TileOwner),
+                switch_view_update_map_flags::<Hex>.in_set(MapUpdateSet::TileFlag),
                 switch_view_update_map_digits::<Hex>.in_set(MapUpdateSet::TileDigit),
                 switch_view_update_map_gents::<Hex>.in_set(MapUpdateSet::TileGent),
                 switch_view_update_map_roads::<Hex>.in_set(MapUpdateSet::TileRoads),
             ).in_set(MapTopologySet(Topology::Hex)),
             (
-                switch_view_update_map_tiles::<Sq>.in_set(MapUpdateSet::TileKind).in_set(MapUpdateSet::TileOwner),
+                switch_view_update_map_tilekind::<Sq>.in_set(MapUpdateSet::TileKind),
+                switch_view_update_map_owners::<Sq>.in_set(MapUpdateSet::TileOwner),
+                switch_view_update_map_flags::<Sq>.in_set(MapUpdateSet::TileFlag),
                 switch_view_update_map_digits::<Sq>.in_set(MapUpdateSet::TileDigit),
                 switch_view_update_map_gents::<Sq>.in_set(MapUpdateSet::TileGent),
                 switch_view_update_map_roads::<Sq>.in_set(MapUpdateSet::TileRoads),
@@ -107,7 +111,8 @@ pub struct ViewTileData {
     pub item: ItemKind,
     pub has_structure: bool,
     pub structure: StructureKind,
-    // #[skip] __: B1,
+    pub flag: B4,
+    #[skip] __: B4,
 }
 
 /// The map data of a view
@@ -150,11 +155,30 @@ fn switch_view_showhide(
     }
 }
 
-fn switch_view_update_map_tiles<C: Coord>(
+fn switch_view_update_map_tilekind<C: Coord>(
     viewing: Res<PlidViewing>,
     players: Res<PlayersIndex>,
     q_view: Query<&ViewMapData<C>>,
-    mut q_maptile: Query<(&MwTilePos, &mut TileKind, &mut TileOwner)>,
+    mut q_maptile: Query<(&MwTilePos, &mut TileKind)>,
+) {
+    let e_view = players.0[viewing.0.i()];
+    let Ok(viewdata) = q_view.get(e_view) else {
+        error!("View for {:?} does not exist!", viewing.0);
+        return;
+    };
+    // TODO: handle any need for bundle/component changes due to tile kind
+    for (pos, mut kind) in q_maptile.iter_mut() {
+        let c: C = pos.0.into();
+        let tiledata = &viewdata.0[c];
+        *kind = tiledata.kind();
+    }
+}
+
+fn switch_view_update_map_owners<C: Coord>(
+    viewing: Res<PlidViewing>,
+    players: Res<PlayersIndex>,
+    q_view: Query<&ViewMapData<C>>,
+    mut q_maptile: Query<(&MwTilePos, &mut TileOwner)>,
     mut evw_visrecompute: EventWriter<RecomputeVisEvent>,
 ) {
     evw_visrecompute.send(RecomputeVisEvent(None));
@@ -164,10 +188,9 @@ fn switch_view_update_map_tiles<C: Coord>(
         error!("View for {:?} does not exist!", viewing.0);
         return;
     };
-    for (pos, mut kind, mut owner) in q_maptile.iter_mut() {
+    for (pos, mut owner) in q_maptile.iter_mut() {
         let c: C = pos.0.into();
         let tiledata = &viewdata.0[c];
-        *kind = tiledata.kind();
         owner.0 = tiledata.owner().into();
     }
 }
@@ -187,6 +210,24 @@ fn switch_view_update_map_digits<C: Coord>(
         let c: C = pos.0.into();
         let tiledata = &viewdata.0[c];
         digit.0 = tiledata.digit().into();
+    }
+}
+
+fn switch_view_update_map_flags<C: Coord>(
+    viewing: Res<PlidViewing>,
+    players: Res<PlayersIndex>,
+    q_view: Query<&ViewMapData<C>>,
+    mut q_maptile: Query<(&MwTilePos, &mut TileFlag)>,
+) {
+    let e_view = players.0[viewing.0.i()];
+    let Ok(viewdata) = q_view.get(e_view) else {
+        error!("View for {:?} does not exist!", viewing.0);
+        return;
+    };
+    for (pos, mut flag) in q_maptile.iter_mut() {
+        let c: C = pos.0.into();
+        let tiledata = &viewdata.0[c];
+        flag.0 = tiledata.flag().into();
     }
 }
 

@@ -92,7 +92,9 @@ pub struct UiHudSettings {
 ///
 /// Indexed by player ID (0 = neutral)
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct PlayerPaletteSettings {
+    pub flag_style: u8,
     pub visible: [Lcha; 8],
     pub fog: Lcha,
     pub pending: [Lcha; 8],
@@ -100,6 +102,7 @@ pub struct PlayerPaletteSettings {
 
 /// Parameters for local map generation
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct MapGenSettings {
     pub size: u8,
     pub topology: mw_common::grid::Topology,
@@ -193,6 +196,7 @@ impl From<Lcha> for Color {
 impl Default for PlayerPaletteSettings {
     fn default() -> Self {
         PlayerPaletteSettings {
+            flag_style: 0,
             visible: [
                 Lcha(0.75, 0.0, 0.0),
                 Lcha(0.75, 0.5, 0.0),
