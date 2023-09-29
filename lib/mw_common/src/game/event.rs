@@ -60,6 +60,9 @@ pub enum PlayerEv {
     LivesRemain {
         lives: u8,
     },
+    MatchTimeRemain {
+        secs: u16,
+    },
     FriendlyChat(String),
     AllChat(String),
 }

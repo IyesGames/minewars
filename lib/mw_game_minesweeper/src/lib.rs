@@ -52,6 +52,11 @@ pub struct PlayerData {
     n_lives: u8,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MinesweeperSchedEvent {
+    GameOverOutOfTime,
+}
+
 pub struct GameMinesweeper<C: Coord> {
     settings: MinesweeperSettings,
     mapdata: MapData<C, TileData>,
@@ -118,9 +123,22 @@ impl<C: Coord> Game for GameMinesweeper<C> {
     type InitData = ();
     type InputAction = MinesweeperInputAction;
     type OutEvent = MwEv;
-    type SchedEvent = ();
+    type SchedEvent = MinesweeperSchedEvent;
 
     fn init<H: Host<Self>>(&mut self, host: &mut H, _initdata: Self::InitData) {
+        // schedule an event for "game over by running out of time"
+        if self.settings.time_limit_secs != 0 {
+            host.msg(Plids::all(true), MwEv::Player {
+                plid: PlayerId::Neutral,
+                ev: PlayerEv::MatchTimeRemain {
+                    secs: self.settings.time_limit_secs,
+                },
+            });
+            host.sched(
+                Instant::now() + Duration::from_secs(self.settings.time_limit_secs as u64),
+                MinesweeperSchedEvent::GameOverOutOfTime
+            );
+        }
     }
     fn input<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction) {
         if u8::from(plid) > self.settings.n_plids || plid == PlayerId::Neutral {
@@ -143,6 +161,19 @@ impl<C: Coord> Game for GameMinesweeper<C> {
         }
     }
     fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent) {
+        match event {
+            MinesweeperSchedEvent::GameOverOutOfTime => {
+                for (i, playerdata) in self.playerdata.iter().enumerate() {
+                    if playerdata.n_lives > 0 {
+                        host.msg(Plids::all(true), MwEv::Player {
+                            plid: PlayerId::from(i as u8 + 1),
+                            ev: PlayerEv::Eliminated,
+                        });
+                    }
+                }
+                host.game_over();
+            }
+        }
     }
 }
 
