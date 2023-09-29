@@ -226,31 +226,39 @@ The next byte:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`xxxx----`| PlayerId       |
-|`----xxxx`| Status         |
+|`----xxxx`| PlayerId       |
+|`xxxx----`| PlayerSubId    |
 
-PlayerId must not be zero.
+PlayerId is the gameplay plid (view) that is affected.
 
-The Status frield specifies what happened:
+PlayerSubId is the individual user/client, in game modes where multiple people
+can control a single in-game plid.
 
-|Bits  |Meaning         |
-|------|----------------|
-|`0000`| Joined         |
-|`0001`| (reserved)     |
-|`0010`| Stunned/Killed |
-|`0011`| Un-Stunned     |
-|`0100`| Blinded        |
-|`0101`| Un-Blinded     |
-|`0110`| Protected      |
-|`0111`| Un-Protected   |
-|`1000`| Eliminated     |
-|`1001`| Surrendered    |
-|`1010`| Disconnected   |
-|`1011`| Kicked         |
-|`1100`| (reserved)     |
-|`1101`| (reserved)     |
-|`1110`| Friendly-Chat  |
-|`1111`| All-Chat       |
+Some message kinds ignore PlayerSubId. See the "Granularity" column in the table below.
+
+The next byte specifies the message kind (what happened):
+
+|Bits  |Meaning         |Granularity|
+|------|----------------|-----------|
+|`00000000`| Joined         |PlayerSubId|
+|`00000001`| Ping/RTT Info  |PlayerSubId|
+|`00000010`| Stunned/Killed |PlayerId   |
+|`00000011`| Un-Stunned     |PlayerId   |
+|`00000100`| Blinded        |PlayerId   |
+|`00000101`| Un-Blinded     |PlayerId   |
+|`00000110`| Protected      |PlayerId   |
+|`00000111`| Un-Protected   |PlayerId   |
+|`00001000`| Eliminated     |PlayerId   |
+|`00001001`| Surrendered    |PlayerId   |
+|`00001010`| Disconnected   |PlayerSubId|
+|`00001011`| Kicked         |PlayerSubId|
+|`00001100`| Initiate Vote  |PlayerSubId|
+|`00001101`| Vote           |PlayerSubId|
+|`00001110`| Friendly-Chat  |PlayerSubId|
+|`00001111`| All-Chat       |PlayerSubId|
+| ...      | (reserved)     |           |
+
+Then follows the data payload for the given message kind.
 
 #### Tremor
 
