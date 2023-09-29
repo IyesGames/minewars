@@ -229,6 +229,9 @@ impl<C: Coord> GameMinesweeper<C> {
     fn capture_tile<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, mut c: C, recurse: bool) {
         let mut q = vec![];
         loop {
+            if !self.mapdata[c].kind().is_land() {
+                break;
+            }
             if let Some(playerdata) = self.playerdata.get_mut(plid.i()-1) {
                 playerdata.n_owned += 1;
             }
@@ -276,7 +279,7 @@ impl<C: Coord> GameMinesweeper<C> {
                         }
                     });
                 }
-                if recurse && digit.0 == 0 &&self.mapdata[c2].owner() == 0 {
+                if recurse && kind.is_land() && digit.0 == 0 &&self.mapdata[c2].owner() == 0 {
                     q.push(c2);
                 }
             }
