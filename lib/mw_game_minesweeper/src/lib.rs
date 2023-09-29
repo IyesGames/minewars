@@ -358,6 +358,9 @@ impl<C: Coord> GameMinesweeper<C> {
                             lives: playerdata.n_lives,
                         },
                     });
+                    if self.playerdata.iter().all(|p| p.n_lives == 0) {
+                        host.game_over();
+                    }
                 }
             },
         }

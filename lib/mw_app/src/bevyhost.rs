@@ -49,6 +49,10 @@ where
                 .in_set(BevyHostSet::All)
                 .run_if(resource_exists::<BevyHost<G>>())
         );
+        app.configure_sets(Update, (
+            BevyHostSet::PostGame.after(BevyHostSet::Game),
+            BevyHostSet::EvOut.after(BevyHostSet::Game),
+        ));
         app.add_systems(Update, (
             (
                 player_inputs::<G, EvIn>.in_set(BevyHostSet::EvIn),
@@ -58,6 +62,7 @@ where
                 cancel_scheds::<G>,
             ).in_set(BevyHostSet::PostGame),
             drain_out_events::<G, EvOut>.in_set(BevyHostSet::EvOut).in_set(GameEventSet),
+            game_over::<G>.after(BevyHostSet::EvOut),
         ).in_set(BevyHostSet::All)
          .in_set(InGameSet(None))
          .in_set(InStateSet(SessionKind::BevyHost))
@@ -77,6 +82,7 @@ struct BevyHostState<G: Game> {
     scheds: BTreeMap<Instant, G::SchedEvent>,
     cancel: HashSet<G::SchedEvent>,
     init_data: Option<Box<G::InitData>>,
+    game_over: bool,
 }
 
 impl<G: Game> BevyHost<G> {
@@ -88,6 +94,7 @@ impl<G: Game> BevyHost<G> {
                 scheds: BTreeMap::default(),
                 cancel: HashSet::default(),
                 init_data: Some(Box::new(init_data)),
+                game_over: false,
             },
         }
     }
@@ -103,10 +110,13 @@ impl<G: Game> Host<G> for BevyHostState<G> {
     fn desched_all(&mut self, event: G::SchedEvent) {
         self.cancel.insert(event);
     }
+    fn game_over(&mut self) {
+        self.game_over = true;
+    }
 }
 
 fn init<G>(
-    mut host: ResMut<BevyHost<G>>,
+    host: ResMut<BevyHost<G>>,
 )
 where
     G: Game + Send + Sync + 'static,
@@ -185,6 +195,18 @@ where
         for plid in plids.iter(None) {
             evw.send((plid, ev.clone()).into());
         }
+    }
+}
+
+fn game_over<G>(
+    mut commands: Commands,
+    host: Res<BevyHost<G>>,
+)
+where
+    G: Game + Send + Sync + 'static,
+{
+    if host.state.game_over {
+        commands.remove_resource::<BevyHost<G>>();
     }
 }
 

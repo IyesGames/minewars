@@ -13,6 +13,7 @@ pub trait Host<G: Game>: Sized {
     fn sched(&mut self, time: Instant, event: G::SchedEvent);
     /// Cancel scheduled events equal to the value given
     fn desched_all(&mut self, event: G::SchedEvent);
+    fn game_over(&mut self);
 }
 
 /// Abstract interface through which the Host communicates with the Game
