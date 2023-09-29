@@ -31,6 +31,7 @@ pub struct AllSettings {
     pub net: NetSettings,
     pub mapgen: MapGenSettings,
     pub game_minesweeper: MinesweeperSettings,
+    pub input: InputSettings,
 }
 
 #[derive(Resource, Debug, Default, Clone, PartialEq, Eq)]
@@ -46,6 +47,12 @@ pub enum MwRenderer {
 pub struct NetSettings {
     pub last_host_addr: SocketAddr,
     pub last_host_sessionid: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct InputSettings {
+    pub millis_click: u16,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -125,6 +132,13 @@ impl Default for NetSettings {
     }
 }
 
+impl Default for InputSettings {
+    fn default() -> Self {
+        InputSettings {
+            millis_click: 250,
+        }
+    }
+}
 
 impl Default for CameraSettings {
     fn default() -> Self {

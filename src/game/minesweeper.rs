@@ -1,5 +1,6 @@
 use crate::camera::GridCursor;
 use crate::input::GameInputSet;
+use crate::input::MouseClick;
 use crate::prelude::*;
 use crate::settings::MapGenStyle;
 use mw_app::map::MapTileIndex;
@@ -112,19 +113,20 @@ fn setup_minesweeper_playground_flatmap<C: Coord>(
 // TODO: replace this with something more elaborate?
 fn minesweeper_input(
     crs: Res<GridCursor>,
-    btn: Res<Input<MouseButton>>,
+    mut evr_mouse: EventReader<MouseClick>,
     mut evw: EventWriter<MinesweeperInputAction>,
 ) {
-    if btn.just_pressed(MouseButton::Left) {
-        evw.send(MinesweeperInputAction::ExploreTile {
-            pos: crs.0,
-        });
-    }
-    if btn.just_pressed(MouseButton::Middle) {
-        evw.send(MinesweeperInputAction::SetFlag {
-            flag: true,
-            pos: crs.0,
-        });
+    for ev in evr_mouse.iter() {
+        if ev.0 == MouseButton::Left {
+            evw.send(MinesweeperInputAction::ExploreTile {
+                pos: crs.0,
+            });
+        }
+        if ev.0 == MouseButton::Right {
+            evw.send(MinesweeperInputAction::ToggleFlag {
+                pos: crs.0,
+            });
+        }
     }
 }
 
