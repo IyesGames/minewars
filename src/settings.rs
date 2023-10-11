@@ -105,9 +105,8 @@ pub struct UiHudSettings {
 #[serde(default)]
 pub struct PlayerPaletteSettings {
     pub flag_style: u8,
-    pub visible: [Lcha; 8],
+    pub visible: [Lcha; 16],
     pub fog: Lcha,
-    pub pending: [Lcha; 8],
 }
 
 /// Parameters for local map generation
@@ -233,25 +232,23 @@ impl Default for PlayerPaletteSettings {
             flag_style: 0,
             visible: [
                 Lcha(0.75, 0.0, 0.0),
-                Lcha(0.75, 0.5, 0.0),
-                Lcha(0.75, 0.5, 180.0),
-                Lcha(0.75, 0.5, 60.0),
-                Lcha(0.75, 0.5, 240.0),
-                Lcha(0.75, 0.5, 120.0),
-                Lcha(0.75, 0.5, 300.0),
-                Lcha(0.75, 0.5, 30.0),
+                Lcha(0.5, 0.5, 0.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 11.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 6.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 3.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 13.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 8.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 2.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 12.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 4.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 14.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 7.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 1.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 9.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 5.0/15.0 * 360.0),
+                Lcha(0.5, 0.5, 10.0/15.0 * 360.0),
             ],
-            pending: [
-                Lcha(0.75, 0.0, 0.0),
-                Lcha(0.75, 0.25, 0.0),
-                Lcha(0.75, 0.25, 180.0),
-                Lcha(0.75, 0.25, 60.0),
-                Lcha(0.75, 0.25, 240.0),
-                Lcha(0.75, 0.25, 120.0),
-                Lcha(0.75, 0.25, 300.0),
-                Lcha(0.75, 0.25, 30.0),
-            ],
-            fog: Lcha(0.5, 0.0, 00.0),
+            fog: Lcha(0.25, 0.0, 0.0),
         }
     }
 }
