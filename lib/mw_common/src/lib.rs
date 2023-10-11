@@ -33,6 +33,8 @@ pub mod prelude {
     pub use rustls;
     #[cfg(feature = "net")]
     pub use quinn;
+    #[cfg(feature = "net")]
+    pub use crate::net::prelude::*;
 }
 
 #[cfg(feature = "net")]

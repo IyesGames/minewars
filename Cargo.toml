@@ -44,6 +44,7 @@ release = []
 proprietary = ["dep:mw_proprietary_client"]
 
 [dependencies]
+anyhow = "1.0.75"
 directories = "5.0.1"
 enum-iterator = "1.4.1"
 fluent_content = "0.0.5"

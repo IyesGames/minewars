@@ -1,7 +1,17 @@
 use crate::prelude::*;
 
+pub mod prelude {
+    pub use tokio::sync::broadcast::{Sender as TxBroadcast, Receiver as RxBroadcast};
+    pub use tokio::sync::mpsc::{Sender as TxMpsc, Receiver as RxMpsc, UnboundedSender as TxMpscU, UnboundedReceiver as RxMpscU};
+    pub use tokio::sync::oneshot::{Sender as TxOneshot, Receiver as RxOneshot};
+    pub use super::{TxShutdown, RxShutdown};
+}
+
 use quinn::Endpoint;
 use rustls::{Certificate, PrivateKey, RootCertStore, server::AllowAnyAuthenticatedClient};
+
+pub type TxShutdown = TxBroadcast<()>;
+pub type RxShutdown = RxBroadcast<()>;
 
 /// How to interpret a list of restrictions for security
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

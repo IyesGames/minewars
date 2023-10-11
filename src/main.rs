@@ -26,6 +26,7 @@ mod gfx2d;
 mod input;
 mod locale;
 mod minimap;
+mod net;
 mod screens {
     pub mod loading;
     pub mod splash;
@@ -103,6 +104,7 @@ fn main() {
         crate::gfx2d::Gfx2dPlugin,
         crate::game::GameplayPlugin,
         crate::minimap::MinimapPlugin,
+        crate::net::NetClientPlugin,
     ));
 
     #[cfg(feature = "proprietary")]

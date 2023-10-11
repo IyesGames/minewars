@@ -45,8 +45,11 @@ pub enum MwRenderer {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct NetSettings {
+    pub enabled: bool,
+    // TODO: do things via ToSocketAddrs to support DNS
     pub last_host_addr: SocketAddr,
     pub last_host_sessionid: u32,
+    pub worker: NetWorkerConfig,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -123,11 +126,28 @@ pub enum MapGenStyle {
     MineWars,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct NetWorkerConfig {
+    pub ca_cert: PathBuf,
+    pub host_client_cert: Vec<PathBuf>,
+    pub host_client_key: PathBuf,
+    pub auth_client_cert: Vec<PathBuf>,
+    pub auth_client_key: PathBuf,
+}
+
 impl Default for NetSettings {
     fn default() -> Self {
         NetSettings {
+            enabled: true,
             last_host_addr: "127.0.0.1:13370".parse().unwrap(),
             last_host_sessionid: 0,
+            worker: NetWorkerConfig {
+                ca_cert: "cert/ca.cert.der".into(),
+                host_client_cert: vec!["cert/hostclient.cert.der".into(), "cert/ca.cert.der".into()],
+                host_client_key: "cert/hostclient.key.der".into(),
+                auth_client_cert: vec!["cert/authclient.cert.der".into(), "cert/ca.cert.der".into()],
+                auth_client_key: "cert/authclient.key.der".into(),
+            },
         }
     }
 }

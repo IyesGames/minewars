@@ -8,6 +8,7 @@ cert = ["devcerts/host.cert.der", "devcerts/ca.cert.der"]
 key = "devcerts/host.key.der"
 ip_control = "Denylist"
 ip_list = []
+player_ca = ""
 allow_players_unexpected = true
 allow_players_nocert = true
 allow_players_anyip = true

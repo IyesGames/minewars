@@ -129,4 +129,3 @@ fn minesweeper_input(
         }
     }
 }
-

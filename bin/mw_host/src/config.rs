@@ -37,6 +37,8 @@ pub struct ServerConfig {
     pub ip_control: ControlListMode,
     /// List of IPs for IP restriction
     pub ip_list: IpListOrFile,
+    /// If players connect with client authentication, expect certs signed by this CA
+    pub player_ca: PathBuf,
     /// Allow players to connect without a prior `ExpectPlayer` from RPC/hostauth
     pub allow_players_unexpected: bool,
     /// Allow players to connect without a client TLS certificate (disable client cert verification)

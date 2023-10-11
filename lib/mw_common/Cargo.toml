@@ -15,7 +15,6 @@ derive_more = "0.99.17"
 enum-iterator = "1.4.1"
 enum-map = "2.6.1"
 glam = "0.24.1"
-hashbrown = "0.14.0"
 modular-bitfield = "0.11.2"
 num = "0.4.1"
 num-derive = "0.4.0"
@@ -23,6 +22,10 @@ num-traits = "0.2.16"
 thiserror = "1.0.47"
 tracing = "0.1.37"
 rand_pcg = "0.3.1"
+
+[dependencies.hashbrown]
+version = "0.14.0"
+features = ["serde"]
 
 [dependencies.rand]
 version = "0.8.5"
