@@ -125,20 +125,21 @@ The final amounts are rounded up to the nearest **100**.
 Cost sheet (TODO playtest and balance):
 
 Items:
+ - Decoy: 2.0
  - Mine: 3.0
- - Decoy: 3.0
+ - Mine (upgrade from decoy): 2.5
  - Flashbang: 4.0
 
 Structures:
  - Road: 1.5
- - Barricade: 8.0
- - WatchTower: 12.0
- - Bridge: 5.0
+ - Barricade: 20.0
+ - WatchTower: 50.0
+ - Bridge: 8.0
 
 Actions:
- - Strike: 1.0 + 0.25 * NTiles
- - Reveal: 10.0
- - Smoke: 2.0
+ - Strike: 0.5 + 1.0 * NTiles
+ - Reveal: 3.0
+ - Smoke: 0.5
 
 Starting money:
  - If a player captures a neutral city: 10.0

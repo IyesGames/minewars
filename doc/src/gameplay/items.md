@@ -43,17 +43,12 @@ actual location of the decoy.
 
 ## Flashbang Traps
 
-**Flashbangs** will cause **Blindness** when stepped on.
-
-All players in the match will be notified of this event. The explosion effect
-and location will be seen by all players.
-
 The offending player will get a "full white" screen flash, which fades out over
 **0.36** seconds. For accessibility reasons, the color of the flash should be
 customizable, but it cannot be disabled completely.
 
-Every land tile the player owns, that is adjacent to a tile owned by another
-player, will get random nonsensical digits, thus preventing them from knowing
-any information about other players' items.
+All tiles adjacent to the flashbang's tile, that are owned by the offending
+player, will have their digits obscured (similar to smoke).
 
-The blindness duration is **5** seconds.
+Similar to a Decoy, a Flashbang will add an asterisk (*) to adjacent digits.
+This will trick players to fall into the trap.

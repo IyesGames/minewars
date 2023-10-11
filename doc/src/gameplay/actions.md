@@ -88,6 +88,11 @@ The item is purchased using money from the city's region (if owned), or
 the nearest city by distance (if unowned). The cost may be spread out
 between multiple cities, if there are active road connections.
 
+Items can be deployed only to empty (not containing a structure or item)
+land tiles.
+
+Additionally, decoys can be "upgraded" to mines.
+
 ## Initiate Construction
 
 Cooldown: **0.5 sec**.
