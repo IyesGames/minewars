@@ -206,7 +206,7 @@ pub struct CitRes {
 pub fn setup_map<C: Coord, D>(
     world: &mut World,
     mapdata: &MapData<C, D>,
-    cits: &[Pos],
+    cits: &[C],
     f_tilekind: impl Fn(&D) -> TileKind,
     f_regid: impl Fn(&D) -> u8,
 ) {
@@ -256,6 +256,7 @@ pub fn setup_map<C: Coord, D>(
     }
 
     for (i, cit_pos) in cits.iter().enumerate() {
+        let cit_pos = (*cit_pos).into();
         let e_cit = world.spawn(
             CitBundle {
                 regid: CitRegion(i as u8),
@@ -268,8 +269,8 @@ pub fn setup_map<C: Coord, D>(
             },
         ).id();
         cit_index.by_id.push(e_cit);
-        cit_index.by_pos.insert(*cit_pos, e_cit);
-        world.entity_mut(tile_index.0[(*cit_pos).into()])
+        cit_index.by_pos.insert(cit_pos, e_cit);
+        world.entity_mut(tile_index.0[(cit_pos).into()])
             .insert(TileGent::Cit(i as u8));
     }
 

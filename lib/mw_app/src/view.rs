@@ -253,12 +253,11 @@ fn switch_view_update_map_gents<C: Coord>(
     for (pos, mut gent) in q_maptile.iter_mut() {
         let c: C = pos.0.into();
         let tiledata = &viewdata.0[c];
-        // TODO:
-        let is_cit = false;
-        *gent = if is_cit {
-            // TODO:
-            TileGent::Cit(0)
-        } else if tiledata.has_structure() {
+        // preserve CITS, they are special
+        if let TileGent::Cit(_) = *gent {
+            continue;
+        }
+        *gent = if tiledata.has_structure() {
             TileGent::Structure(tiledata.structure())
         } else {
             let item = tiledata.item();

@@ -138,9 +138,9 @@ mod sprite {
     pub const GENT_DECOY: usize = GENTS + 1;
     pub const GENT_FLASH: usize = GENTS + 2;
     pub const GENT_MINEACT: usize = GENTS + 3;
-    pub const GENT_CIT: usize = GENTS + 3;
-    pub const GENT_TOWER: usize = GENTS + 4;
-    pub const GENT_WALL: usize = GENTS + 5;
+    pub const GENT_CIT: usize = GENTS + 4;
+    pub const GENT_TOWER: usize = GENTS + 5;
+    pub const GENT_WALL: usize = GENTS + 6;
     pub const EXPLOSION_MINE: usize = OVERLAYS + 0;
     pub const EXPLOSION_DECOY: usize = OVERLAYS + 1;
     pub const SMOKE: usize = OVERLAYS + 2;

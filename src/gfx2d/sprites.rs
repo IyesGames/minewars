@@ -355,7 +355,7 @@ fn tile_gent_sprite_mgr(
         };
 
         if let Some(spr_gent) = spr_gent {
-            // there is an existing digit entity we can reuse
+            // there is an existing gent entity we can reuse
             let e_gent = spr_gent.0;
             let mut sprite = q_gent.get_mut(e_gent).unwrap();
             sprite.index = i_gent;
