@@ -10,6 +10,8 @@ pub enum FloodSelect {
     Yes,
     /// Add tile to start of queue (next tile to check)
     YesPrio,
+    /// Do no more iterations
+    Abort,
 }
 
 /// Type of the queue data structure (re)used for `flood`
@@ -42,6 +44,9 @@ where
                     q.push_back(c.into());
                 }
                 FloodSelect::No => {}
+                FloodSelect::Abort => {
+                    break;
+                }
             }
         }
     }
