@@ -8,16 +8,11 @@ edition = "2021"
 [features]
 bevy = [
     "mw_common/bevy",
-    "dep:mw_app",
     "dep:bevy",
 ]
 
 [dependencies.mw_common]
 path = "../mw_common"
-
-[dependencies.mw_app]
-path = "../mw_app"
-optional = true
 
 [dependencies.serde]
 version = "1.0.188"

@@ -2,13 +2,18 @@ pub mod prelude {
     pub use mw_common::prelude::*;
     pub use iyes_bevy_extras::prelude::*;
     pub use crate::appstate::*;
+    pub use crate::settings::{AllSettings, NeedsSettingsSet};
+    pub use crate::PROPRIETARY;
 }
+
+pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 pub mod appstate;
 
 pub mod map;
 pub mod player;
 pub mod view;
+pub mod settings;
 
 pub mod bevyhost;
 
@@ -24,6 +29,7 @@ impl Plugin for MwCommonPlugin {
         app.add_event::<mw_common::game::event::GameEvent>();
         app.add_plugins((
             appstate::AppStatesPlugin,
+            settings::SettingsPlugin,
             map::MapPlugin,
             view::GameViewPlugin,
         ));

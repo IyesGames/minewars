@@ -1,4 +1,4 @@
-use crate::{prelude::*, locale::L10nKey, assets::UiAssets, settings::NeedsSettingsSet};
+use crate::{prelude::*, locale::L10nKey, assets::UiAssets};
 
 use super::tooltip::InfoText;
 

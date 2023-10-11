@@ -41,7 +41,7 @@ debug = false
 [features]
 dev = ["bevy/filesystem_watcher"]
 release = []
-proprietary = ["dep:mw_proprietary_client"]
+proprietary = ["dep:mw_proprietary_client", "mw_app/proprietary"]
 
 [dependencies]
 anyhow = "1.0.75"

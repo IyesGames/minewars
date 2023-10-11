@@ -1,4 +1,4 @@
-use crate::{prelude::*, settings::NeedsSettingsSet, ui::console::UiConsole, assets::UiAssets};
+use crate::{prelude::*, ui::console::UiConsole, assets::UiAssets};
 
 pub struct TextFieldPlugin;
 

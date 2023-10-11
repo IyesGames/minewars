@@ -1,7 +1,8 @@
 use mw_common::net::{load_client_crypto, setup_quic_client};
 
 use crate::prelude::*;
-use crate::settings::NetWorkerConfig;
+
+use mw_app::settings::NetWorkerConfig;
 
 use super::*;
 
@@ -121,7 +122,7 @@ async fn async_main(config: NetWorkerConfig, mut channels: Channels) {
                         match connect_host(&state.endpoint, &config).await {
                             Ok(session) => {
                                 channels.tx_status.send(NetWorkerStatus::HostConnected).ok();
-                                info!("Connected to Host Server!").ok();
+                                info!("Connected to Host Server!");
                                 host_session(&mut state, channels.clone(), session).await;
                             }
                             Err(e) => {
@@ -147,7 +148,7 @@ async fn host_session(wstate: &mut NetWorkerState, mut channels: Channels, sessi
                 match e {
                     quinn::ConnectionError::ApplicationClosed(_) => {}
                     _ => {
-                        channels.tx_status.send(NetWorkerStatus::NetError(e.into()));
+                        channels.tx_status.send(NetWorkerStatus::NetError(e.into())).ok();
                     }
                 }
                 break;
