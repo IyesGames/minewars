@@ -2,6 +2,8 @@ use derive_more::*;
 
 use std::ops::{Mul, MulAssign};
 
+use super::Coord;
+
 /// Topology-agnostic (type erased) coordinate
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Add, AddAssign, Sub, SubAssign, Neg,
@@ -75,5 +77,11 @@ impl From<Pos> for glam::IVec2 {
 impl Default for Pos {
     fn default() -> Self {
         Self::origin()
+    }
+}
+
+impl<C: Coord> From<&C> for Pos {
+    fn from(value: &C) -> Self {
+        (*value).into()
     }
 }
