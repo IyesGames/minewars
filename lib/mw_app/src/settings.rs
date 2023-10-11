@@ -24,6 +24,7 @@ pub struct AllSettings {
     pub player_colors: PlayerPaletteSettings,
     pub net: NetSettings,
     pub mapgen: MapGenSettings,
+    pub game: MinewarsGameSettings,
     pub game_minesweeper: MinesweeperSettings,
     pub input: InputSettings,
 }
@@ -113,6 +114,18 @@ pub struct MapGenSettings {
     pub seed: Option<u64>,
 }
 
+/// Parameters for hosting MineWars games
+///
+/// (used to set up playground mode and LAN servers)
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct MinewarsGameSettings {
+    pub n_plids: u8,
+    pub n_cits: u8,
+    pub mine_density: u8,
+    pub prob_decoy: u8,
+}
+
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MapGenStyle {
     Flat,
@@ -126,6 +139,17 @@ pub struct NetWorkerConfig {
     pub host_client_key: PathBuf,
     pub auth_client_cert: Vec<PathBuf>,
     pub auth_client_key: PathBuf,
+}
+
+impl Default for MinewarsGameSettings {
+    fn default() -> Self {
+        MinewarsGameSettings {
+            n_plids: 2,
+            n_cits: 5,
+            mine_density: 72,
+            prob_decoy: 56,
+        }
+    }
 }
 
 impl Default for NetSettings {

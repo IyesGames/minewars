@@ -133,6 +133,14 @@ pub struct DespawnOnViewSwitch;
 #[derive(Component)]
 pub struct VisibleInView(pub PlayerId);
 
+impl ViewTileData {
+    pub fn from_kind(kind: TileKind) -> Self {
+        let mut t = Self::default();
+        t.set_kind(kind);
+        t
+    }
+}
+
 fn switch_view_despawn(
     mut commands: Commands,
     q: Query<Entity, With<DespawnOnViewSwitch>>,

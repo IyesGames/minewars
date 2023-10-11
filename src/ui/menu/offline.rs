@@ -61,7 +61,7 @@ fn spawn_menu_offline(
         &mut commands,
         &*uiassets,
         &*settings,
-        OnClick::new().cli("offline_playground"),
+        OnClick::new().cli("playground"),
         "menu-button-playground",
         if PROPRIETARY { "menu-tooltip-playground" }
         else { "tooltip-unavailable-proprietary" },
