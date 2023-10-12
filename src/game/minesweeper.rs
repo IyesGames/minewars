@@ -60,7 +60,7 @@ fn cli_minesweeper_playground(world: &mut World) {
         (true, MapGenStyle::MineWars) => {
             #[cfg(feature = "proprietary")]
             mw_proprietary_client::setup_minesweeper_playground_mwmap(
-                world, minesweeper_settings, mapgen_settings.size, mapgen_settings.seed,
+                world, minesweeper_settings, &mapgen_settings,
             );
         }
     }

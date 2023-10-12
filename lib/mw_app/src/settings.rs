@@ -112,6 +112,7 @@ pub struct MapGenSettings {
     pub topology: mw_common::grid::Topology,
     pub style: MapGenStyle,
     pub seed: Option<u64>,
+    pub land_bias: u8,
 }
 
 /// Parameters for hosting MineWars games
@@ -281,6 +282,7 @@ impl Default for MapGenSettings {
             } else {
                 MapGenStyle::Flat
             },
+            land_bias: 32,
             seed: None,
         }
     }
