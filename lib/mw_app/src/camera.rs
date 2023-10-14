@@ -21,6 +21,9 @@ impl Plugin for MwCameraPlugin {
                 .in_set(InGameSet(None)),
             GridCursorSet
                 .in_set(InGameSet(None)),
+            GridCursorChangedSet
+                .after(GridCursorSet)
+                .run_if(resource_changed::<GridCursor>())
         ));
     }
 }
@@ -46,6 +49,9 @@ pub struct CameraControlSet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub struct GridCursorSet;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct GridCursorChangedSet;
 
 #[derive(Resource, Default)]
 pub struct GridCursor(pub Pos);

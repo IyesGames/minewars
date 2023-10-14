@@ -15,7 +15,6 @@ mod prelude {
 use crate::prelude::*;
 
 mod assets;
-mod camera;
 mod cli;
 mod game;
 mod gfx2d;
@@ -96,7 +95,6 @@ fn main() {
         crate::ui::UiPlugin,
         crate::settings::SettingsPlugin,
         crate::input::InputPlugin,
-        crate::camera::MwCameraPlugin,
         crate::gfx2d::Gfx2dPlugin,
         crate::game::GameplayPlugin,
         crate::minimap::MinimapPlugin,

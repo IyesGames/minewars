@@ -1,8 +1,9 @@
 use bevy::{input::mouse::{MouseMotion, MouseWheel, MouseScrollUnit}, window::PrimaryWindow};
 use bevy_tweening::*;
 use mw_common::{game::MapDescriptor, grid::*};
+use mw_app::camera::*;
 
-use crate::{prelude::*, camera::*};
+use crate::prelude::*;
 
 use super::Gfx2dSet;
 
@@ -54,7 +55,10 @@ fn grid_cursor(
             let grid = conv * crs_in.pos;
             let new = Hex::from_f32_clamped(grid.into());
             if new.ring() <= mapdesc.size {
-                crs_out.0 = new.into();
+                let new_pos = Pos::from(new);
+                if crs_out.0 != new_pos {
+                    crs_out.0 = new_pos;
+                }
             }
         }
         Topology::Sq => {
@@ -62,7 +66,10 @@ fn grid_cursor(
             let adj = crs_in.pos / tdim;
             let new = Sq::from_f32_clamped(adj.into());
             if new.ring() <= mapdesc.size {
-                crs_out.0 = new.into();
+                let new_pos = Pos::from(new);
+                if crs_out.0 != new_pos {
+                    crs_out.0 = new_pos;
+                }
             }
         }
     };

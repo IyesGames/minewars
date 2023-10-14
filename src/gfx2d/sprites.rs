@@ -1,8 +1,8 @@
 use crate::assets::GameAssets;
-use crate::camera::GridCursor;
-use crate::camera::GridCursorSet;
 use crate::prelude::*;
 
+use mw_app::camera::GridCursor;
+use mw_app::camera::GridCursorChangedSet;
 use mw_app::player::PlayersIndex;
 use mw_app::view::PlidViewing;
 use mw_app::view::ViewMapData;
@@ -48,7 +48,7 @@ impl Plugin for Gfx2dSpritesPlugin {
                 cursor_sprite::<Sq>
                     .in_set(MapTopologySet(Topology::Sq)),
             )
-                .after(GridCursorSet),
+                .in_set(GridCursorChangedSet),
         ).in_set(Gfx2dSet::Any));
     }
 }
@@ -97,9 +97,6 @@ fn cursor_sprite<C: Coord>(
     mut q: Query<(&mut Transform, &mut MwTilePos), With<CursorSprite>>,
     crs: Res<GridCursor>,
 ) {
-    if !crs.is_changed() {
-        return;
-    }
     let Ok((mut xf, mut pos)) = q.get_single_mut() else {
         return;
     };

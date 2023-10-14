@@ -9,7 +9,7 @@ pub mod prelude {
 pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 pub mod appstate;
-
+pub mod camera;
 pub mod map;
 pub mod player;
 pub mod view;
@@ -29,6 +29,7 @@ impl Plugin for MwCommonPlugin {
         app.add_event::<mw_common::game::event::GameEvent>();
         app.add_plugins((
             appstate::AppStatesPlugin,
+            camera::MwCameraPlugin,
             settings::SettingsPlugin,
             map::MapPlugin,
             view::GameViewPlugin,

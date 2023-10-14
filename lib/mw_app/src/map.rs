@@ -7,6 +7,8 @@ use mw_common::grid::*;
 use mw_common::plid::*;
 use mw_common::game::*;
 
+use crate::camera::GridCursor;
+use crate::camera::GridCursorChangedSet;
 use crate::prelude::*;
 use crate::view::VisibleInView;
 
@@ -18,10 +20,15 @@ impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(update::MapUpdatePlugin);
         app.add_event::<RecomputeVisEvent>();
+        app.init_resource::<GridCursorTileEntity>();
         for topo in enum_iterator::all::<Topology>() {
             app.configure_set(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
             app.configure_set(Update, NeedsMapSet.run_if(resource_exists::<MapDescriptor>()));
         }
+        app.add_systems(Update, (
+            grid_cursor_map_tile::<Hex>.in_set(MapTopologySet(Topology::Hex)),
+            grid_cursor_map_tile::<Sq>.in_set(MapTopologySet(Topology::Sq)),
+        ).in_set(GridCursorTileSet).in_set(GridCursorChangedSet));
     }
 }
 
@@ -45,6 +52,12 @@ pub enum MapUpdateSet {
     TileGent,
     TileRoads,
 }
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GridCursorTileSet;
+
+#[derive(Resource, Default)]
+pub struct GridCursorTileEntity(pub Option<Entity>);
 
 #[derive(Resource)]
 pub struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);
@@ -192,6 +205,14 @@ pub struct CitRes {
     pub money: u32,
     pub income: u16,
     pub res: u16,
+}
+
+fn grid_cursor_map_tile<C: Coord>(
+    cursor: Res<GridCursor>,
+    index: Option<Res<MapTileIndex<C>>>,
+    mut cursor_tile: ResMut<GridCursorTileEntity>,
+) {
+    cursor_tile.0 = index.and_then(|inner| inner.0.get(cursor.0.into()).cloned());
 }
 
 /// Helper code to setup all the map-related ECS stuff.

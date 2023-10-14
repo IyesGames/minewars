@@ -1,7 +1,7 @@
-use crate::camera::GridCursor;
 use crate::input::GameInputSet;
 use crate::input::MouseClick;
 use crate::prelude::*;
+use mw_app::camera::GridCursor;
 use mw_app::settings::MapGenStyle;
 use mw_app::view::*;
 use mw_app::bevyhost::*;
