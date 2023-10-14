@@ -34,10 +34,10 @@ During the game, there can be a scoreboard allowing players to judge the progres
 through the game, based on their (and other players') stats.
 
 The most important number is the "cities owned". It indicates the size of each
-player's empire. All players must know the status of all cities at all times.
-Their locations and owners are visible, even behind fog of war. There can be a
-mini-scoreboard on-screen at all times, showing the number of cities for each
-player in the match.
+player's empire.
+
+There can be a mini-scoreboard on-screen at all times, showing the number of
+cities for each player in the match.
 
 Additionally, players can bring up a detailed scoreboard, which provides more
 stats. Some example things we can include:

@@ -18,6 +18,7 @@
   - [Monetization Ideas](./mgmt/monetization.md)
   - [Game Settings](./mgmt/settings.md)
   - [Achievement Ideas](./achievements.md)
+  - [Notes / Philosophy](./mgmt/philosophy.md)
 - [Technical Documentation](./tech.md)
   - [Player Stream Format](./tech/dataformat-player.md)
   - [Spectator/Replay Stream Format](./tech/dataformat-spectator.md)

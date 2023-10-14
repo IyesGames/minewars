@@ -10,34 +10,22 @@ player can see **3** tiles away from tiles they own.
 
 The entire map's geography is shown to all players at all times, there are no
 areas that are completely "black". Fog of war simply means that the player does
-not get updates on the status of the tile / any gameplay that happens there.
-
-Any changes to the tile kind behind fog of war are not revealed, so a player's
-view of the map geography can be outdated.
-
-Previous ownership is not shown behind fog of war. Tiles should have a neutral
-color.
+not know the ownership (which player controls the tile).
 
 Mountain tiles are always treated as a cluster. If you can see one tile of
 the cluster, you see them all.
 
-There are technically 3 levels of visibility, showing increasing amounts of info:
- - Fog: any tile further than the visibility radius away from a player-owned tile
- - Limited: any tile not owned by the player, within the visibility radius
- - Full: tiles owned by the player, tiles within the range of a **Watch Tower**, tiles where a **City** is located
-
-Within "Fog Visibility" tiles, the player sees:
- - Last known tile kind / geography (may be outdated)
+Within fog-of-war tiles, the player sees:
+ - Current tile kind (if changed due to harvesting, explosions, etc.)
+ - Completed Structures (incl Roads)
+ - Explosions
  - Skulls
 
-Within "Limited Visibility" tiles, the player also sees:
- - Current tile kind (if changed due to harvesting, explosions, etc.)
+Within visible tiles, the player also sees:
  - The ownership of the tile (displayed using the owner's color)
- - Completed Structures
  - Smokes
- - Explosions
 
-Within "Full Visibility" tiles, the player also sees:
+On a player's own territory, the player also sees:
  - Items
  - Pending Structures
 
@@ -56,8 +44,8 @@ with, if the player owns the city.
 
 On owned **Land**, the player gets:
  - the ability to deploy **Items** on the tile
- - the ability to perform **offensive actions** on adjacent unowned tiles
- - the ability to **build structures**, if the player owns the region's city
+ - the ability to perform various **actions** on the tile and on adjacent unowned tiles
+ - the ability to **build structures**
  - the ability to **Harvest** the tile, if the player owns the region's city
  - visibility of surrounding tiles
  - a digit (like Minesweeper) indicating how many (if any) items exist on adjacent unowned tiles
@@ -84,14 +72,22 @@ a risk to the player.
 
 If the tile contains any **Items**, their respective effects will be triggered
 when the player attempts to capture the tile (see their respective docs for more detail):
- - **Mines** will **explode**, causing the player to be **stunned**
+ - **Mines** will **explode**, giving the player a Death timeout
  - **Decoys** will **break** / do nothing, and the tile will be captured as if it was empty
- - **Flashbang Traps** will "blind" the player
+ - **Smoke Traps** will "blind" the player
 
 Player strategy: if they think the tile is empty or a decoy, they should capture
 it, breaking any decoy. If they think the tile contains a dangerous item, they
 can either **Strike the tile** to destroy it, or try to safely surround and
 **capture the item**.
+
+#### Autoexpand
+
+When land is known safe, the server should auto-claim it for you. The game should
+be designed to reduce any tedious clicking around. This should be recursive and
+happen instantly.
+
+It can account for player flags, to mark tiles to avoid.
 
 ### Clusters
 
@@ -131,7 +127,8 @@ carefully and taking the time to treat foreign items as a puzzle to be solved,
 rather than simply striking the tiles to destroy the items. Striking is quick and
 easy, but costs money, and destroys the land's resources. Capturing the items
 is time-consuming and requires mental effort to solve the minesweeper digits
-puzzle, but rewards the player with money and keeps the land intact.
+puzzle, but rewards the player with money and keeps the land intact. If the digits
+are ambiguous, you can use Reveal, or Strike.
 
 ### Cities
 
@@ -150,7 +147,7 @@ See the **Economy** section for further implications of capturing cities.
 
 Road tiles are treated as land tiles for the purpose of capturing.
 
-However, note that cities only count as connected, if there is a path
+However, note that cities only count as connected if there is a path
 that is fully owned by the player. Upon losing even a single tile,
 the connection is broken.
 

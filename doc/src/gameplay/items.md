@@ -11,20 +11,19 @@ on adjacent tiles they do not own.
 ## Mines
 
 **Mines** will **explode** when stepped on, resulting in the offending player
-receiving a **Stun**. This adds to the "Death" count of the offending player and
-to your "Kill" count.
+receiving a **Death Timeout**. This adds to the "Death" count of the offending
+player and to your "Kill" count.
 
 All players in the match will be notified of this event. The explosion effect
 and location will be seen by all players. The tile where the explosion occurs
-will be upgraded to "Limited Visibility" status for all players for a duration
-of **2.0 sec**. Note: this means players can see ownership, etc.
+will become visible (no fog) for all players for a duration of **2.0 sec**.
 
 A skull decal will be left behind to commemorate the occasion.
 
-The **Stun** is a timeout during which a player cannot perform any game actions.
-All of their cities pause production for the duration of the stun.
+During the timeout a player cannot perform any game actions.
+All of their cities pause production for the duration.
 
-The stun duration is **5** seconds.
+The timeout duration is **10** seconds.
 
 The tile will be converted to **Destroyed Land**, thereby providing no more
 resources for the remainder of the game.
@@ -41,14 +40,10 @@ The presence of a decoy will add an asterisk (*) to the digits other players see
 on adjacent tiles. This provides a hint to them, without directly revealing the
 actual location of the decoy.
 
-## Flashbang Traps
+## Smoke Traps
 
-The offending player will get a "full white" screen flash, which fades out over
-**0.36** seconds. For accessibility reasons, the color of the flash should be
-customizable, but it cannot be disabled completely.
+All tiles adjacent to the trap's tile, that are owned by the offending
+player, will have their digits obscured with **Smoke**.
 
-All tiles adjacent to the flashbang's tile, that are owned by the offending
-player, will have their digits obscured (similar to smoke).
-
-Similar to a Decoy, a Flashbang will add an asterisk (*) to adjacent digits.
+Similar to a Decoy, a Smoke Trap will add an asterisk (*) to adjacent digits.
 This will trick players to fall into the trap.

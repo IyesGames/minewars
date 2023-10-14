@@ -16,6 +16,8 @@ Structures are destructable. They take **1** damage from adjacent explosions and
 **Strike** can be peformed on structures, causing direct damage. Adjacent damage
 can be caused by nearby mine explosions or strikes.
 
+Built structures are visible to other players behind fog of war.
+
 ## Roads
 
 HP: **3**.
@@ -66,10 +68,9 @@ easier to destroy.
 
 ## Watch Towers
 
-HP: **5**.
+HP: **6**.
 
-Watch towers give "Full Visibility" of the surrounding area (radius of **5**
-tiles).
+Watch towers give visibility of the surrounding area (radius of **5** tiles).
 
 They can be built on any player-owned land tile, as long as the player owns the
 city of the region. If adjacent to a mountain or forest, the player must also

@@ -10,32 +10,28 @@ Each city has a **Bank**. The Bank is the total **money** of the city.
 The player can spend money to:
  - Build structures
  - Deploy items
- - Perform offensive actions
+ - Perform actions
 
 The actions are funded by the city of the region of the tile where the action
 takes place.
 
 In foreign regions (where the player does not own the local city), actions
-are funded by the nearest city by distance and have their cost multiplied by **1.25**.
+are funded by the nearest city by distance.
 
 If a city has *active road connections* to other cities, then they will fund the
 actions collectively. The cost of the actions is split between all connected
 neighboring cities, proportionally to the total amount of money each city has in
 its bank. The local city's contribution is weighted double.
 
-If a city is captured by another player, **75%** of the city's money will be
-distributed between your remaining cities. **25%** of the money will stay in the
-city and be usable by the new owner.
+If a city is captured by another player, **50%** of the money will stay in the
+city and be usable by the new owner, and the remainder will be lost.
 
 ### Income
 
 Each city constantly generates/accumulates money. The rate of income is determined
 by the total **resources** owned by the city; that is, the sum of the resources
-of each owned tile within the city's region.
-
-If a structure is currently being built, the city does not generate income until
-it is completed. Instead, the resources are counted towards the rate of
-construction progress on the structure.
+of each owned tile within the city's region. It can be reduced due to ongoing
+construction. It can be affected by **Policy**.
 
 Neutral cities (not owned by any player) do not generate any income.
 
@@ -49,11 +45,21 @@ Resources given by each tile owned:
  - **Regular Land**: **1** Res/sec
  - **Fertile Land**: **2** Res/sec
  - **Destroyed Land** and **Foundation**: **0** Res/sec
- - **Forest**: **3** Res/sec
- - **Mountain**: **5** Res/sec
+ - **Forest**: **5** Res/sec
+ - **Mountain**: **7** Res/sec
 
-Further, each city has **50** Base Res: the minimum amount of resources inherent
+Further, each city has **25** Base Res: the minimum amount of resources inherent
 to the city, regardless of any owned tiles in the region.
+
+### Policy
+
+Players may tune a few different parameters that affect the resources of a city
+and their usage:
+
+ - Construction Rate: What % of resources goes towards any in-progress structures,
+   instead of generating Income.
+ - Export Rate: How much do we help (% of max) connected cities with their spending.
+ - Import Rate: How much help (% of max) do we accept from connected cities.
 
 ### Harvesting Tiles
 
@@ -65,9 +71,6 @@ This is a one-time action. After harvesting, the tile is converted to
 
 The player must own both the tile and the city whose region it belongs to.
 
-The change in tile kind is not visible to other players behind fog of war. When
-players gain visibility of the tile, that is when they will get the update.
-
 This mechanic exists to give players more options for survival in tense
 situations. They can accelerate their current production one-time, at the cost
 of foregoing all the potential resources they could have accumulated from the
@@ -75,11 +78,18 @@ tile over time and also potentially worsening the natural protection they get
 from the map's geography.
 
 Harvest bounties (resource given when harvesting a tile):
+ - **Destroyed Land** and **Foundation**: not harvestable (**0** Res)
  - **Regular Land**: **100** Res
  - **Fertile Land**: **250** Res
- - **Destroyed Land** and **Foundation**: not harvestable (**0** Res)
  - **Forest**: **420** Res
  - **Mountain**: **600** Res
+
+Harvest delay:
+ - **Destroyed Land** and **Foundation**: not harvestable (**0** Res)
+ - **Regular Land**: **5** sec
+ - **Fertile Land**: **5** sec
+ - **Forest**: **15** sec
+ - **Mountain**: **30** sec
 
 ### Constructing Structures
 
@@ -94,7 +104,7 @@ resources are instantly reclaimed and the remaining resources are lost.
 ### Bulldozing Structures
 
 Any structures on land owned by the player can be bulldozed. This returns
-**25%** of the resource cost of the structure back to the player as income.
+**25%** of the resource cost of the structure back to the player.
 
 The reward is counted towards the city of the tile's region, if owned by the
 player, or the nearest city by distance otherwise.
@@ -102,7 +112,10 @@ player, or the nearest city by distance otherwise.
 ### Capturing Foreign Items
 
 If a player captures a tile that contains an item, the item is instantly sold,
-giving the player **75%** of the usual cost of the item.
+giving the player:
+ - Mine: 75% of the usual cost
+ - Decoy: 50% of the usual cost
+ - Smoke Trap: 0% of the usual cost
 
 The reward is counted towards the city of the tile's region, if owned by the
 player, or the nearest city by distance otherwise.
@@ -127,18 +140,18 @@ Cost sheet (TODO playtest and balance):
 Items:
  - Decoy: 2.0
  - Mine: 3.0
- - Mine (upgrade from decoy): 2.5
- - Flashbang: 4.0
+ - Mine (upgrade from decoy): 3.0
+ - Flashbang: 8.0
 
 Structures:
  - Road: 1.5
  - Barricade: 20.0
- - WatchTower: 50.0
- - Bridge: 8.0
+ - WatchTower: 30.0
+ - Bridge: 5.0
 
 Actions:
- - Strike: 0.5 + 1.0 * NTiles
- - Reveal: 3.0
+ - Strike: 1.0 + 2.0 * NTiles
+ - Reveal: 5.0
  - Smoke: 0.5
 
 Starting money:
