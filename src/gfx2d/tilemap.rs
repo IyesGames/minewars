@@ -36,6 +36,7 @@ impl Plugin for Gfx2dTilemapPlugin {
                 digit_tilemap_mgr.after(MapUpdateSet::TileDigit),
                 gent_tilemap_mgr.after(MapUpdateSet::TileGent),
                 overlay_tilemap_mgr,
+                tilemap_reghighlight.run_if(resource_changed::<GridCursorTileEntity>()),
             )
                 .run_if(resource_exists::<TilemapInitted>()),
         ).in_set(Gfx2dSet::Tilemap));
@@ -493,6 +494,64 @@ fn overlay_tilemap_mgr(
                 },
             ));
             ts_overlay.set(&tilepos, e);
+        }
+    }
+}
+
+fn tilemap_reghighlight(
+    mut commands: Commands,
+    mapdesc: Res<MapDescriptor>,
+    cursor_tile: Res<GridCursorTileEntity>,
+    q_highlight: Query<Entity, With<RegHighlightSprite>>,
+    q_tile: Query<(&TilePos, &TileRegion), With<BaseSprite>>,
+    mut q_tm: Query<(Entity, &TilemapSize, &mut TileStorage), With<RegHighlightTilemap>>,
+    mut last_region: Local<Option<u8>>,
+) {
+    if let Some(e_tile) = cursor_tile.0 {
+        let Ok(region) = q_tile.get(e_tile) else {
+            return;
+        };
+        let region = region.1.0;
+        if *last_region != Some(region) {
+            *last_region = Some(region);
+            // clear old
+            if !q_highlight.is_empty() {
+                let (_, tm_size, mut ts) = q_tm.single_mut();
+                *ts = TileStorage::empty(*tm_size);
+                for e in &q_highlight {
+                    commands.entity(e).despawn_recursive();
+                }
+            }
+            // create new
+            let i = match mapdesc.topology {
+                Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_CURSOR,
+                Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_CURSOR,
+            };
+            let (e_tm, _, mut ts) = q_tm.single_mut();
+            for (tilepos, tile_region) in &q_tile {
+                if tile_region.0 == region {
+                    let e_tile = commands.spawn((
+                        RegHighlightSprite,
+                        TileBundle {
+                            position: *tilepos,
+                            texture_index: TileTextureIndex(i as u32),
+                            tilemap_id: TilemapId(e_tm),
+                            visible: TileVisible(true),
+                            color: TileColor(Color::WHITE.with_a(0.25)),
+                            ..Default::default()
+                        }
+                    )).id();
+                    ts.set(&tilepos, e_tile);
+                }
+            }
+        }
+    } else {
+        if !q_highlight.is_empty() {
+            let (_, tm_size, mut ts) = q_tm.single_mut();
+            *ts = TileStorage::empty(*tm_size);
+            for e in &q_highlight {
+                commands.entity(e).despawn_recursive();
+            }
         }
     }
 }

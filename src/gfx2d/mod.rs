@@ -47,7 +47,7 @@ struct DigitSprite;
 #[derive(Component)]
 struct GentSprite;
 #[derive(Component)]
-struct FlagSprite;
+struct RegHighlightSprite;
 #[derive(Component)]
 struct ExplosionSprite {
     timer: Timer,
