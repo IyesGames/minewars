@@ -374,4 +374,3 @@ fn explosion_sprite_mgr(
         }
     }
 }
-
