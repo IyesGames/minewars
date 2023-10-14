@@ -3,6 +3,7 @@
 //! Allows offline gameplay without a server.
 
 use crate::GameEventSet;
+use crate::player::PlayersIndex;
 use crate::player::PlidPlayingAs;
 use crate::prelude::*;
 
@@ -185,14 +186,16 @@ where
 
 fn drain_out_events<G, EvOut>(
     mut host: ResMut<BevyHost<G>>,
+    players: Option<Res<PlayersIndex>>,
     mut evw: EventWriter<EvOut>,
 )
 where
     G: Game + Send + Sync + 'static,
     EvOut: From<(PlayerId, G::OutEvent)> + Event,
 {
+    let n_plids = players.map(|p| p.0.len() as u8 - 1);
     for (plids, ev) in host.state.events.drain(..) {
-        for plid in plids.iter(None) {
+        for plid in plids.iter(n_plids) {
             evw.send((plid, ev.clone()).into());
         }
     }
