@@ -66,9 +66,9 @@ pub struct GameAssets {
     #[asset(key = "game.tilemap.sprites")]
     pub sprites: Handle<TextureAtlas>,
     #[asset(key = "game.tilemap.roads6")]
-    pub roads6: Handle<Image>,
+    pub roads6: Handle<TextureAtlas>,
     #[asset(key = "game.tilemap.roads4")]
-    pub roads4: Handle<Image>,
+    pub roads4: Handle<TextureAtlas>,
 }
 
 #[derive(AssetCollection, Resource)]
