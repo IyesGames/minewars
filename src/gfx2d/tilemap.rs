@@ -1,6 +1,7 @@
 use crate::assets::GameAssets;
 use crate::prelude::*;
 
+use bevy::render::render_resource::FilterMode;
 use mw_app::player::PlayersIndex;
 use mw_app::view::PlidViewing;
 use mw_app::view::ViewMapData;
@@ -16,6 +17,7 @@ pub struct Gfx2dTilemapPlugin;
 impl Plugin for Gfx2dTilemapPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, prealloc_tilemap);
+        app.add_systems(OnExit(AppState::AssetsLoading), preprocess_tilemap_assets);
         app.add_systems(Update, (
             (
                 setup_tilemap::<Hex>
@@ -84,6 +86,40 @@ fn prealloc_tilemap(
     world.insert_resource(Tilemaps {
         base, digit, road, gent, overlay, reghighlight,
     })
+}
+
+fn preprocess_tilemap_assets(
+    gas: Res<GameAssets>,
+    ast: Res<Assets<TextureAtlas>>,
+    proc: ResMut<ArrayTextureLoader>,
+) {
+    let tile_size = TilemapTileSize {
+        x: 128.0, y: 128.0,
+    };
+    proc.add(TilemapArrayTexture {
+        texture: TilemapTexture::Single(
+            ast.get(&gas.sprites).unwrap().texture.clone(),
+        ),
+        tile_size,
+        filter: Some(FilterMode::Linear),
+        ..Default::default()
+    });
+    proc.add(TilemapArrayTexture {
+        texture: TilemapTexture::Single(
+            ast.get(&gas.roads6).unwrap().texture.clone(),
+        ),
+        tile_size,
+        filter: Some(FilterMode::Linear),
+        ..Default::default()
+    });
+    proc.add(TilemapArrayTexture {
+        texture: TilemapTexture::Single(
+            ast.get(&gas.roads4).unwrap().texture.clone(),
+        ),
+        tile_size,
+        filter: Some(FilterMode::Linear),
+        ..Default::default()
+    });
 }
 
 fn setup_tilemap<C: Coord>(
@@ -212,12 +248,6 @@ fn setup_tilemap<C: Coord>(
         transform: get_tilemap_center_transform(&tm_size, &grid_size, &map_type, zpos::ROAD),
         ..Default::default()
     });
-
-    // world.resource_mut::<ArrayTextureLoader>().add(TilemapArrayTexture {
-    //     texture: TilemapTexture::Single(atlas_img.clone()),
-    //     tile_size,
-    //     ..Default::default()
-    // });
 
     world.insert_resource(index);
 
