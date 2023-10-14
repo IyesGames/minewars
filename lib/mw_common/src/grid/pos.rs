@@ -14,6 +14,12 @@ impl Pos {
     pub fn origin() -> Self {
         Pos(0, 0)
     }
+    pub fn x(self) -> i8 {
+        self.1
+    }
+    pub fn y(self) -> i8 {
+        self.0
+    }
 }
 
 impl Mul<i8> for Pos {

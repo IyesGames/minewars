@@ -41,6 +41,13 @@ impl Coord for Hex {
         Hex(0, 0)
     }
 
+    fn x(self) -> i8 {
+        self.1
+    }
+    fn y(self) -> i8 {
+        self.0
+    }
+
     fn distance(self, other: Self) -> u16 {
         let a0 = self.0;
         let a1 = self.1;

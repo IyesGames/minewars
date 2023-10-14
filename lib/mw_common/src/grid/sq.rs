@@ -41,6 +41,13 @@ impl Coord for Sq {
         Sq(0, 0)
     }
 
+    fn x(self) -> i8 {
+        self.1
+    }
+    fn y(self) -> i8 {
+        self.0
+    }
+
     fn distance(self, other: Self) -> u16 {
         let dy = (self.0 as i16 - other.0 as i16).abs() as u16;
         let dx = (self.1 as i16 - other.1 as i16).abs() as u16;

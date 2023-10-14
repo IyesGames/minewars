@@ -19,9 +19,9 @@ impl Plugin for Gfx2dSpritesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (
             (
-                setup_base_tile::<Hex>
+                setup_tilemap::<Hex>
                     .in_set(MapTopologySet(Topology::Hex)),
-                setup_base_tile::<Sq>
+                setup_tilemap::<Sq>
                     .in_set(MapTopologySet(Topology::Sq)),
             )
                 .in_set(Gfx2dTileSetupSet)
@@ -41,7 +41,7 @@ impl Plugin for Gfx2dSpritesPlugin {
         ).in_set(Gfx2dSet::Sprites));
         app.add_systems(OnEnter(AppState::InGame), (
             setup_cursor,
-        ));
+        ).in_set(Gfx2dSet::Any));
         app.add_systems(Update, (
             (
                 cursor_sprite::<Hex>
@@ -121,7 +121,7 @@ fn cursor_sprite<C: Coord>(
     xf.translation = Vec3::new(trans.x * width, trans.y * height, super::zpos::CURSOR);
 }
 
-fn setup_base_tile<C: Coord>(
+fn setup_tilemap<C: Coord>(
     world: &mut World,
 ) {
     let texture_atlas = world.resource::<GameAssets>().sprites.clone();
@@ -154,6 +154,7 @@ fn setup_base_tile<C: Coord>(
     }
     world.insert_resource(index);
     world.insert_resource(TilemapInitted);
+    debug!("Initialized map using Sprites renderer.");
 }
 
 fn tile_kind<C: Coord>(
