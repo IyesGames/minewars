@@ -44,7 +44,6 @@ pub enum MapUpdateSet {
     TileDigit,
     TileGent,
     TileRoads,
-    TileFlag,
 }
 
 #[derive(Resource)]
@@ -79,10 +78,6 @@ pub struct TileRegion(pub u8);
 #[derive(Component)]
 pub struct TileOwner(pub PlayerId);
 
-/// Plid who has a flag/mark on the tile
-#[derive(Component)]
-pub struct TileFlag(pub PlayerId);
-
 /// Any minesweeper digit to be displayed on the tile.
 ///
 /// The `u8` is the digit value (`0` means no digit).
@@ -113,6 +108,8 @@ pub enum TileGent {
     /// Tile contains a non-road structure
     /// (ignore roads, represent them using `TileRoads` instead)
     Structure(StructureKind),
+    /// Tile contains a Flag (placed by the given player)
+    Flag(PlayerId),
 }
 
 /// Visibility level of the given tile
@@ -156,7 +153,6 @@ pub struct LandTileBundle {
     pub digit: TileDigit,
     pub gent: TileGent,
     pub roads: TileRoads,
-    pub flag: TileFlag,
 }
 
 /// Components of resource clusters (mountain, forest)
@@ -240,7 +236,6 @@ pub fn setup_map<C: Coord, D>(
                     digit: TileDigit(0, false),
                     gent: TileGent::Empty,
                     roads: TileRoads(0),
-                    flag: TileFlag(PlayerId::Neutral),
                 }).id()
             } else if tilekind.is_rescluster() {
                 world.spawn(ResClusterTileBundle {

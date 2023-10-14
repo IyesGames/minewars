@@ -13,18 +13,16 @@ impl Plugin for MapUpdatePlugin {
                 event_kind::<Hex>.in_set(MapUpdateSet::TileKind),
                 event_owner::<Hex>.in_set(MapUpdateSet::TileOwner),
                 event_digit::<Hex>.in_set(MapUpdateSet::TileDigit),
-                event_flag::<Hex>.in_set(MapUpdateSet::TileFlag),
                 (
-                    (event_item::<Hex>, event_explosion::<Hex>).chain(),
+                    (event_gents::<Hex>, event_explosion::<Hex>).chain(),
                 ).in_set(MapUpdateSet::TileGent),
             ).in_set(MapTopologySet(Topology::Hex)),
             (
                 event_kind::<Sq>.in_set(MapUpdateSet::TileKind),
                 event_owner::<Sq>.in_set(MapUpdateSet::TileOwner),
                 event_digit::<Sq>.in_set(MapUpdateSet::TileDigit),
-                event_flag::<Sq>.in_set(MapUpdateSet::TileFlag),
                 (
-                    (event_item::<Sq>, event_explosion::<Sq>).chain(),
+                    (event_gents::<Sq>, event_explosion::<Sq>).chain(),
                 ).in_set(MapUpdateSet::TileGent),
             ).in_set(MapTopologySet(Topology::Sq)),
         ).in_set(NeedsMapSet).after(GameEventSet).after(ViewSwitchSet));
@@ -96,25 +94,7 @@ fn event_digit<C: Coord>(
     }
 }
 
-fn event_flag<C: Coord>(
-    mut evr: EventReader<GameEvent>,
-    viewing: Res<PlidViewing>,
-    index: Res<MapTileIndex<C>>,
-    mut q_tile: Query<&mut TileFlag>,
-) {
-    for ev in evr.iter() {
-        if ev.plid != viewing.0 {
-            continue;
-        }
-        if let MwEv::Map { pos, ev: MapEv::Flag { plid }} = ev.ev {
-            if let Ok(mut tileflag) = q_tile.get_mut(index.0[pos.into()]) {
-                tileflag.0 = plid;
-            }
-        }
-    }
-}
-
-fn event_item<C: Coord>(
+fn event_gents<C: Coord>(
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
     index: Res<MapTileIndex<C>>,
@@ -124,13 +104,22 @@ fn event_item<C: Coord>(
         if ev.plid != viewing.0 {
             continue;
         }
-        if let MwEv::Map { pos, ev: MapEv::Item { kind }} = ev.ev {
-            if let Ok(mut tilegent) = q_tile.get_mut(index.0[pos.into()]) {
-                match *tilegent {
-                    TileGent::Empty | TileGent::Item(_) => {
-                        *tilegent = TileGent::Item(kind);
-                    }
-                    TileGent::Cit(_) | TileGent::Structure(_) => {}
+        let (pos, gent) = match ev.ev {
+            MwEv::Map { pos, ev: MapEv::Flag { plid }} => {
+                (pos, TileGent::Flag(plid))
+            }
+            MwEv::Map { pos, ev: MapEv::Item { kind }} => {
+                (pos, TileGent::Item(kind))
+            }
+            // TODO: structures
+            _ => continue,
+        };
+        if let Ok(mut tilegent) = q_tile.get_mut(index.0[pos.into()]) {
+            match *tilegent {
+                // Cits are important, protect them against bad updates
+                TileGent::Cit(_) => continue,
+                _ => {
+                    *tilegent = gent;
                 }
             }
         }

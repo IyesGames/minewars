@@ -33,7 +33,6 @@ impl Plugin for Gfx2dSpritesPlugin {
                     .in_set(MapTopologySet(Topology::Sq)),
                 tile_owner.after(MapUpdateSet::TileOwner),
                 tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
-                tile_flag_sprite_mgr.after(MapUpdateSet::TileFlag),
                 tile_gent_sprite_mgr.after(MapUpdateSet::TileGent),
                 explosion_sprite_mgr,
             )
@@ -67,9 +66,6 @@ struct TileDigitEntity(Entity);
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 struct TileGentEntity(Entity);
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-struct TileFlagEntity(Entity);
 
 fn setup_cursor(
     mut commands: Commands,
@@ -256,68 +252,11 @@ fn tile_digit_sprite_mgr(
     }
 }
 
-fn tile_flag_sprite_mgr(
-    settings: Res<AllSettings>,
-    viewing: Res<PlidViewing>,
-    mut commands: Commands,
-    assets: Res<GameAssets>,
-    q_tile: Query<
-        (Entity, &MwTilePos, &TileFlag, &Transform, Option<&TileFlagEntity>),
-        (With<BaseSprite>, Changed<TileFlag>)
-    >,
-    mut q_flag: Query<&mut TextureAtlasSprite, With<FlagSprite>>,
-) {
-    for (e, coord, flag, xf, spr_flag) in q_tile.iter() {
-        let mut trans = xf.translation;
-        trans.z += zpos::OVERLAYS;
-
-        let (i_flag, color) = if flag.0 == viewing.0 {
-            (
-                super::sprite::FLAGS + settings.player_colors.flag_style as usize,
-                Color::WHITE,
-            )
-        } else {
-            (
-                super::sprite::FLAGS,
-                settings.player_colors.visible[flag.0.i()].into(),
-            )
-        };
-
-        if let Some(spr_flag) = spr_flag {
-            // there is an existing flag entity we can reuse (or despawn)
-            if flag.0 != PlayerId::Neutral {
-                let e_flag = spr_flag.0;
-                let mut sprite = q_flag.get_mut(e_flag).unwrap();
-                sprite.index = i_flag;
-                sprite.color = color;
-            } else {
-                commands.entity(spr_flag.0).despawn();
-                commands.entity(e).remove::<TileFlagEntity>();
-            }
-        } else if flag.0 != PlayerId::Neutral {
-            // create a new flag entity
-            let e_flag = commands.spawn((
-                SpriteSheetBundle {
-                    sprite: TextureAtlasSprite {
-                        index: i_flag,
-                        color,
-                        ..Default::default()
-                    },
-                    texture_atlas: assets.sprites.clone(),
-                    transform: Transform::from_translation(trans),
-                    ..Default::default()
-                },
-                FlagSprite,
-                MwTilePos(coord.0),
-            )).id();
-            commands.entity(e).insert(TileFlagEntity(e_flag));
-        }
-    }
-}
-
 fn tile_gent_sprite_mgr(
     mut commands: Commands,
+    settings: Res<AllSettings>,
     assets: Res<GameAssets>,
+    viewing: Res<PlidViewing>,
     q_tile: Query<
         (Entity, &MwTilePos, &TileGent, &Transform, Option<&TileGentEntity>),
         (With<BaseSprite>, Changed<TileGent>)
@@ -328,31 +267,41 @@ fn tile_gent_sprite_mgr(
         let mut trans = xf.translation;
         trans.z += zpos::DIGIT;
 
-        let i_gent = match gent {
-            TileGent::Empty | TileGent::Item(ItemKind::Safe) => {
+        let (i_gent, clr_gent) = match gent {
+            TileGent::Empty |
+            TileGent::Item(ItemKind::Safe) |
+            TileGent::Flag(PlayerId::Neutral)=> {
                 if let Some(spr_gent) = spr_gent {
                     commands.entity(spr_gent.0).despawn();
                     commands.entity(e).remove::<TileGentEntity>();
                 }
                 continue;
             }
-            TileGent::Item(kind) => {
-                match kind {
-                    ItemKind::Mine => super::sprite::GENT_MINE,
-                    ItemKind::Decoy => super::sprite::GENT_DECOY,
-                    ItemKind::Flashbang => super::sprite::GENT_FLASH,
-                    ItemKind::Safe => unreachable!(),
+            TileGent::Flag(plid) => {
+                if *plid == viewing.0 {
+                    (
+                        super::sprite::FLAGS + settings.player_colors.flag_style as usize,
+                        Color::WHITE,
+                    )
+                } else {
+                    (
+                        super::sprite::FLAGS,
+                        settings.player_colors.visible[plid.i()].into(),
+                    )
                 }
             }
+            TileGent::Item(ItemKind::Mine) => (super::sprite::GENT_MINE, Color::WHITE),
+            TileGent::Item(ItemKind::Decoy) =>(super::sprite::GENT_DECOY, Color::WHITE),
+            TileGent::Item(ItemKind::Flashbang) => (super::sprite::GENT_FLASH, Color::WHITE),
             TileGent::Structure(kind) => {
-                match kind {
+                (match kind {
                     StructureKind::Barricade => super::sprite::GENT_WALL,
                     StructureKind::WatchTower => super::sprite::GENT_TOWER,
                     StructureKind::Bridge => todo!(),
                     StructureKind::Road => panic!("Roads must use TileRoads, not TileGent"),
-                }
+                }, Color::WHITE)
             }
-            TileGent::Cit(_) => super::sprite::GENT_CIT,
+            TileGent::Cit(_) => (super::sprite::GENT_CIT, Color::WHITE),
         };
 
         if let Some(spr_gent) = spr_gent {
@@ -360,12 +309,14 @@ fn tile_gent_sprite_mgr(
             let e_gent = spr_gent.0;
             let mut sprite = q_gent.get_mut(e_gent).unwrap();
             sprite.index = i_gent;
+            sprite.color = clr_gent;
         } else {
             // create a new gent entity
             let e_gent = commands.spawn((
                 SpriteSheetBundle {
                     sprite: TextureAtlasSprite {
                         index: i_gent,
+                        color: clr_gent,
                         ..Default::default()
                     },
                     texture_atlas: assets.sprites.clone(),

@@ -60,7 +60,6 @@ impl Plugin for GameViewPlugin {
             (
                 switch_view_update_map_tilekind::<Hex>.in_set(MapUpdateSet::TileKind),
                 switch_view_update_map_owners::<Hex>.in_set(MapUpdateSet::TileOwner),
-                switch_view_update_map_flags::<Hex>.in_set(MapUpdateSet::TileFlag),
                 switch_view_update_map_digits::<Hex>.in_set(MapUpdateSet::TileDigit),
                 switch_view_update_map_gents::<Hex>.in_set(MapUpdateSet::TileGent),
                 switch_view_update_map_roads::<Hex>.in_set(MapUpdateSet::TileRoads),
@@ -68,7 +67,6 @@ impl Plugin for GameViewPlugin {
             (
                 switch_view_update_map_tilekind::<Sq>.in_set(MapUpdateSet::TileKind),
                 switch_view_update_map_owners::<Sq>.in_set(MapUpdateSet::TileOwner),
-                switch_view_update_map_flags::<Sq>.in_set(MapUpdateSet::TileFlag),
                 switch_view_update_map_digits::<Sq>.in_set(MapUpdateSet::TileDigit),
                 switch_view_update_map_gents::<Sq>.in_set(MapUpdateSet::TileGent),
                 switch_view_update_map_roads::<Sq>.in_set(MapUpdateSet::TileRoads),
@@ -221,24 +219,6 @@ fn switch_view_update_map_digits<C: Coord>(
     }
 }
 
-fn switch_view_update_map_flags<C: Coord>(
-    viewing: Res<PlidViewing>,
-    players: Res<PlayersIndex>,
-    q_view: Query<&ViewMapData<C>>,
-    mut q_maptile: Query<(&MwTilePos, &mut TileFlag)>,
-) {
-    let e_view = players.0[viewing.0.i()];
-    let Ok(viewdata) = q_view.get(e_view) else {
-        error!("View for {:?} does not exist!", viewing.0);
-        return;
-    };
-    for (pos, mut flag) in q_maptile.iter_mut() {
-        let c: C = pos.0.into();
-        let tiledata = &viewdata.0[c];
-        flag.0 = tiledata.flag().into();
-    }
-}
-
 fn switch_view_update_map_gents<C: Coord>(
     viewing: Res<PlidViewing>,
     players: Res<PlayersIndex>,
@@ -257,15 +237,16 @@ fn switch_view_update_map_gents<C: Coord>(
         if let TileGent::Cit(_) = *gent {
             continue;
         }
+        let item = tiledata.item();
+        let flag = PlayerId::from(tiledata.flag());
         *gent = if tiledata.has_structure() {
             TileGent::Structure(tiledata.structure())
+        } else if flag != PlayerId::Neutral {
+            TileGent::Flag(flag)
+        } else if item != ItemKind::Safe {
+            TileGent::Item(item)
         } else {
-            let item = tiledata.item();
-            if item != ItemKind::Safe {
-                TileGent::Item(item)
-            } else {
-                TileGent::Empty
-            }
+            TileGent::Empty
         };
     }
 }
