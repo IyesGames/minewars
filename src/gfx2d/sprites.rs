@@ -35,6 +35,7 @@ impl Plugin for Gfx2dSpritesPlugin {
                 tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
                 tile_gent_sprite_mgr.after(MapUpdateSet::TileGent),
                 explosion_sprite_mgr,
+                sprites_reghighlight,
             )
                 .run_if(resource_exists::<TilemapInitted>()),
         ).in_set(Gfx2dSet::Sprites));
@@ -211,7 +212,7 @@ fn tile_digit_sprite_mgr(
 ) {
     for (e, coord, digit, xf, spr_digit) in q_tile.iter() {
         let mut trans = xf.translation;
-        trans.z += zpos::DIGIT;
+        trans.z = zpos::DIGIT;
 
         let i_dig = if digit.1 {
             super::sprite::DIGSTAR + digit.0 as usize
@@ -262,7 +263,7 @@ fn tile_gent_sprite_mgr(
 ) {
     for (e, coord, gent, xf, spr_gent) in q_tile.iter() {
         let mut trans = xf.translation;
-        trans.z += zpos::DIGIT;
+        trans.z = zpos::GENTS;
 
         let (i_gent, clr_gent) = match gent {
             TileGent::Empty |
@@ -349,7 +350,7 @@ fn explosion_sprite_mgr(
             // we have an entity with no sprite, set up the sprite
             let xf = q_tile.get(expl.0).unwrap();
             let mut trans = xf.translation;
-            trans.z += zpos::OVERLAYS;
+            trans.z = zpos::OVERLAYS;
             let i_expl = match expl.1 {
                 TileExplosionKind::Normal => super::sprite::EXPLOSION_MINE,
                 TileExplosionKind::Decoy => super::sprite::EXPLOSION_DECOY,
@@ -368,6 +369,58 @@ fn explosion_sprite_mgr(
                     ..Default::default()
                 },
             ));
+        }
+    }
+}
+
+fn sprites_reghighlight(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    mapdesc: Res<MapDescriptor>,
+    cursor_tile: Res<GridCursorTileEntity>,
+    q_highlight: Query<Entity, With<RegHighlightSprite>>,
+    q_tile: Query<(&Transform, &TileRegion), With<BaseSprite>>,
+    mut last_region: Local<Option<u8>>,
+) {
+    if let Some(e_tile) = cursor_tile.0 {
+        let Ok(region) = q_tile.get(e_tile) else {
+            return;
+        };
+        let region = region.1.0;
+        if *last_region != Some(region) {
+            *last_region = Some(region);
+            // clear old
+            for e in &q_highlight {
+                commands.entity(e).despawn_recursive();
+            }
+            // create new
+            let index = match mapdesc.topology {
+                Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_CURSOR,
+                Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_CURSOR,
+            };
+            for (xf, tile_region) in &q_tile {
+                let mut trans = xf.translation;
+                trans.z = zpos::REGHILIGHT;
+                if tile_region.0 == region {
+                    let e_tile = commands.spawn((
+                        RegHighlightSprite,
+                        SpriteSheetBundle {
+                            sprite: TextureAtlasSprite {
+                                index,
+                                color: Color::WHITE.with_a(0.25),
+                                ..Default::default()
+                            },
+                            texture_atlas: assets.sprites.clone(),
+                            transform: Transform::from_translation(trans),
+                            ..Default::default()
+                        },
+                    )).id();
+                }
+            }
+        }
+    } else {
+        for e in &q_highlight {
+            commands.entity(e).despawn_recursive();
         }
     }
 }
