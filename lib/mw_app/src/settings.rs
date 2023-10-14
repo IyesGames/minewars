@@ -282,7 +282,7 @@ impl Default for MapGenSettings {
             } else {
                 MapGenStyle::Flat
             },
-            land_bias: 32,
+            land_bias: 48,
             seed: None,
         }
     }
