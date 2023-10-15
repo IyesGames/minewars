@@ -524,8 +524,8 @@ fn tilemap_reghighlight(
             }
             // create new
             let i = match mapdesc.topology {
-                Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_CURSOR,
-                Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_CURSOR,
+                Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_HIGHLIGHT,
+                Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_HIGHLIGHT,
             };
             let (e_tm, _, mut ts) = q_tm.single_mut();
             for (tilepos, tile_region) in &q_tile {

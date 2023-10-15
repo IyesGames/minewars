@@ -395,8 +395,8 @@ fn sprites_reghighlight(
             }
             // create new
             let index = match mapdesc.topology {
-                Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_CURSOR,
-                Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_CURSOR,
+                Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_HIGHLIGHT,
+                Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_HIGHLIGHT,
             };
             for (xf, tile_region) in &q_tile {
                 let mut trans = xf.translation;
