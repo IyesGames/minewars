@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 use bevy::reflect::{DynamicEnum, DynamicVariant};
+use bevy::diagnostic::LogDiagnosticsPlugin;
 
 use mw_app::GameEventSet;
 use mw_common::game::event::GameEvent;
@@ -9,11 +10,9 @@ pub struct DevPlugin;
 
 impl Plugin for DevPlugin {
     fn build(&self, app: &mut App) {
-        use bevy::diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
         app.register_clicommand_noargs("devmode", cli_devmode);
         app.register_clicommand_args("AppState", cli_appstate);
         app.add_plugins(LogDiagnosticsPlugin::default());
-        app.add_plugins(FrameTimeDiagnosticsPlugin::default());
         app.add_systems(
             Last,
             debug_progress

@@ -4,6 +4,7 @@ mod console;
 mod hud;
 mod menu;
 mod notify;
+mod perf;
 mod tooltip;
 mod widget;
 
@@ -16,6 +17,7 @@ impl Plugin for UiPlugin {
             self::hud::HudPlugin,
             self::menu::MenuPlugin,
             self::notify::NotifyPlugin,
+            self::perf::PerfUiPlugin,
             self::tooltip::TooltipPlugin,
             self::widget::WidgetsPlugin,
         ));

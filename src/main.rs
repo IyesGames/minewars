@@ -71,6 +71,8 @@ fn main() {
     });
     app.add_plugins(bevy_plugins);
 
+    app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default());
+
     app.add_plugins(mw_app::MwCommonPlugin);
 
     // external plugins
