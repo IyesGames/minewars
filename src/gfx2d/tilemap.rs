@@ -500,11 +500,14 @@ fn overlay_tilemap_mgr(
 
 fn tilemap_reghighlight(
     mut commands: Commands,
+    settings: Res<AllSettings>,
     mapdesc: Res<MapDescriptor>,
+    cits: Res<CitIndex>,
     cursor_tile: Res<GridCursorTileEntity>,
     q_highlight: Query<Entity, With<RegHighlightSprite>>,
     q_tile: Query<(&TilePos, &TileRegion), With<BaseSprite>>,
     mut q_tm: Query<(Entity, &TilemapSize, &mut TileStorage), With<RegHighlightTilemap>>,
+    q_cit: Query<&CitOwner>,
     mut last_region: Local<Option<u8>>,
 ) {
     if let Some(e_tile) = cursor_tile.0 {
@@ -527,6 +530,18 @@ fn tilemap_reghighlight(
                 Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_HIGHLIGHT,
                 Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_HIGHLIGHT,
             };
+            let color = if let Some(e_cit) = cits.by_id.get(region as usize) {
+                let owner = q_cit.get(*e_cit).unwrap().0;
+                let mut lcha = settings.player_colors.visible[owner.i()];
+                lcha.0 *= 0.75;
+                lcha.1 *= 0.75;
+                let color = Color::from(lcha);
+                // FIXME: this is to work around bevy_ecs_tilemap broken sRGB
+                let rgba = color.as_linear_rgba_f32();
+                Color::rgba(rgba[0], rgba[1], rgba[2], rgba[3])
+            } else {
+                return;
+            };
             let (e_tm, _, mut ts) = q_tm.single_mut();
             for (tilepos, tile_region) in &q_tile {
                 if tile_region.0 == region {
@@ -537,7 +552,7 @@ fn tilemap_reghighlight(
                             texture_index: TileTextureIndex(i as u32),
                             tilemap_id: TilemapId(e_tm),
                             visible: TileVisible(true),
-                            color: TileColor(Color::WHITE.with_a(0.25)),
+                            color: TileColor(color),
                             ..Default::default()
                         }
                     )).id();

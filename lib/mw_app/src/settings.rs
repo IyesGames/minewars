@@ -225,7 +225,7 @@ impl Default for UiHudSettings {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
-pub struct Lcha(f32, f32, f32);
+pub struct Lcha(pub f32, pub f32, pub f32);
 
 impl From<Color> for Lcha {
     fn from(value: Color) -> Self {

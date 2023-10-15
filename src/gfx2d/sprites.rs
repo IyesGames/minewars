@@ -375,11 +375,14 @@ fn explosion_sprite_mgr(
 
 fn sprites_reghighlight(
     mut commands: Commands,
+    settings: Res<AllSettings>,
     assets: Res<GameAssets>,
     mapdesc: Res<MapDescriptor>,
+    cits: Res<CitIndex>,
     cursor_tile: Res<GridCursorTileEntity>,
     q_highlight: Query<Entity, With<RegHighlightSprite>>,
     q_tile: Query<(&Transform, &TileRegion), With<BaseSprite>>,
+    q_cit: Query<&CitOwner>,
     mut last_region: Local<Option<u8>>,
 ) {
     if let Some(e_tile) = cursor_tile.0 {
@@ -398,23 +401,32 @@ fn sprites_reghighlight(
                 Topology::Hex => super::sprite::TILES6 + super::sprite::TILE_HIGHLIGHT,
                 Topology::Sq => super::sprite::TILES4 + super::sprite::TILE_HIGHLIGHT,
             };
+            let color = if let Some(e_cit) = cits.by_id.get(region as usize) {
+                let owner = q_cit.get(*e_cit).unwrap().0;
+                let mut lcha = settings.player_colors.visible[owner.i()];
+                lcha.0 *= 0.75;
+                lcha.1 *= 0.75;
+                Color::from(lcha)
+            } else {
+                return;
+            };
             for (xf, tile_region) in &q_tile {
                 let mut trans = xf.translation;
                 trans.z = zpos::REGHILIGHT;
                 if tile_region.0 == region {
-                    let e_tile = commands.spawn((
+                    commands.spawn((
                         RegHighlightSprite,
                         SpriteSheetBundle {
                             sprite: TextureAtlasSprite {
                                 index,
-                                color: Color::WHITE.with_a(0.25),
+                                color,
                                 ..Default::default()
                             },
                             texture_atlas: assets.sprites.clone(),
                             transform: Transform::from_translation(trans),
                             ..Default::default()
                         },
-                    )).id();
+                    ));
                 }
             }
         }
