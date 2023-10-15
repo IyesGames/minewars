@@ -1,5 +1,3 @@
-use mw_game_minesweeper::MinesweeperSettings;
-
 use crate::prelude::*;
 
 pub struct SettingsPlugin;

@@ -66,7 +66,7 @@ pub struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);
 pub struct ItemIndex(pub HashMap<Pos, Entity>);
 
 #[derive(Resource)]
-struct CitIndex {
+pub struct CitIndex {
     pub by_pos: HashMap<Pos, Entity>,
     pub by_id: Vec<Entity>,
 }
@@ -187,7 +187,7 @@ pub struct ExplosionBundle {
 #[derive(Event)]
 pub struct RecomputeVisEvent(pub Option<Pos>);
 
-#[derive(Component)]
+#[derive(Bundle)]
 pub struct CitBundle {
     pub regid: CitRegion,
     pub owner: CitOwner,

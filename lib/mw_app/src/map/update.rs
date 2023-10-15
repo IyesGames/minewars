@@ -55,7 +55,9 @@ fn event_owner<C: Coord>(
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
     index: Res<MapTileIndex<C>>,
+    cits: Res<CitIndex>,
     mut q_tile: Query<&mut TileOwner>,
+    mut q_cit: Query<&mut CitOwner>,
 ) {
     for ev in evr.iter() {
         if ev.plid != viewing.0 {
@@ -70,6 +72,10 @@ fn event_owner<C: Coord>(
                     );
                 }
                 owner.0 = plid;
+                if let Some(e_cit) = cits.by_pos.get(&pos) {
+                    let mut citowner = q_cit.get_mut(*e_cit).unwrap();
+                    citowner.0 = plid;
+                }
             }
         }
     }
