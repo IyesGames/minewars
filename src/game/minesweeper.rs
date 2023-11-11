@@ -1,8 +1,6 @@
-use crate::input::GameInputSet;
-use crate::input::MouseClick;
 use crate::prelude::*;
-use mw_app::camera::GridCursor;
 use mw_app::settings::MapGenStyle;
+use mw_app::tool::*;
 use mw_app::view::*;
 use mw_app::bevyhost::*;
 use mw_app::player::*;
@@ -34,7 +32,7 @@ impl Plugin for MinesweeperGameplayPlugin {
         app.add_systems(Update, (
             minesweeper_input
                 .in_set(InGameSet(Some(GameMode::Minesweeper)))
-                .in_set(GameInputSet),
+                .in_set(ToolEventHandlerSet),
         ));
     }
 }
@@ -109,22 +107,23 @@ fn setup_minesweeper_playground_flatmap<C: Coord>(
     world.resource_mut::<NextState<SessionKind>>().set(SessionKind::BevyHost);
 }
 
-// TODO: replace this with something more elaborate?
 fn minesweeper_input(
-    crs: Res<GridCursor>,
-    mut evr_mouse: EventReader<MouseClick>,
+    mut evr_tool: EventReader<ToolEvent>,
     mut evw: EventWriter<MinesweeperInputAction>,
 ) {
-    for ev in evr_mouse.iter() {
-        if ev.0 == MouseButton::Left {
-            evw.send(MinesweeperInputAction::ExploreTile {
-                pos: crs.0,
-            });
-        }
-        if ev.0 == MouseButton::Right {
-            evw.send(MinesweeperInputAction::ToggleFlag {
-                pos: crs.0,
-            });
+    for ev in evr_tool.iter() {
+        match (ev.tool, ev.state) {
+            (Tool::Explore, ToolState::Select(pos)) => {
+                evw.send(MinesweeperInputAction::ExploreTile {
+                    pos,
+                });
+            }
+            (Tool::Flag, ToolState::Select(pos)) => {
+                evw.send(MinesweeperInputAction::ToggleFlag {
+                    pos,
+                });
+            }
+            _ => {}
         }
     }
 }

@@ -18,7 +18,6 @@ mod assets;
 mod cli;
 mod game;
 mod gfx2d;
-mod input;
 mod locale;
 mod minimap;
 mod net;
@@ -83,6 +82,7 @@ fn main() {
         bevy_fluent::FluentPlugin,
         ProgressPlugin::new(AppState::AssetsLoading).continue_to(AppState::SplashIyes),
         iyes_ui::UiExtrasPlugin,
+        InputManagerPlugin::<mw_app::input::InputAction>::default(),
     ));
 
     // our stuff
@@ -96,7 +96,6 @@ fn main() {
         crate::cli::CliPlugin,
         crate::ui::UiPlugin,
         crate::settings::SettingsPlugin,
-        crate::input::InputPlugin,
         crate::gfx2d::Gfx2dPlugin,
         crate::game::GameplayPlugin,
         crate::minimap::MinimapPlugin,
