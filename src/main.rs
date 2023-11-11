@@ -98,7 +98,10 @@ fn main() {
             },
         }
     });
-    app.add_plugins(bevy_plugins);
+    app.add_plugins(
+        bevy_plugins.build()
+            .disable::<bevy::render::pipelined_rendering::PipelinedRenderingPlugin>()
+    );
 
     app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default());
 
