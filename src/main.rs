@@ -68,6 +68,36 @@ fn main() {
         filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=info".into(),
         level: bevy::log::Level::INFO,
     });
+    let compute_threads = {
+        let physical = num_cpus::get_physical();
+        let logical = num_cpus::get();
+        if physical < 4 {
+            logical
+        } else {
+            physical
+        }
+    };
+    let bevy_plugins = bevy_plugins.set(TaskPoolPlugin {
+        task_pool_options: TaskPoolOptions {
+            min_total_threads: 1,
+            max_total_threads: std::usize::MAX,
+            io: bevy::core::TaskPoolThreadAssignmentPolicy {
+                min_threads: 2,
+                max_threads: 4,
+                percent: 0.25,
+            },
+            async_compute: bevy::core::TaskPoolThreadAssignmentPolicy {
+                min_threads: 2,
+                max_threads: 4,
+                percent: 0.25,
+            },
+            compute: bevy::core::TaskPoolThreadAssignmentPolicy {
+                min_threads: compute_threads,
+                max_threads: std::usize::MAX,
+                percent: 1.0,
+            },
+        }
+    });
     app.add_plugins(bevy_plugins);
 
     app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default());
