@@ -21,4 +21,5 @@ fn rc_accepting_mouse_input(
 
 pub fn add_minewars_defaults(map: &mut InputMap<InputAction>) {
     map.insert(MouseButton::Left, InputAction::UseCurrentTool);
+    // map.insert(MouseButton::Right, InputAction::UseTool(Tool::Flag));
 }

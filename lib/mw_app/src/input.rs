@@ -18,6 +18,7 @@ impl Plugin for InputPlugin {
         ));
         app.add_systems(Startup, setup_input);
         app.add_systems(Update, (
+            input_workaround_lwim.before(input_tool_event),
             input_tool_event.before(ToolEventHandlerSet),
         ));
     }
@@ -63,6 +64,19 @@ fn setup_input(mut commands: Commands) {
         action_state: ActionState::default(),
         input_map: new_map_with_minewars_defaults(),
     });
+}
+
+fn input_workaround_lwim(
+    crs: Res<GridCursor>,
+    mut evw_tool: EventWriter<ToolEvent>,
+    mousebtn: Res<Input<MouseButton>>,
+) {
+    if mousebtn.just_pressed(MouseButton::Middle) {
+        evw_tool.send(ToolEvent {
+            tool: Tool::Flag,
+            state: ToolState::Select(crs.0),
+        });
+    }
 }
 
 fn input_tool_event(
