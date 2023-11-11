@@ -3,6 +3,7 @@ use derive_more::*;
 use std::iter::FusedIterator;
 use std::ops::{Mul, MulAssign};
 
+use crate::prelude::*;
 use super::pos::Pos;
 use super::{Coord, OutOfBoundsError};
 
@@ -10,6 +11,8 @@ use super::{Coord, OutOfBoundsError};
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Add, AddAssign, Sub, SubAssign, Neg,
 )]
+#[derive(Serialize, Deserialize)]
+#[serde(from = "(i8, i8)", into = "(i8, i8)")]
 pub struct Sq(pub i8, pub i8);
 
 impl From<Pos> for Sq {
@@ -203,6 +206,12 @@ impl From<Sq> for glam::IVec2 {
     fn from(c: Sq) -> Self {
         let (y, x): (i8, i8) = c.into();
         glam::IVec2::new(x as i32, y as i32)
+    }
+}
+
+impl From<(i8, i8)> for Sq {
+    fn from(value: (i8, i8)) -> Self {
+        Sq(value.0, value.1)
     }
 }
 
