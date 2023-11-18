@@ -38,7 +38,7 @@ cargo run --features dev
 
 (the `dev` feature enables extra functionality not present in release builds)
 
-The [minewars-proprietary-stub](https://github.com/IyesGames/minewars-proprietary-shim)
+The [minewars-proprietary-shim](https://github.com/IyesGames/minewars-proprietary-shim)
 repo is what makes this possible, by providing open-source stubs that will be
 used instead of the real proprietary code.
 
