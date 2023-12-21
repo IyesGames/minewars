@@ -23,6 +23,9 @@ impl Plugin for InputPlugin {
             GameInputSet::Process
                 .in_set(InStateSet(AppState::InGame))
                 .after(GameInputSet::Collect),
+            GameInputSet::ProcessEvents
+                .in_set(GameInputSet::Process)
+                .run_if(on_event::<InputAction>()),
         ));
         app.add_plugins((
             gamepad::GamepadInputPlugin,
@@ -32,7 +35,7 @@ impl Plugin for InputPlugin {
         ));
         app.add_systems(OnEnter(AppState::InGame), clear_game_input);
         app.add_systems(Update, (
-            input_tool_event.in_set(GameInputSet::Process).before(ToolEventHandlerSet),
+            input_tool_event.in_set(GameInputSet::ProcessEvents).before(ToolEventHandlerSet),
         ));
     }
 }
@@ -41,6 +44,7 @@ impl Plugin for InputPlugin {
 pub enum GameInputSet {
     Collect,
     Process,
+    ProcessEvents,
 }
 
 /// If any entities with this component exist, gameplay input handling is suspended
@@ -90,7 +94,7 @@ fn activate_input(
 }
 fn deactivate_input(
     input: InputAction,
-    analog_source: AnalogSource,
+    _analog_source: AnalogSource,
     analogs: &mut ResMut<ActiveAnalogs>,
 ) {
     match input {

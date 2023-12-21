@@ -1,9 +1,9 @@
 use bevy::{input::mouse::{MouseMotion, MouseWheel, MouseScrollUnit}, window::PrimaryWindow};
 use bevy_tweening::*;
 use mw_common::{game::MapDescriptor, grid::*};
-use mw_app::camera::*;
+use mw_app::{camera::*, input::InputAction};
 
-use crate::{prelude::*, ui::UiCamera};
+use crate::{prelude::*, ui::UiCamera, input::GameInputSet};
 
 use super::Gfx2dSet;
 
@@ -15,10 +15,11 @@ impl Plugin for Gfx2dCameraPlugin {
         app.add_systems(OnEnter(AppState::InGame), setup_game_camera.in_set(Gfx2dSet::Any));
         app.add_systems(Update, (
             camera_control_zoom_mousewheel,
+            inputaction_zoom
+                .in_set(GameInputSet::ProcessEvents),
         )
          .in_set(CameraControlSet)
          .in_set(Gfx2dSet::Any)
-         .after(iyes_bevy_extras::d2::WorldCursorSet)
         );
         app.add_systems(Update, (
             grid_cursor,
@@ -83,6 +84,36 @@ impl Lens<OrthographicProjection> for ProjectionScaleLens {
     fn lerp(&mut self, target: &mut OrthographicProjection, ratio: f32) {
         let scale = self.start + (self.end - self.start) * ratio;
         target.scale = scale;
+    }
+}
+
+fn inputaction_zoom(
+    mut commands: Commands,
+    settings: Res<AllSettings>,
+    q_cam: Query<(Entity, &OrthographicProjection), With<GameCamera>>,
+    q_wnd: Query<&Window, With<PrimaryWindow>>,
+    mut evr_action: EventReader<InputAction>,
+) {
+    for ev in evr_action.iter() {
+        if let InputAction::ZoomCamera(lines) = ev {
+            if *lines != 0.0 {
+                let wnd = q_wnd.single();
+                let (e_cam, proj) = q_cam.single();
+
+                let newscale = ((proj.scale as f64 / wnd.scale_factor()).round() + *lines as f64).clamp(1.0, 8.0) * wnd.scale_factor();
+
+                let dur = Duration::from_millis(settings.camera.zoom_tween_duration_ms as u64);
+                let tween = Animator::new(Tween::new(
+                    EaseFunction::QuadraticOut,
+                    dur,
+                    ProjectionScaleLens {
+                        start: proj.scale,
+                        end: newscale as f32,
+                    }
+                ));
+                commands.entity(e_cam).insert(tween);
+            }
+        }
     }
 }
 
