@@ -75,6 +75,7 @@ pub struct KeyboardSettings {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct GamepadSettings {
+    pub pan_sens: f32,
     pub buttonmap: HashMap<GamepadButtonType, InputAction>,
     pub axismap: HashMap<GamepadAxisType, InputAction>,
 }
@@ -278,6 +279,7 @@ impl Default for GamepadSettings {
         axismap.insert(GamepadAxisType::RightStickX, InputAction::Analog(AnalogInput::PanCamera));
         axismap.insert(GamepadAxisType::RightStickY, InputAction::Analog(AnalogInput::PanCamera));
         GamepadSettings {
+            pan_sens: 800.0,
             buttonmap,
             axismap,
         }

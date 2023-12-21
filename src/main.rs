@@ -15,6 +15,7 @@ use crate::prelude::*;
 
 mod assets;
 mod cli;
+mod input;
 mod game;
 mod gfx2d;
 mod locale;
@@ -124,6 +125,7 @@ fn main() {
         crate::assets::AssetsPlugin,
         crate::locale::LocalePlugin,
         crate::cli::CliPlugin,
+        crate::input::InputPlugin,
         crate::ui::UiPlugin,
         crate::settings::SettingsPlugin,
         crate::gfx2d::Gfx2dPlugin,

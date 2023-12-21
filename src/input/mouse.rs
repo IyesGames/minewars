@@ -3,10 +3,13 @@ use bevy::input::{mouse::MouseButtonInput, ButtonState};
 use crate::prelude::*;
 use super::*;
 
+mod gfx2d;
+
 pub struct MouseInputPlugin;
 
 impl Plugin for MouseInputPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(gfx2d::Gfx2dMouseInputPlugin);
         app.add_systems(Update, (
             collect_actions_mousebtn
                 .in_set(GameInputSet::Collect)
@@ -25,13 +28,15 @@ fn collect_actions_mousebtn(
         if let Some(action) = settings.input.mouse.map.get(&ev.button) {
             match ev.state {
                 ButtonState::Pressed => {
-                    action.activate(
+                    activate_input(
+                        *action,
                         AnalogSource::MouseMotion,
                         &mut evw_action, &mut analogs,
                     );
                 }
                 ButtonState::Released => {
-                    action.deactivate(
+                    deactivate_input(
+                        *action,
                         AnalogSource::MouseMotion,
                         &mut analogs,
                     );

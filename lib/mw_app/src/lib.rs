@@ -30,13 +30,12 @@ impl Plugin for MwCommonPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<mw_common::game::event::GameEvent>();
         app.add_plugins((
-            appstate::AppStatesPlugin,
-            camera::MwCameraPlugin,
-            tool::ToolPlugin,
-            input::InputPlugin,
-            settings::SettingsPlugin,
-            map::MapPlugin,
-            view::GameViewPlugin,
+            crate::appstate::AppStatesPlugin,
+            crate::camera::MwCameraPlugin,
+            crate::tool::ToolPlugin,
+            crate::settings::SettingsPlugin,
+            crate::map::MapPlugin,
+            crate::view::GameViewPlugin,
         ));
     }
 }

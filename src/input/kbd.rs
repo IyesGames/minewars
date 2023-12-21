@@ -1,13 +1,15 @@
 use bevy::input::keyboard::KeyboardInput;
 
 use crate::prelude::*;
-
 use super::*;
 
-pub struct KbdInputPlugin;
+mod gfx2d;
 
-impl Plugin for KbdInputPlugin {
+pub struct KeyboardInputPlugin;
+
+impl Plugin for KeyboardInputPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(gfx2d::Gfx2dKeyboardInputPlugin);
         app.add_systems(Update, (
             collect_actions_key
                 .in_set(GameInputSet::Collect)
@@ -29,13 +31,15 @@ fn collect_actions_key(
             .or_else(|| ev.key_code.and_then(|k| settings.input.keyboard.keymap.get(&k)))
         {
             if kbd.just_pressed(ScanCode(ev.scan_code)) {
-                action.activate(
+                activate_input(
+                    *action,
                     AnalogSource::MouseMotion,
                     &mut evw_action, &mut analogs,
                 );
             }
             if kbd.just_released(ScanCode(ev.scan_code)) {
-                action.deactivate(
+                deactivate_input(
+                    *action,
                     AnalogSource::MouseMotion,
                     &mut analogs,
                 );
