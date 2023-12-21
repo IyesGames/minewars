@@ -1,5 +1,6 @@
+use bevy::input::keyboard::KeyboardInput;
+
 use crate::prelude::*;
-use leafwing_input_manager::axislike::VirtualAxis;
 
 use super::*;
 
@@ -7,36 +8,38 @@ pub struct KbdInputPlugin;
 
 impl Plugin for KbdInputPlugin {
     fn build(&self, app: &mut App) {
+        app.add_systems(Update, (
+            collect_actions_key
+                .in_set(GameInputSet::Collect)
+                .run_if(on_event::<KeyboardInput>()),
+        ));
     }
 }
 
-pub fn add_minewars_defaults(map: &mut InputMap<InputAction>) {
-    map.insert_modified(Modifier::Shift, KeyCode::Grave, InputAction::OpenDevConsole);
-    map.insert_modified(Modifier::Shift, KeyCode::Tab, InputAction::CycleToolPrev);
-    map.insert(KeyCode::Tab, InputAction::CycleToolNext);
-    map.insert(KeyCode::Return, InputAction::UseCurrentTool);
-    map.insert(KeyCode::Space, InputAction::UseCurrentTool);
-    map.insert(VirtualDPad::arrow_keys(), InputAction::PanCamera);
-    map.insert(KeyCode::Q, InputAction::SwitchTool(Tool::DeployMine));
-    map.insert(KeyCode::W, InputAction::SwitchTool(Tool::DeployDecoy));
-    map.insert(KeyCode::E, InputAction::SwitchTool(Tool::DeployTrap));
-    map.insert(KeyCode::R, InputAction::SwitchTool(Tool::Smoke));
-    map.insert(KeyCode::A, InputAction::SwitchTool(Tool::Explore));
-    map.insert(KeyCode::S, InputAction::SwitchTool(Tool::Flag));
-    map.insert(KeyCode::D, InputAction::SwitchTool(Tool::Reveal));
-    map.insert(KeyCode::F, InputAction::SwitchTool(Tool::Strike));
-    map.insert(KeyCode::G, InputAction::SwitchTool(Tool::Harvest));
-    map.insert(KeyCode::Z, InputAction::SwitchTool(Tool::RemoveStructure));
-    map.insert(KeyCode::X, InputAction::SwitchTool(Tool::BuildRoad));
-    map.insert(KeyCode::C, InputAction::SwitchTool(Tool::BuildBridge));
-    map.insert(KeyCode::V, InputAction::SwitchTool(Tool::BuildWall));
-    map.insert(KeyCode::B, InputAction::SwitchTool(Tool::BuildTower));
-    map.insert(VirtualAxis {
-        negative: KeyCode::BracketRight.into(),
-        positive: KeyCode::BracketLeft.into(),
-    }, InputAction::RotateCamera);
-    map.insert(VirtualAxis {
-        negative: KeyCode::Minus.into(),
-        positive: KeyCode::Plus.into(),
-    }, InputAction::ZoomCamera);
+fn collect_actions_key(
+    settings: Res<AllSettings>,
+    mut analogs: ResMut<ActiveAnalogs>,
+    mut evr_kbd: EventReader<KeyboardInput>,
+    mut evw_action: EventWriter<InputAction>,
+    // to ignore repeats
+    kbd: Res<Input<ScanCode>>,
+) {
+    for ev in evr_kbd.iter() {
+        if let Some(action) = settings.input.keyboard.scanmap.get(&ScanCode(ev.scan_code))
+            .or_else(|| ev.key_code.and_then(|k| settings.input.keyboard.keymap.get(&k)))
+        {
+            if kbd.just_pressed(ScanCode(ev.scan_code)) {
+                action.activate(
+                    AnalogSource::MouseMotion,
+                    &mut evw_action, &mut analogs,
+                );
+            }
+            if kbd.just_released(ScanCode(ev.scan_code)) {
+                action.deactivate(
+                    AnalogSource::MouseMotion,
+                    &mut analogs,
+                );
+            }
+        }
+    }
 }

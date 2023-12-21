@@ -3,7 +3,6 @@ mod prelude {
     pub use bevy::prelude::*;
     pub use bevy_asset_loader::prelude::*;
     pub use bevy_ecs_tilemap::prelude::*;
-    pub use bevy_prototype_lyon::prelude::*;
     pub use iyes_bevy_extras::prelude::*;
     pub use iyes_progress::prelude::*;
     pub use iyes_cli::prelude::*;
@@ -60,12 +59,12 @@ fn main() {
     });
     #[cfg(feature = "dev")]
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
-        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace".into(),
+        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace,mw_app=trace".into(),
         level: bevy::log::Level::TRACE,
     });
     #[cfg(not(feature = "dev"))]
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
-        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=info".into(),
+        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=info,mw_app=info".into(),
         level: bevy::log::Level::INFO,
     });
     let compute_threads = {
@@ -110,12 +109,10 @@ fn main() {
     // external plugins
     app.add_plugins((
         TilemapPlugin,
-        ShapePlugin,
         bevy_tweening::TweeningPlugin,
         bevy_fluent::FluentPlugin,
         ProgressPlugin::new(AppState::AssetsLoading).continue_to(AppState::SplashIyes),
         iyes_ui::UiExtrasPlugin,
-        InputManagerPlugin::<mw_app::input::InputAction>::default(),
     ));
 
     // our stuff

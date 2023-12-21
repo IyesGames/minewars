@@ -1,3 +1,5 @@
+use mw_common::grid::{Hex, Sq};
+
 use crate::{prelude::*, tool::*, camera::GridCursor};
 
 mod gamepad;
@@ -9,28 +11,44 @@ pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<InputAction>();
         app.init_resource::<CurrentTool>();
+        app.init_resource::<ActiveAnalogs>();
+        app.configure_sets(Update, (
+            GameInputSet::Collect
+                .in_set(InStateSet(AppState::InGame))
+                .run_if(rc_accepting_game_input),
+            GameInputSet::Process
+                .in_set(InStateSet(AppState::InGame))
+                .after(GameInputSet::Collect),
+        ));
         app.add_plugins((
             gamepad::GamepadInputPlugin,
             kbd::KbdInputPlugin,
             mouse::MouseInputPlugin,
             touch::TouchInputPlugin,
         ));
-        app.add_systems(Startup, setup_input);
+        app.add_systems(OnEnter(AppState::InGame), clear_game_input);
         app.add_systems(Update, (
-            input_workaround_lwim.before(input_tool_event),
-            input_tool_event.before(ToolEventHandlerSet),
+            input_tool_event.in_set(GameInputSet::Process).before(ToolEventHandlerSet),
         ));
     }
+}
+
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum GameInputSet {
+    Collect,
+    Process,
 }
 
 /// If any entities with this component exist, gameplay input handling is suspended
 #[derive(Component)]
 pub struct InhibitGameInput;
 
-#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
+#[derive(Event, PartialEq, Clone, Copy, Debug)]
 #[derive(Serialize, Deserialize)]
 pub enum InputAction {
+    Analog(AnalogInput),
     OpenDevConsole,
     SwitchTool(Tool),
     CycleToolPrev,
@@ -39,88 +57,132 @@ pub enum InputAction {
     UseTool(Tool),
     ConfirmCurrentTool,
     CancelCurrentTool,
-    GridCursorMoveHex,
-    GridCursorMoveSq,
+    GridCursorMoveHex(Hex),
+    GridCursorMoveSq(Sq),
+    PanCamera(Vec2),
+    RotateCamera(f32),
+    ZoomCamera(f32),
+    #[cfg(feature = "dev")]
+    DevDebug,
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
+#[derive(Serialize, Deserialize)]
+pub enum AnalogInput {
+    GridCursorMove,
     PanCamera,
     RotateCamera,
     ZoomCamera,
-    MinimapEnlarge,
-    MinimapShrink,
 }
 
 #[derive(Resource, Default)]
 pub struct CurrentTool(pub Tool);
 
-pub fn new_map_with_minewars_defaults() -> InputMap<InputAction> {
-    let mut map = InputMap::default() ;
-    kbd::add_minewars_defaults(&mut map);
-    mouse::add_minewars_defaults(&mut map);
-    gamepad::add_minewars_defaults(&mut map);
-    map
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Hash)]
+enum AnalogSource {
+    MouseMotion,
+    MouseScroll,
+    GamepadAxis(GamepadAxisType),
+    GamepadAxisAny,
 }
 
-fn setup_input(mut commands: Commands) {
-    commands.spawn(InputManagerBundle {
-        action_state: ActionState::default(),
-        input_map: new_map_with_minewars_defaults(),
-    });
-}
+#[derive(Resource, Default)]
+struct ActiveAnalogs(HashMap<AnalogSource, AnalogInput>);
 
-fn input_workaround_lwim(
-    crs: Res<GridCursor>,
-    mut evw_tool: EventWriter<ToolEvent>,
-    mousebtn: Res<Input<MouseButton>>,
-) {
-    if mousebtn.just_pressed(MouseButton::Middle) {
-        evw_tool.send(ToolEvent {
-            tool: Tool::Flag,
-            state: ToolState::Select(crs.0),
-        });
+impl InputAction {
+    fn activate(
+        self,
+        analog_source: AnalogSource,
+        evw: &mut EventWriter<InputAction>,
+        analogs: &mut ResMut<ActiveAnalogs>,
+    ) {
+        match self {
+            InputAction::Analog(analog_input) => {
+                analogs.0.insert(analog_source, analog_input);
+            }
+            _ => {
+                evw.send(self);
+            }
+        }
     }
+    fn deactivate(
+        self,
+        analog_source: AnalogSource,
+        analogs: &mut ResMut<ActiveAnalogs>,
+    ) {
+        match self {
+            InputAction::Analog(_) => {
+                analogs.0.remove(&analog_source);
+            }
+            _ => {}
+        }
+    }
+}
+
+fn rc_accepting_game_input(
+    q_inhibit: Query<(), With<InhibitGameInput>>,
+    q_ui_interaction: Query<&Interaction>,
+) -> bool {
+    if !q_inhibit.is_empty() {
+        return false;
+    }
+    let any_interaction = q_ui_interaction.iter().any(|i| *i != Interaction::None);
+    !any_interaction
+}
+
+fn clear_game_input(
+    mut ev: ResMut<Events<InputAction>>,
+    mut analogs: ResMut<ActiveAnalogs>,
+) {
+    ev.clear();
+    analogs.0.clear();
 }
 
 fn input_tool_event(
     crs: Res<GridCursor>,
     mut current_tool: ResMut<CurrentTool>,
-    q_action: Query<&ActionState<InputAction>>,
+    mut evr_action: EventReader<InputAction>,
     mut evw_tool: EventWriter<ToolEvent>,
 ) {
-    for action_state in &q_action {
-        for just_pressed in action_state.get_just_pressed() {
-            match just_pressed {
-                InputAction::UseCurrentTool => {
-                    evw_tool.send(ToolEvent {
-                        tool: current_tool.0,
-                        state: ToolState::Select(crs.0),
-                    });
-                }
-                InputAction::UseTool(tool) => {
-                    evw_tool.send(ToolEvent {
-                        tool,
-                        state: ToolState::Select(crs.0),
-                    });
-                }
-                InputAction::SwitchTool(tool) => {
-                    evw_tool.send(ToolEvent {
-                        tool: current_tool.0,
-                        state: ToolState::Cancel,
-                    });
-                    current_tool.0 = tool;
-                }
-                InputAction::CancelCurrentTool => {
-                    evw_tool.send(ToolEvent {
-                        tool: current_tool.0,
-                        state: ToolState::Cancel,
-                    });
-                }
-                InputAction::ConfirmCurrentTool => {
-                    evw_tool.send(ToolEvent {
-                        tool: current_tool.0,
-                        state: ToolState::Confirm,
-                    });
-                }
-                _ => {},
+    for ev in evr_action.iter() {
+        match ev {
+            InputAction::UseCurrentTool => {
+                evw_tool.send(ToolEvent {
+                    tool: current_tool.0,
+                    state: ToolState::Select(crs.0),
+                });
+                debug!("Use Tool: {:?}", current_tool.0);
             }
+            InputAction::UseTool(tool) => {
+                evw_tool.send(ToolEvent {
+                    tool: *tool,
+                    state: ToolState::Select(crs.0),
+                });
+                debug!("Use Tool: {:?}", *tool);
+            }
+            InputAction::SwitchTool(tool) => {
+                evw_tool.send(ToolEvent {
+                    tool: current_tool.0,
+                    state: ToolState::Cancel,
+                });
+                current_tool.0 = *tool;
+                debug!("Current Tool: {:?}", current_tool.0);
+            }
+            InputAction::CancelCurrentTool => {
+                evw_tool.send(ToolEvent {
+                    tool: current_tool.0,
+                    state: ToolState::Cancel,
+                });
+                debug!("Cancel Tool: {:?}", current_tool.0);
+            }
+            InputAction::ConfirmCurrentTool => {
+                evw_tool.send(ToolEvent {
+                    tool: current_tool.0,
+                    state: ToolState::Confirm,
+                });
+                debug!("Confirm Tool: {:?}", current_tool.0);
+            }
+            _ => {},
         }
     }
 }

@@ -3,7 +3,7 @@ use bevy_tweening::*;
 use mw_common::{game::MapDescriptor, grid::*};
 use mw_app::camera::*;
 
-use crate::prelude::*;
+use crate::{prelude::*, ui::UiCamera};
 
 use super::Gfx2dSet;
 
@@ -37,7 +37,7 @@ fn setup_game_camera(
 ) {
     let camera = Camera2dBundle::default();
 
-    world.spawn((StateDespawnMarker, GameCamera, WorldCursorCamera, camera));
+    world.spawn((StateDespawnMarker, GameCamera, UiCamera, WorldCursorCamera, camera));
 }
 
 fn grid_cursor(

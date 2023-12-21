@@ -1,7 +1,6 @@
 pub mod prelude {
     pub use mw_common::prelude::*;
     pub use iyes_bevy_extras::prelude::*;
-    pub use leafwing_input_manager::prelude::*;
     pub use crate::appstate::*;
     pub use crate::settings::{AllSettings, NeedsSettingsSet};
     pub use crate::PROPRIETARY;

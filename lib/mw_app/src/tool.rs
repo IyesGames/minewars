@@ -35,6 +35,32 @@ pub enum Tool {
     BuildTower,
 }
 
+impl Tool {
+    pub fn is_multistep(self) -> bool {
+        use Tool::*;
+        match self {
+            | Explore
+            | Flag
+            | Reveal
+            | DeployMine
+            | DeployDecoy
+            | DeployTrap
+            | Smoke => {
+                false
+            }
+            | BuildTower
+            | BuildWall
+            | BuildBridge
+            | BuildRoad
+            | RemoveStructure
+            | Harvest
+            | Strike => {
+                true
+            }
+        }
+    }
+}
+
 #[derive(Event)]
 pub struct ToolEvent {
     pub tool: Tool,
@@ -49,7 +75,7 @@ pub enum ToolState {
     ///
     /// For some tools (direct action), this will perform a game action.
     /// For other tools (select-then-act), this will place a mark, and the action will
-    /// be peformed on `Commit`.
+    /// be peformed on `Confirm`.
     Select(Pos),
     /// The user cancels any Pending tile(s).
     Cancel,

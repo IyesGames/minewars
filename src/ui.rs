@@ -29,7 +29,7 @@ impl Plugin for UiPlugin {
 
 /// Marker for the camera that displays our UI
 #[derive(Component)]
-struct UiCamera;
+pub struct UiCamera;
 
 /// Marker for UI root entity / top-level container
 ///

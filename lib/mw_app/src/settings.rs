@@ -1,6 +1,6 @@
 use mw_game_minesweeper::MinesweeperSettings;
 
-use crate::prelude::*;
+use crate::{prelude::*, input::{InputAction, AnalogInput}, tool::Tool};
 
 pub struct SettingsPlugin;
 
@@ -50,7 +50,33 @@ pub struct NetSettings {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct InputSettings {
-    pub millis_click: u16,
+    pub mouse: MouseSettings,
+    pub keyboard: KeyboardSettings,
+    pub gamepad: GamepadSettings,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct MouseSettings {
+    // pub millis_click: u16,
+    pub map: HashMap<MouseButton, InputAction>,
+    pub scroll: InputAction,
+    pub edge_pan: bool,
+    pub edge_pan_speed: f32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct KeyboardSettings {
+    pub scanmap: HashMap<ScanCode, InputAction>,
+    pub keymap: HashMap<KeyCode, InputAction>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct GamepadSettings {
+    pub buttonmap: HashMap<GamepadButtonType, InputAction>,
+    pub axismap: HashMap<GamepadAxisType, InputAction>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -59,8 +85,6 @@ pub struct CameraSettings {
     pub zoom_tween_duration_ms: u32,
     pub jump_tween_duration_ms: u32,
     pub screenshake: bool,
-    pub edge_pan: bool,
-    pub edge_pan_speed: f32,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -173,7 +197,89 @@ impl Default for NetSettings {
 impl Default for InputSettings {
     fn default() -> Self {
         InputSettings {
-            millis_click: 250,
+            mouse: default(),
+            keyboard: default(),
+            gamepad: default(),
+        }
+    }
+}
+
+impl Default for KeyboardSettings {
+    fn default() -> Self {
+        let mut keymap = HashMap::default();
+        #[cfg(feature = "dev")]
+        keymap.insert(KeyCode::Backslash, InputAction::DevDebug);
+        keymap.insert(KeyCode::Grave, InputAction::OpenDevConsole);
+        keymap.insert(KeyCode::Tab, InputAction::CycleToolNext);
+        keymap.insert(KeyCode::Return, InputAction::ConfirmCurrentTool);
+        keymap.insert(KeyCode::Back, InputAction::CancelCurrentTool);
+        keymap.insert(KeyCode::Delete, InputAction::CancelCurrentTool);
+        keymap.insert(KeyCode::Space, InputAction::UseCurrentTool);
+        keymap.insert(KeyCode::Q, InputAction::SwitchTool(Tool::DeployMine));
+        keymap.insert(KeyCode::W, InputAction::SwitchTool(Tool::DeployDecoy));
+        keymap.insert(KeyCode::E, InputAction::SwitchTool(Tool::DeployTrap));
+        keymap.insert(KeyCode::R, InputAction::SwitchTool(Tool::Smoke));
+        keymap.insert(KeyCode::A, InputAction::SwitchTool(Tool::Explore));
+        keymap.insert(KeyCode::S, InputAction::SwitchTool(Tool::Flag));
+        keymap.insert(KeyCode::D, InputAction::SwitchTool(Tool::Reveal));
+        keymap.insert(KeyCode::F, InputAction::SwitchTool(Tool::Strike));
+        keymap.insert(KeyCode::G, InputAction::SwitchTool(Tool::Harvest));
+        keymap.insert(KeyCode::Z, InputAction::SwitchTool(Tool::RemoveStructure));
+        keymap.insert(KeyCode::X, InputAction::SwitchTool(Tool::BuildRoad));
+        keymap.insert(KeyCode::C, InputAction::SwitchTool(Tool::BuildBridge));
+        keymap.insert(KeyCode::V, InputAction::SwitchTool(Tool::BuildWall));
+        keymap.insert(KeyCode::B, InputAction::SwitchTool(Tool::BuildTower));
+        keymap.insert(KeyCode::Plus, InputAction::ZoomCamera(1.0));
+        keymap.insert(KeyCode::Minus, InputAction::ZoomCamera(-1.0));
+        keymap.insert(KeyCode::BracketRight, InputAction::RotateCamera(1.0));
+        keymap.insert(KeyCode::BracketLeft, InputAction::RotateCamera(-1.0));
+        keymap.insert(KeyCode::Left, InputAction::PanCamera(Vec2::NEG_X));
+        keymap.insert(KeyCode::Right, InputAction::PanCamera(Vec2::X));
+        keymap.insert(KeyCode::Down, InputAction::PanCamera(Vec2::NEG_Y));
+        keymap.insert(KeyCode::Up, InputAction::PanCamera(Vec2::Y));
+        keymap.insert(KeyCode::ControlLeft, InputAction::Analog(AnalogInput::PanCamera));
+        keymap.insert(KeyCode::AltLeft, InputAction::Analog(AnalogInput::RotateCamera));
+        KeyboardSettings {
+            scanmap: default(),
+            keymap,
+        }
+    }
+}
+
+impl Default for MouseSettings {
+    fn default() -> Self {
+        let mut map = HashMap::default();
+        map.insert(MouseButton::Other(4), InputAction::ConfirmCurrentTool);
+        map.insert(MouseButton::Left, InputAction::UseCurrentTool);
+        map.insert(MouseButton::Middle, InputAction::UseTool(Tool::Flag));
+        map.insert(MouseButton::Right, InputAction::Analog(AnalogInput::PanCamera));
+        MouseSettings {
+            map,
+            scroll: InputAction::Analog(AnalogInput::ZoomCamera),
+            edge_pan: true,
+            edge_pan_speed: 4.0,
+        }
+    }
+}
+
+impl Default for GamepadSettings {
+    fn default() -> Self {
+        let mut buttonmap = HashMap::default();
+        buttonmap.insert(GamepadButtonType::West, InputAction::ConfirmCurrentTool);
+        buttonmap.insert(GamepadButtonType::East, InputAction::CancelCurrentTool);
+        buttonmap.insert(GamepadButtonType::South, InputAction::UseCurrentTool);
+        buttonmap.insert(GamepadButtonType::LeftTrigger, InputAction::CycleToolPrev);
+        buttonmap.insert(GamepadButtonType::RightTrigger, InputAction::CycleToolNext);
+        buttonmap.insert(GamepadButtonType::LeftTrigger2, InputAction::ZoomCamera(1.0));
+        buttonmap.insert(GamepadButtonType::RightTrigger2, InputAction::ZoomCamera(-1.0));
+        let mut axismap = HashMap::default();
+        axismap.insert(GamepadAxisType::LeftStickX, InputAction::Analog(AnalogInput::GridCursorMove));
+        axismap.insert(GamepadAxisType::LeftStickY, InputAction::Analog(AnalogInput::GridCursorMove));
+        axismap.insert(GamepadAxisType::RightStickX, InputAction::Analog(AnalogInput::PanCamera));
+        axismap.insert(GamepadAxisType::RightStickY, InputAction::Analog(AnalogInput::PanCamera));
+        GamepadSettings {
+            buttonmap,
+            axismap,
         }
     }
 }
@@ -184,8 +290,6 @@ impl Default for CameraSettings {
             zoom_tween_duration_ms: 125,
             jump_tween_duration_ms: 125,
             screenshake: true,
-            edge_pan: true,
-            edge_pan_speed: 4.0,
         }
     }
 }
