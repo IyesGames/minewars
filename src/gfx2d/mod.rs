@@ -104,7 +104,7 @@ fn fancytint<C: Coord>(map_size: u8, c: C, f_kind: impl Fn(C) -> TileKind) -> f3
     }
 }
 
-mod sprite {
+pub mod sprite {
     pub const WIDTH6: f32 = 112.0;
     pub const HEIGHT6: f32 = 128.0;
 

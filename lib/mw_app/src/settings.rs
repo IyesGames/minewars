@@ -75,6 +75,9 @@ pub struct KeyboardSettings {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct GamepadSettings {
+    pub gridcursor_nonlinear: bool,
+    pub gridcursor_sens: f32,
+    pub pan_nonlinear: bool,
     pub pan_sens: f32,
     pub buttonmap: HashMap<GamepadButtonType, InputAction>,
     pub axismap: HashMap<GamepadAxisType, InputAction>,
@@ -279,7 +282,10 @@ impl Default for GamepadSettings {
         axismap.insert(GamepadAxisType::RightStickX, InputAction::Analog(AnalogInput::PanCamera));
         axismap.insert(GamepadAxisType::RightStickY, InputAction::Analog(AnalogInput::PanCamera));
         GamepadSettings {
-            pan_sens: 800.0,
+            gridcursor_nonlinear: true,
+            gridcursor_sens: 420.0,
+            pan_nonlinear: true,
+            pan_sens: 920.0,
             buttonmap,
             axismap,
         }

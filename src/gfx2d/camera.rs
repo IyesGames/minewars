@@ -22,7 +22,8 @@ impl Plugin for Gfx2dCameraPlugin {
          .in_set(Gfx2dSet::Any)
         );
         app.add_systems(Update, (
-            grid_cursor,
+            grid_cursor
+                .run_if(resource_changed::<WorldCursor>()),
         )
          .in_set(GridCursorSet)
          .in_set(Gfx2dSet::Any)
@@ -48,12 +49,11 @@ fn grid_cursor(
     match mapdesc.topology {
         Topology::Hex => {
             let tdim = Vec2::new(super::sprite::WIDTH6, super::sprite::HEIGHT6);
-            // PERF: fugly
             let conv = bevy::math::Mat2::from_cols_array(
                 &[tdim.x, 0.0, tdim.x * 0.5, tdim.y * 0.75]
             ).inverse();
-            let grid = conv * crs_in.pos;
-            let new = Hex::from_f32_clamped(grid.into());
+            let adj = conv * crs_in.pos;
+            let new = Hex::from_f32_clamped(adj.into());
             if new.ring() <= mapdesc.size {
                 let new_pos = Pos::from(new);
                 if crs_out.0 != new_pos {
