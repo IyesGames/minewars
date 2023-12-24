@@ -3,7 +3,7 @@ use mw_common::game::event::GameEvent;
 
 use crate::prelude::*;
 
-use self::worker::{NetWorkerControl, HostSessionConfig};
+use self::worker::{NetWorkerControl, host::HostSessionConfig};
 
 mod worker;
 
@@ -12,6 +12,7 @@ pub struct NetClientPlugin;
 impl Plugin for NetClientPlugin {
     fn build(&self, app: &mut App) {
         app.register_clicommand_noargs("host_connect_last", cli_host_connect_last);
+        app.init_resource::<NetInfo>();
         app.configure_set(Update, NeedsNetSet.run_if(resource_exists::<NetWorkerThread>()));
         app.add_systems(Update, (
             net_manager,
@@ -19,12 +20,19 @@ impl Plugin for NetClientPlugin {
                 .run_if(resource_added::<AllSettings>())
                 .run_if(not(resource_exists::<NetWorkerThread>())),
             net_gameevent.in_set(GameEventSet).in_set(NeedsNetSet),
+            net_status.in_set(NeedsNetSet),
         ));
     }
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NeedsNetSet;
+
+#[derive(Resource, Default)]
+pub struct NetInfo {
+    pub rtt: Option<Duration>,
+    pub server_addr: Option<SocketAddr>,
+}
 
 #[derive(Resource)]
 struct GameEventChannel(RxMpscU<GameEvent>);
@@ -49,7 +57,7 @@ impl Drop for NetWorkerThread {
 }
 
 fn setup_networkerthread(mut commands: Commands, settings: Res<AllSettings>) {
-    let (tx_control, rx_control) = tokio::sync::broadcast::channel(2);
+    let (tx_control, rx_control) = tokio::sync::broadcast::channel(8);
     let (tx_status, rx_status) = tokio::sync::mpsc::unbounded_channel();
     let (tx_game_event, rx_game_event) = tokio::sync::mpsc::unbounded_channel();
 
@@ -83,6 +91,19 @@ fn setup_networkerthread(mut commands: Commands, settings: Res<AllSettings>) {
         Err(e) => {
             error!("Could not create net worker thread! Error: {}", e);
         }
+    }
+}
+
+fn net_status(
+    mut chan: ResMut<NetStatusChannel>,
+    mut netinfo: ResMut<NetInfo>,
+) {
+    while let Ok(status) = chan.0.try_recv() {
+        use worker::NetWorkerStatus::*;
+        netinfo.rtt = match status {
+            RttReport(rtt) => Some(rtt),
+            _ => None,
+        };
     }
 }
 

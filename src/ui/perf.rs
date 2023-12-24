@@ -9,12 +9,15 @@ pub struct PerfUiPlugin;
 impl Plugin for PerfUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnExit(AppState::AssetsLoading), setup_perfui);
-        app.add_systems(Update, fps_text_update_system);
+        app.add_systems(Update, (fps_text_update_system, rtt_text_update_system));
     }
 }
 
 #[derive(Component)]
 struct FpsText;
+
+#[derive(Component)]
+struct RttText;
 
 fn setup_perfui(
     mut commands: Commands,
@@ -64,7 +67,31 @@ fn setup_perfui(
             ..Default::default()
         },
     )).id();
-    commands.entity(root).push_children(&[text_fps]);
+    let text_rtt = commands.spawn((
+        RttText,
+        TextBundle {
+            text: Text::from_sections([
+                TextSection {
+                    value: "Ping: ".into(),
+                    style: TextStyle {
+                        font: uiassets.font2_bold.clone(),
+                        font_size: 16.0 * settings.ui.text_scale,
+                        color: Color::WHITE,
+                    }
+                },
+                TextSection {
+                    value: "N/A".into(),
+                    style: TextStyle {
+                        font: uiassets.font2_bold.clone(),
+                        font_size: 16.0 * settings.ui.text_scale,
+                        color: Color::WHITE,
+                    }
+                },
+            ]),
+            ..Default::default()
+        },
+    )).id();
+    commands.entity(root).push_children(&[text_fps, text_rtt]);
 }
 
 fn fps_text_update_system(
@@ -74,7 +101,6 @@ fn fps_text_update_system(
     for mut text in &mut query {
         if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
             if let Some(value) = fps.smoothed() {
-                // Update the value of the second section
                 text.sections[1].value = format!("{value:.2}");
                 text.sections[1].style.color = if value >= 120.0 {
                     Color::GREEN
@@ -93,6 +119,50 @@ fn fps_text_update_system(
                 } else {
                     Color::RED
                 }
+            }
+        }
+    }
+}
+
+fn rtt_text_update_system(
+    diagnostics: Res<DiagnosticsStore>,
+    netinfo: Res<crate::net::NetInfo>,
+    mut query: Query<&mut Text, With<RttText>>,
+) {
+    for mut text in &mut query {
+        if let Some(rtt) = netinfo.rtt {
+            let millis = rtt.as_secs_f64() * 1000.0;
+            text.sections[1].value = format!("{millis:.2}");
+            let fps = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS)
+                .and_then(|fps| fps.smoothed())
+                .unwrap_or(0.0);
+            text.sections[1].style.color = if fps == 0.0 {
+                Color::WHITE
+            } else {
+                let frame_time = 1.0 / fps * 1000.0;
+                let frame_time2 = frame_time * 2.0;
+                if millis >= frame_time2 {
+                    Color::RED
+                } else if millis >= frame_time {
+                    Color::rgb(
+                        1.0,
+                        ((frame_time2 - millis) / frame_time) as f32,
+                        0.0,
+                    )
+                } else if millis >= 0.0 {
+                    Color::rgb(
+                        (1.0 - (frame_time - millis) / frame_time) as f32,
+                        1.0,
+                        0.0,
+                    )
+                } else {
+                    Color::GREEN
+                }
+            };
+        } else {
+            if text.sections[1].value != "N/A" {
+                text.sections[1].value = "N/A".into();
+                text.sections[1].style.color = Color::WHITE;
             }
         }
     }
