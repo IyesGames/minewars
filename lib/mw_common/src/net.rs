@@ -4,14 +4,54 @@ pub mod prelude {
     pub use tokio::sync::broadcast::{Sender as TxBroadcast, Receiver as RxBroadcast};
     pub use tokio::sync::mpsc::{Sender as TxMpsc, Receiver as RxMpsc, UnboundedSender as TxMpscU, UnboundedReceiver as RxMpscU};
     pub use tokio::sync::oneshot::{Sender as TxOneshot, Receiver as RxOneshot};
-    pub use super::{TxShutdown, RxShutdown};
+    pub use tokio_util::sync::CancellationToken;
+    pub use super::ManagedRuntime;
 }
 
 use quinn::Endpoint;
 use rustls::{Certificate, PrivateKey, RootCertStore, server::AllowAnyAuthenticatedClient};
+use tokio_util::task::TaskTracker;
 
-pub type TxShutdown = TxBroadcast<()>;
-pub type RxShutdown = RxBroadcast<()>;
+#[derive(Clone)]
+pub struct ManagedRuntime {
+    shutdown_token: CancellationToken,
+    tracker: Arc<TaskTracker>,
+}
+
+impl ManagedRuntime {
+    pub fn new() -> Self {
+        ManagedRuntime {
+            shutdown_token: CancellationToken::new(),
+            tracker: Arc::new(TaskTracker::new()),
+        }
+    }
+    pub fn token(&self) -> CancellationToken {
+        self.shutdown_token.clone()
+    }
+    pub fn child_token(&self) -> CancellationToken {
+        self.shutdown_token.child_token()
+    }
+    pub fn trigger_shutdown(&self) {
+        self.shutdown_token.cancel();
+    }
+    pub async fn listen_shutdown(&self) {
+        self.shutdown_token.cancelled().await;
+    }
+    pub async fn wait_shutdown(&self) {
+        self.tracker.close();
+        self.tracker.wait().await;
+    }
+    pub fn has_tasks(&self) -> bool {
+        !self.tracker.is_empty()
+    }
+    pub fn spawn<F>(&self, task: F) -> tokio::task::JoinHandle<F::Output>
+    where
+        F: std::future::Future + Send + 'static,
+        F::Output: Send + 'static,
+    {
+        self.tracker.spawn(task)
+    }
+}
 
 /// How to interpret a list of restrictions for security
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

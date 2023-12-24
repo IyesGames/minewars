@@ -38,18 +38,17 @@ struct NetStatusChannel(RxMpscU<worker::NetWorkerStatus>);
 #[derive(Resource)]
 pub struct NetWorkerThread {
     jh: Option<std::thread::JoinHandle<()>>,
-    tx_shutdown: TxShutdown,
+    shutdown: CancellationToken,
 }
 
 impl Drop for NetWorkerThread {
     fn drop(&mut self) {
-        self.tx_shutdown.send(()).ok();
+        self.shutdown.cancel();
         self.jh.take().unwrap().join().ok();
     }
 }
 
 fn setup_networkerthread(mut commands: Commands, settings: Res<AllSettings>) {
-    let (tx_shutdown, rx_shutdown) = tokio::sync::broadcast::channel(1);
     let (tx_control, rx_control) = tokio::sync::broadcast::channel(2);
     let (tx_status, rx_status) = tokio::sync::mpsc::unbounded_channel();
     let (tx_game_event, rx_game_event) = tokio::sync::mpsc::unbounded_channel();
@@ -62,19 +61,22 @@ fn setup_networkerthread(mut commands: Commands, settings: Res<AllSettings>) {
         return;
     }
 
+    let rt = ManagedRuntime::new();
+    let shutdown = rt.token();
+
     let networker_channels = worker::Channels {
-        tx_shutdown: tx_shutdown.clone(), rx_shutdown, rx_control, tx_status, tx_game_event,
+        shutdown: shutdown.clone(), rx_control, tx_status, tx_game_event,
     };
 
     let networker_settings = settings.net.worker.clone();
 
     match std::thread::Builder::new()
         .name("minewars-net-worker".into())
-        .spawn(|| worker::main(networker_settings, networker_channels))
+        .spawn(|| worker::main(rt, networker_settings, networker_channels))
     {
         Ok(jh) => {
             commands.insert_resource(NetWorkerThread {
-                tx_shutdown,
+                shutdown,
                 jh: Some(jh),
             });
         },

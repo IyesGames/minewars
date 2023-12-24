@@ -42,8 +42,7 @@ impl HostSessionConfig {
 }
 
 pub struct Channels {
-    pub tx_shutdown: TxShutdown,
-    pub rx_shutdown: RxShutdown,
+    pub shutdown: CancellationToken,
     pub tx_game_event: TxMpscU<GameEvent>,
     pub tx_status: TxMpscU<NetWorkerStatus>,
     pub rx_control: RxBroadcast<NetWorkerControl>,
@@ -52,15 +51,14 @@ pub struct Channels {
 impl Channels {
     fn net_disable(&mut self) {
         self.tx_status.send(NetWorkerStatus::NetDisabled).ok();
-        self.tx_shutdown.send(()).ok();
+        self.shutdown.cancel();
     }
 }
 
 impl Clone for Channels {
     fn clone(&self) -> Self {
         Channels {
-            tx_shutdown: self.tx_shutdown.clone(),
-            rx_shutdown: self.rx_shutdown.resubscribe(),
+            shutdown: self.shutdown.clone(),
             tx_game_event: self.tx_game_event.clone(),
             tx_status: self.tx_status.clone(),
             rx_control: self.rx_control.resubscribe(),
@@ -68,83 +66,99 @@ impl Clone for Channels {
     }
 }
 
-struct HostSessionState {
-    connection: quinn::Connection,
-}
-
-struct NetWorkerState {
-    endpoint: quinn::Endpoint,
-}
-
-async fn setup(config: &NetWorkerConfig) -> AnyResult<NetWorkerState> {
+async fn setup(config: &NetWorkerConfig) -> AnyResult<quinn::Endpoint> {
     let crypto = load_client_crypto(
         &config.ca_cert,
         false,
         &[""], "",
     ).await?;
     let endpoint = setup_quic_client(crypto, "0.0.0.0:0".parse().unwrap())?;
-    Ok(NetWorkerState {
-        endpoint,
-    })
+    Ok(endpoint)
 }
 
 async fn connect_host(
     endpoint: &quinn::Endpoint,
     config: &HostSessionConfig,
-) -> AnyResult<HostSessionState> {
+) -> AnyResult<quinn::Connection> {
     info!("Connecting to Host: {}", config.addr);
     let connecting = endpoint.connect(config.addr, config.server_name())?;
     let connection = connecting.await?;
-    Ok(HostSessionState {
-        connection,
-    })
+    Ok(connection)
 }
 
-async fn async_main(config: NetWorkerConfig, mut channels: Channels) {
-    let mut state = match setup(&config).await  {
-        Ok(state) => state,
+async fn async_main(rt: ManagedRuntime, config: NetWorkerConfig, mut channels: Channels) {
+    let mut endpoint = match setup(&config).await  {
+        Ok(endpoint) => endpoint,
         Err(e) => {
-            error!("Could not set up networking: {}", e);
+            error!("Could not set up networking: {:#}", e);
             channels.tx_status.send(NetWorkerStatus::NetError(e)).ok();
             channels.net_disable();
             return;
         }
     };
 
+    info!("Networking started.");
+
+    let mut session_cancel = rt.child_token();
+
     loop {
         tokio::select! {
-            _ = channels.rx_shutdown.recv() => {
+            _ = rt.listen_shutdown() => {
                 break;
             }
             Ok(control) = channels.rx_control.recv() => {
                 match control {
                     NetWorkerControl::ConnectHost(config) => {
-                        match connect_host(&state.endpoint, &config).await {
-                            Ok(session) => {
-                                channels.tx_status.send(NetWorkerStatus::HostConnected).ok();
-                                info!("Connected to Host Server!");
-                                host_session(&mut state, channels.clone(), session).await;
-                            }
-                            Err(e) => {
-                                error!("Could not connect to host: {}", e);
-                                channels.tx_status.send(NetWorkerStatus::NetError(e)).ok();
-                            }
-                        }
+                        session_cancel.cancel();
+                        session_cancel = rt.child_token();
+                        rt.spawn(host_session(
+                            endpoint.clone(),
+                            config,
+                            channels.clone(),
+                            session_cancel.clone(),
+                        ));
                     }
-                    NetWorkerControl::Disconnect => {}
+                    NetWorkerControl::Disconnect => {
+                        session_cancel.cancel();
+                    }
                 }
             }
         }
     }
 }
 
-async fn host_session(wstate: &mut NetWorkerState, mut channels: Channels, session: HostSessionState) {
+async fn host_session(
+    endpoint: quinn::Endpoint,
+    config: HostSessionConfig,
+    mut channels: Channels,
+    cancel: CancellationToken,
+) {
+    let conn = tokio::select! {
+        _ = cancel.cancelled() => {
+            return;
+        }
+        r = connect_host(&endpoint, &config) => {
+            match r {
+                Ok(conn) => {
+                    info!("Connected to Host Server!");
+                    channels.tx_status.send(NetWorkerStatus::HostConnected).ok();
+                    conn
+                }
+                Err(e) => {
+                    error!("Could not connect to host: {}", e);
+                    channels.tx_status.send(NetWorkerStatus::NetError(e)).ok();
+                    return;
+                }
+            }
+        }
+    };
+
     loop {
         tokio::select! {
-            _ = channels.rx_shutdown.recv() => {
+            _ = cancel.cancelled() => {
                 break;
             }
-            e = session.connection.closed() => {
+            e = conn.closed() => {
                 match e {
                     quinn::ConnectionError::ApplicationClosed(_) => {}
                     _ => {
@@ -162,12 +176,13 @@ async fn host_session(wstate: &mut NetWorkerState, mut channels: Channels, sessi
             }
         }
     }
+
     info!("Disconnected from Host Server!");
     channels.tx_status.send(NetWorkerStatus::HostDisconnected).ok();
 }
 
-pub fn main(config: NetWorkerConfig, channels: Channels) {
-    let rt = tokio::runtime::Builder::new_current_thread()
+pub fn main(rt: ManagedRuntime, config: NetWorkerConfig, channels: Channels) {
+    let tokrt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .thread_name_fn(|| {
              "minewars-net-worker".into()
@@ -175,5 +190,5 @@ pub fn main(config: NetWorkerConfig, channels: Channels) {
         .build()
         .expect("Cannot create tokio runtime!");
 
-    rt.block_on(async_main(config, channels));
+    tokrt.block_on(async_main(rt, config, channels));
 }

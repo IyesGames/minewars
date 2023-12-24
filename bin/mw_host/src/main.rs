@@ -17,15 +17,6 @@ mod server;
 fn main() {
     let args = cli::Args::parse();
 
-    let config_bytes = std::fs::read(&args.config)
-        .expect("Could not read config file");
-    let config_str = std::str::from_utf8(&config_bytes)
-        .expect("Config file is not UTF-8");
-    let mut config: Config = toml::from_str(config_str)
-        .expect("Error in config file");
-
-    config.apply_cli(&args);
-
     tracing::subscriber::set_global_default(
         tracing_subscriber::FmtSubscriber::builder()
             .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
@@ -44,52 +35,83 @@ fn main() {
         .build()
         .expect("Cannot create tokio runtime!");
 
-    rt.block_on(async_main(Arc::new(config)));
+    rt.block_on(async_main(args));
 }
 
-async fn async_main(config: Arc<Config>) {
-    let (shutdown_tx, mut shutdown_rx) = tokio::sync::broadcast::channel::<()>(1);
-    let (reload_tx, mut reload_rx) = tokio::sync::broadcast::channel::<Arc<Config>>(1);
+async fn load_config(path: &Path) -> AnyResult<Config> {
+    let config_bytes = tokio::fs::read(path).await
+        .context("Could not read config file")?;
+    let config_str = std::str::from_utf8(&config_bytes)
+        .context("Config file is not UTF-8")?;
+    let config: Config = toml::from_str(config_str)
+        .context("Error in config file")?;
+    Ok(config)
+}
 
-    let jh_server = tokio::spawn(
-        crate::server::host_main(
-            config.clone(),
-            shutdown_tx.subscribe(),
-            reload_tx.subscribe(),
-        )
-    );
-
-    let jh_hostauth = tokio::spawn(
-        crate::hostauth::hostauth_main(
-            config.clone(),
-            shutdown_tx.subscribe(),
-            reload_tx.subscribe(),
-        )
-    );
-
-    let jh_rpc = tokio::spawn(
-        crate::rpc::rpc_main(
-            config.clone(),
-            shutdown_tx.subscribe(),
-            reload_tx.subscribe(),
-        )
-    );
+async fn async_main(args: cli::Args) {
+    let rt = ManagedRuntime::new();
 
     loop {
+        let softreset = rt.child_token();
+
+        let mut config = match load_config(&args.config).await {
+            Ok(mut config) => {
+                config.apply_cli(&args);
+                Arc::new(config)
+            }
+            Err(e) => {
+                error!("Error loading config file: {:#}", e);
+                if rt.has_tasks() {
+                    let sec_retry = 15;
+                    info!("Server has active tasks. Will not shut down; retrying config load in {} seconds.", sec_retry);
+                    tokio::time::sleep(Duration::from_secs(sec_retry)).await;
+                    continue;
+                } else {
+                    break;
+                }
+            }
+        };
+
+        rt.spawn(
+            crate::server::host_main(
+                config.clone(),
+                rt.clone(),
+                softreset.clone(),
+            )
+        );
+
+        rt.spawn(
+            crate::hostauth::hostauth_main(
+                config.clone(),
+                rt.clone(),
+                softreset.clone(),
+            )
+        );
+
+        rt.spawn(
+            crate::rpc::rpc_main(
+                config.clone(),
+                rt.clone(),
+                softreset.clone(),
+            )
+        );
+
         tokio::select! {
-            Ok(()) = shutdown_rx.recv() => {
-                info!("Shutting down...");
-                let _ = tokio::join! {
-                    jh_server,
-                    jh_hostauth,
-                    jh_rpc,
-                };
+            _ = softreset.cancelled() => {
+                tokio::time::sleep(Duration::from_millis(250)).await;
+            }
+            _ = rt.listen_shutdown() => {
                 break;
             }
             _ = tokio::signal::ctrl_c() => {
-                info!("Ctrl-C interrupt received! Shutting down!");
-                shutdown_tx.send(()).ok();
+                info!("Ctrl-C interrupt received!");
+                break;
             }
         }
     }
+
+    info!("Shutting down...");
+    rt.trigger_shutdown();
+    rt.wait_shutdown().await;
+    info!("Shutdown complete.");
 }

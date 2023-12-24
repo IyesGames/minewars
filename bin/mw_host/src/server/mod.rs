@@ -3,59 +3,41 @@ use mw_common::{net::*, prelude::rustls::ServerConfig};
 use crate::prelude::*;
 
 pub async fn host_main(
-    mut config: Arc<Config>,
-    mut shutdown_rx: tokio::sync::broadcast::Receiver<()>,
-    mut reload_rx: tokio::sync::broadcast::Receiver<Arc<Config>>
+    config: Arc<Config>,
+    rt: ManagedRuntime,
+    softreset: CancellationToken,
 ) {
     info!("Host Server Initializing...");
-
-    let mut jhs_listeners = vec![];
-
-    loop {
-        let (listener_kill_tx, _) = tokio::sync::broadcast::channel(1);
-
-        match load_server_crypto(
-            &config.server.cert,
-            &config.server.key,
-            !config.server.allow_players_nocert,
-            &config.server.player_ca,
-        ).await {
-            Ok(crypto) => {
-                info!("Host Server crypto (certs and keys) loaded.");
-                for addr in config.server.listen_players.iter() {
-                    let jh = tokio::spawn(host_listener(config.clone(), listener_kill_tx.subscribe(), crypto.clone(), *addr));
-                    jhs_listeners.push(jh);
-                }
-            }
-            Err(e) => {
-                error!("Host Server crypto (certs/keys) failed to load: {}", e);
+    match load_server_crypto(
+        &config.server.cert,
+        &config.server.key,
+        !config.server.allow_players_nocert,
+        &config.server.player_ca,
+    ).await {
+        Ok(crypto) => {
+            info!("Host Server crypto (certs and keys) loaded.");
+            for addr in config.server.listen_players.iter() {
+                rt.spawn(
+                    host_listener(
+                        config.clone(),
+                        rt.clone(),
+                        softreset.clone(),
+                        crypto.clone(),
+                        *addr,
+                    )
+                );
             }
         }
-
-        tokio::select! {
-            Ok(()) = shutdown_rx.recv() => {
-                listener_kill_tx.send(()).ok();
-                for jh in jhs_listeners.drain(..) {
-                    jh.await.ok();
-                }
-                break;
-            }
-            Ok(newconfig) = reload_rx.recv() => {
-                config = newconfig;
-                // stop all existing listeners and create new ones next loop
-                listener_kill_tx.send(()).ok();
-                // wait for the old ones to stop
-                for jh in jhs_listeners.drain(..) {
-                    jh.await.ok();
-                }
-            }
+        Err(e) => {
+            error!("Host Server crypto (certs/keys) failed to load: {}", e);
         }
     }
 }
 
 async fn host_listener(
     config: Arc<Config>,
-    mut kill_rx: tokio::sync::broadcast::Receiver<()>,
+    rt: ManagedRuntime,
+    softreset: CancellationToken,
     crypto: Arc<ServerConfig>,
     addr: SocketAddr,
 ) {
@@ -71,7 +53,10 @@ async fn host_listener(
 
     loop {
         tokio::select! {
-            Ok(()) = kill_rx.recv() => {
+            _ = softreset.cancelled() => {
+                break;
+            }
+            _ = rt.listen_shutdown() => {
                 break;
             }
             connecting = endpoint.accept() => {
