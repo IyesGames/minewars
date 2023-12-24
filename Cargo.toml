@@ -65,6 +65,12 @@ path = "lib/mw_app"
 path = "lib/mw_game_minesweeper"
 features = ["bevy"]
 
+[dependencies.mw_proto_host]
+path = "lib/mw_proto_host"
+
+[dependencies.mw_proto_auth]
+path = "lib/mw_proto_auth"
+
 [dependencies.mw_proprietary_client]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
 optional = true

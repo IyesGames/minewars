@@ -1,4 +1,5 @@
 use mw_common::{net::*, prelude::rustls::ServerConfig};
+use mw_proto_host::server::ProtoState;
 
 use crate::prelude::*;
 
@@ -62,9 +63,10 @@ async fn host_listener(
             connecting = endpoint.accept() => {
                 match connecting {
                     Some(connecting) => {
+                        let rt = rt.clone();
                         let config = config.clone();
                         tokio::spawn(async {
-                            if let Err(e) = player_handle_connection(config, connecting).await {
+                            if let Err(e) = player_handle_connection(rt, config, connecting).await {
                                 error!("Player connection error: {}", e);
                             }
                         });
@@ -80,6 +82,7 @@ async fn host_listener(
 }
 
 async fn player_handle_connection(
+    rt: ManagedRuntime,
     config: Arc<Config>,
     connecting: quinn::Connecting,
 ) -> AnyResult<()> {
@@ -92,6 +95,53 @@ async fn player_handle_connection(
 
     info!("Incoming Player connection from: {}", addr_remote);
     let conn = connecting.await?;
+
     info!("Player connected from: {}", addr_remote);
+
+    let mut buf_tx = Vec::with_capacity(512);
+    let mut buf_rx = vec![0; 512];
+    let mut proto = ProtoState::new();
+
+    loop {
+        tokio::select! {
+            _ = rt.listen_shutdown() => {
+                break;
+            }
+            e = conn.closed() => {
+                info!("Player connection {} closed: {}", addr_remote, e);
+                break;
+            }
+            r = drive_player_session(&conn, &mut proto, &mut buf_tx, &mut buf_rx) => {
+                if let Err(e) = r {
+                    error!("Player<->Host Protocol Error: {:#}", e);
+                    break;
+                }
+            }
+        }
+    }
+
+    info!("Player {} disconnected.", addr_remote);
+
+    Ok(())
+}
+
+async fn drive_player_session(
+    conn: &quinn::Connection,
+    proto: &mut ProtoState,
+    buf_tx: &mut Vec<u8>,
+    buf_rx: &mut Vec<u8>,
+) -> AnyResult<()> {
+    match proto {
+        ProtoState::AwaitingHandshake(awaiting) => {
+            let (responding, handshake) = awaiting.await_handshake(conn, buf_rx).await?;
+            *proto = responding.into();
+        }
+        ProtoState::HandshakeResponding(responding) => {
+            let response = Err(mw_proto_host::HandshakeError::Full);
+            *proto = responding.respond_handshake(buf_tx, &response).await?.into();
+        }
+        ProtoState::HandshakeComplete(hscomplete) => {
+        }
+    }
     Ok(())
 }

@@ -6,10 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-mw_common = { path = "../mw_common" }
+mw_common = { path = "../mw_common", features = ["net"] }
 mw_dataformat = { path = "../mw_dataformat" }
 thiserror = "1.0.48"
+rmp-serde = "1.1.2"
 
 [dependencies.serde]
 version = "1.0.188"
 features = [ "derive" ]
+
+[dependencies.quinn]
+version = "0.9.3"
+optional = true
+default-features = false
+features = ["runtime-tokio", "tls-rustls"]

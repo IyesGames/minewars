@@ -1,3 +1,5 @@
+use mw_proto_host::client::ProtoState;
+
 use crate::prelude::*;
 use super::*;
 
@@ -58,7 +60,12 @@ pub(super) async fn host_session(
 
     channels.tx_status.send(NetWorkerStatus::RttReport(conn.rtt())).ok();
 
+    let mut buf_tx = Vec::with_capacity(64);
+    let mut buf_rx = vec![0; 512];
+    let mut proto = ProtoState::new();
+
     loop {
+        let mut rx_control = channels.rx_control.resubscribe();
         tokio::select! {
             _ = cancel.cancelled() => {
                 break;
@@ -72,11 +79,18 @@ pub(super) async fn host_session(
                 }
                 break;
             }
-            Ok(control) = channels.rx_control.recv() => {
+            Ok(control) = rx_control.recv() => {
                 match control {
                     NetWorkerControl::Disconnect | NetWorkerControl::ConnectHost(_) => {
                         break;
                     }
+                }
+            }
+            r = drive_host_session(&config, &channels, &conn, &mut proto, &mut buf_tx, &mut buf_rx) => {
+                channels.tx_status.send(NetWorkerStatus::RttReport(conn.rtt())).ok();
+                if let Err(e) = r {
+                    error!("Player<->Host Protocol Error: {:#}", e);
+                    break;
                 }
             }
         }
@@ -84,4 +98,32 @@ pub(super) async fn host_session(
 
     info!("Disconnected from Host Server!");
     channels.tx_status.send(NetWorkerStatus::HostDisconnected).ok();
+}
+
+async fn drive_host_session(
+    config: &HostSessionConfig,
+    channels: &Channels,
+    conn: &quinn::Connection,
+    proto: &mut ProtoState,
+    buf_tx: &mut Vec<u8>,
+    buf_rx: &mut Vec<u8>,
+) -> AnyResult<()> {
+    match proto {
+        ProtoState::Start(start) => {
+            let handshake = mw_proto_host::ConnectHandshake {
+                client_version: mw_proto_host::CURRENT_VERSION,
+                display_name: "Test Player!".into(),
+                token: vec![],
+                session_id: config.session_id,
+                want_plid: None,
+            };
+            *proto = start.send_handshake(conn, buf_tx, handshake).await?.into();
+        }
+        ProtoState::HandshakeSent(awaiting) => {
+            *proto = awaiting.await_handshake(buf_rx).await?.into();
+        }
+        ProtoState::HandshakeComplete(hscomplete) => {
+        }
+    }
+    Ok(())
 }
