@@ -57,3 +57,58 @@ pub trait Game: Sized {
     fn input<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction);
 }
 
+/// Abstract interface for writing multiple player streams at once.
+///
+/// We use this to encode game messages on the server side into all the appropriate
+/// player streams.
+pub trait PlidsMuxWriter {
+    /// Append some bytes to each of the buffers as indicated by Plids.
+    fn append_bytes(
+        &mut self,
+        plids: Plids,
+        bytes: &[u8]
+    ) -> std::io::Result<()>;
+}
+
+/// Abstract interface for outputting game events when decoding a stream.
+///
+/// When a protocol stream is decoded, this trait will help handle each event
+/// on the client side.
+pub trait EventEmitter<G: Game> {
+    type EmitError: std::error::Error;
+
+    fn emit_event(&mut self, plid: PlayerId, event: G::OutEvent) -> Result<(), Self::EmitError>;
+}
+
+/// Abstract interface for serializing a Game's OutEvents into protocol streams
+///
+/// Used for games hosted on a network server, where the event stream needs to
+/// be sent over a network transport protocol.
+pub trait Encoder<G: Game, W: PlidsMuxWriter>: Sized {
+    type EncodeError: std::error::Error;
+
+    /// Takes a queue of game events with associated destination Plids, generates
+    /// a binary stream to be sent to each PlayerId.
+    ///
+    /// Implementations are free to mangle and mutate the queue in-place as they see fit
+    /// (typically for optimization purposes). It should be cleared before returning.
+    fn encode(
+        &mut self,
+        writer: &mut W,
+        event_q: &mut Vec<(Plids, G::OutEvent)>
+    ) -> Result<(), Self::EncodeError>;
+}
+
+/// Abstract interface for deserializing a Game's OutEvents from protocol streams
+///
+/// Used for game clients playing on a network server, where the event stream needs
+/// to be received over a network transport protocol.
+pub trait Decoder<G: Game, E: EventEmitter<G>>: Sized {
+    type DecodeError: std::error::Error;
+
+    /// Takes a stream of bytes and decodes it into game events.
+    ///
+    /// The emitter is used to output each decoded event. Using a generic interface
+    /// like this allows the game client to control what to do with each event.
+    fn decode(&mut self, emitter: &mut E, bytes: &[u8]) -> Result<(), Self::DecodeError>;
+}
