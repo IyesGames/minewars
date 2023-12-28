@@ -38,7 +38,12 @@ allow_payloads = ["Minewars", "TomlRules"]
 rpc_method_control = "Denylist"
 rpc_methods_list = []
 
-[sessions.autosession]
+[sessions]
+max_sessions = 4
+autosession = "minewars_duel"
+autostart = { minewars_largeopenduos = 1, minesweeper4 = 1 }
+
+[[sessions.preset.minewars_duel]]
 mode = "MineWars"
 autorestart = true
 open_session = false
@@ -52,7 +57,7 @@ map_size = 24
 map_n_cits = 5
 map_land_bias = 48
 
-[[sessions.session]] # 0
+[[sessions.preset.minesweeper4]]
 mode = "Minesweeper"
 autorestart = true
 open_session = true
@@ -65,7 +70,7 @@ map_size = 48
 map_n_cits = 0
 map_land_bias = 48
 
-[[sessions.session]] # 1
+[[sessions.session.minewars_largeopenduos]]
 mode = "MineWars"
 autorestart = true
 open_session = true
@@ -74,6 +79,6 @@ n_subplids = 2
 map_mode = "Generate"
 map_topology = "Hex"
 map_style = "MineWars"
-map_size = 64
+map_size = 80
 map_n_cits = 12
 map_land_bias = 48

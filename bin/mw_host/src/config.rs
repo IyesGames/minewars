@@ -6,10 +6,16 @@ use mw_proto_hostrpc::RpcMethodName;
 #[derive(Debug, Clone)]
 #[derive(Serialize, Deserialize)]
 pub struct Config {
+    /// General options that govern everything
     pub general: GeneralConfig,
+    /// Options related to the Game Server (for incoming player connections)
     pub server: ServerConfig,
+    /// Options related to the RPC Server (for administration / management)
     pub rpc: RpcConfig,
+    /// Options related to the HostAuth Client (for connecting to a management/account service)
     pub hostauth: HostAuthConfig,
+    /// Configuration of preset game sessions to be hosted on the server.
+    /// Optional. Additional sessions can be created at runtime via RPC or HostAuth.
     pub sessions: SessionConfig,
 }
 
@@ -27,11 +33,15 @@ pub struct GeneralConfig {
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 pub struct SessionConfig {
-    /// If set, a new session will be created automatically with these settings,
-    /// if new players connect and all other sessions are full.
-    pub autosession: Option<SessionParams>,
+    /// Limit how many concurrent sessions the server is allowed to host.
+    pub max_sessions: Option<u32>,
     /// Create a fixed number of sessions with the provided settings.
-    pub session: Vec<SessionParams>,
+    pub preset: HashMap<String, SessionParams>,
+    /// If set, a new session will be created automatically with the given preset,
+    /// if new players connect and all other sessions are full.
+    pub autosession: Option<String>,
+    /// Automatically create N sessions of each specified preset, at startup.
+    pub autostart: HashMap<String, u32>,
 }
 
 /// Settings for a specific game session
