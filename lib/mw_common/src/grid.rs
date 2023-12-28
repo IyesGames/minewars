@@ -31,6 +31,7 @@ pub mod sq;
 
 pub use hex::Hex;
 pub use map::MapData;
+pub use map::MapDataTopo;
 pub use pos::Pos;
 pub use sq::Sq;
 

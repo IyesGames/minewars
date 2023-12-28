@@ -4,6 +4,11 @@ use std::ops::{Index, IndexMut};
 
 use super::*;
 
+pub enum MapDataTopo<D> {
+    Sq(MapData<Sq, D>),
+    Hex(MapData<Hex, D>),
+}
+
 /// Map storage for a "radial" map, as a compact dense array.
 ///
 /// `C` is the type of coordinate.
