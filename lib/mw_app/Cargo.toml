@@ -46,6 +46,7 @@ features = [
 	"bevy_sprite",
 	"bevy_text",
 	"bevy_ui",
+	"serialize",
 ]
 
 [dependencies.iyes_bevy_extras]

@@ -2,6 +2,7 @@ pub mod prelude {
     pub use mw_common::prelude::*;
     pub use crate::config::Config;
     pub use tracing::{error, warn, info, debug, trace};
+    pub use tokio::sync::{Mutex, RwLock, Notify};
 }
 
 use clap::Parser;

@@ -13,6 +13,7 @@ mw_dataformat = { path = "../../lib/mw_dataformat" }
 mw_proto_host = { path = "../../lib/mw_proto_host" }
 mw_proto_hostrpc = { path = "../../lib/mw_proto_hostrpc" }
 mw_proto_hostauth = { path = "../../lib/mw_proto_hostauth" }
+modular-bitfield = "0.11.2"
 toml = "0.7.8"
 anyhow = "1.0.75"
 ron = "0.8.1"
