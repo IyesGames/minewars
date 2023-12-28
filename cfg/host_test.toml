@@ -37,3 +37,43 @@ key = "devcerts/hostauth.key.der"
 allow_payloads = ["Minewars", "TomlRules"]
 rpc_method_control = "Denylist"
 rpc_methods_list = []
+
+[sessions.autosession]
+mode = "MineWars"
+autorestart = true
+open_session = false
+allow_spectators = true
+n_plids = 2
+n_subplids = 1
+map_mode = "Generate"
+map_topology = "Hex"
+map_style = "MineWars"
+map_size = 24
+map_n_cits = 5
+map_land_bias = 48
+
+[[sessions.session]] # 0
+mode = "Minesweeper"
+autorestart = true
+open_session = true
+n_plids = 4
+n_subplids = 1
+map_mode = "Generate"
+map_topology = "Hex"
+map_style = "MineWars"
+map_size = 48
+map_n_cits = 0
+map_land_bias = 48
+
+[[sessions.session]] # 1
+mode = "MineWars"
+autorestart = true
+open_session = true
+n_plids = 6
+n_subplids = 2
+map_mode = "Generate"
+map_topology = "Hex"
+map_style = "MineWars"
+map_size = 64
+map_n_cits = 12
+map_land_bias = 48

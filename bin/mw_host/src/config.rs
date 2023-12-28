@@ -10,6 +10,7 @@ pub struct Config {
     pub server: ServerConfig,
     pub rpc: RpcConfig,
     pub hostauth: HostAuthConfig,
+    pub sessions: SessionConfig,
 }
 
 /// General options, regardless of protocol
@@ -18,6 +19,73 @@ pub struct Config {
 pub struct GeneralConfig {
     pub log_file: Option<PathBuf>,
     pub log_debug: bool,
+}
+
+/// Settings for automatic session creation
+/// (useful if running without RPC or HostAuth)
+#[derive(Debug, Clone, Default)]
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
+pub struct SessionConfig {
+    /// If set, a new session will be created automatically with these settings,
+    /// if new players connect and all other sessions are full.
+    pub autosession: Option<SessionParams>,
+    /// Create a fixed number of sessions with the provided settings.
+    pub session: Vec<SessionParams>,
+}
+
+/// Settings for a specific game session
+#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize)]
+pub struct SessionParams {
+    /// The game to be played in this session
+    pub mode: GameMode,
+    /// Should the session be recreated/restarted after game over?
+    pub autorestart: bool,
+    /// true: The game can start with fewer players, new players can join mid-game.
+    /// false: The game requires all players to connect at the start, no new players can join mid-game.
+    pub open_session: bool,
+    /// Should spectators be allowed for this session?
+    pub allow_spectators: Option<bool>,
+    /// Number of logical players for the game
+    pub n_plids: u8,
+    /// Number of actual clients controlling each logical player
+    pub n_subplids: u8,
+    /// What map will this session be played on?
+    #[serde(flatten)]
+    pub map: MapParams,
+}
+
+/// Settings for map generation
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "map_mode")]
+pub enum MapParams {
+    File {
+        map_path: PathBuf,
+    },
+    Generate {
+        map_topology: mw_common::grid::Topology,
+        map_style: MapStyle,
+        map_seed: Option<u64>,
+        map_size: u8,
+        map_n_cits: u8,
+        map_land_bias: u8,
+    },
+}
+
+#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize)]
+pub enum GameMode {
+    Minesweeper,
+    MineWars,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
+pub enum MapStyle {
+    Flat,
+    MineWars,
 }
 
 /// Confguration for the Host Server Protocol
@@ -49,9 +117,6 @@ pub struct ServerConfig {
     pub allow_anysession: bool,
     /// Global toggle for enabling/disabling spectator mode. Can also be controlled per-session.
     pub allow_spectators: bool,
-    /// Load session info from these files and auto-create some sessions on startup.
-    /// Useful if RPC/hostauth are disabled and you want to run a server with fixed, predefined sessions.
-    pub sessions: Vec<PathBuf>,
 }
 
 /// Confguration for the HostAuth Client
@@ -158,7 +223,6 @@ impl IpListOrFile {
 impl Config {
     /// Check for any CLI Args that override config options and modify the config accordingly.
     pub fn apply_cli(&mut self, args: &crate::cli::Args) {
-        self.server.sessions.extend_from_slice(&args.session);
         self.general.log_debug |= args.debug;
         if let Some(log_file) = &args.log {
             self.general.log_file = Some(log_file.clone());
