@@ -223,7 +223,7 @@ fn grid_cursor_map_tile<C: Coord>(
 pub fn setup_map<C: Coord, D>(
     world: &mut World,
     mapdata: &MapData<C, D>,
-    cits: &[C],
+    cits: &[Pos],
     f_tilekind: impl Fn(&D) -> TileKind,
     f_regid: impl Fn(&D) -> u8,
 ) {
@@ -272,7 +272,7 @@ pub fn setup_map<C: Coord, D>(
     }
 
     for (i, cit_pos) in cits.iter().enumerate() {
-        let cit_pos = (*cit_pos).into();
+        let cit_pos = *cit_pos;
         let e_cit = world.spawn(
             CitBundle {
                 regid: CitRegion(i as u8),

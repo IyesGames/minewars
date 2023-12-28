@@ -157,3 +157,13 @@ pub struct MapDescriptor {
     pub topology: Topology,
 }
 
+/// The basic per-tile data, as per mapgen or file
+#[bitfield]
+#[derive(Clone, Copy, Default)]
+pub struct MapGenTileData {
+    pub kind: TileKind,
+    pub mark: bool,
+    pub item: ItemKind,
+    #[skip] __: B2,
+    pub region: u8,
+}
