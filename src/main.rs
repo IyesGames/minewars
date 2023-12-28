@@ -40,6 +40,8 @@ fn main() {
         primary_window: Some(Window {
             title: "MineWars™ PRE-ALPHA".into(),
             present_mode: bevy::window::PresentMode::Fifo,
+            // present_mode: bevy::window::PresentMode::Immediate,
+            // mode: bevy::window::WindowMode::Fullscreen,
             resizable: true,
             resolution: bevy::window::WindowResolution::new(800.0, 600.0),
             resize_constraints: WindowResizeConstraints {
