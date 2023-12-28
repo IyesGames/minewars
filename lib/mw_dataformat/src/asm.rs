@@ -122,8 +122,20 @@ impl Assembly for Msg {
             Msg::Digit { pos, digit } => {
                 writeln!(fmt, "DIGIT {}/{},{}", digit, pos.0, pos.1)?;
             },
-            Msg::CitUpdate { cit, money, income, res } => {
-                writeln!(fmt, "CIT {} {} {} {}", cit, res, money, income)?;
+            Msg::CitRes { cit, res } => {
+                writeln!(fmt, "CITRES {} {}", cit, res)?;
+            },
+            Msg::CitSpend { cit, spent } => {
+                writeln!(fmt, "CITSPEND {} {}", cit, spent)?;
+            },
+            Msg::CitMoney { cit, money } => {
+                writeln!(fmt, "CITMONEY {} {}", cit, money)?;
+            },
+            Msg::CitIncome { cit, money, income } => {
+                writeln!(fmt, "CITINCOME {} {} {}", cit, money, income)?;
+            },
+            Msg::CitTradeInfo { cit, export, import } => {
+                writeln!(fmt, "CITTRADE {} {} {}", cit, export, import)?;
             },
             Msg::RevealStructure { pos, kind } => {
                 writeln!(fmt, "STRUCT {},{} {}", pos.0, pos.1, match kind {
@@ -132,6 +144,9 @@ impl Assembly for Msg {
                     MsgStructureKind::Wall => "wall",
                     MsgStructureKind::Tower => "tower",
                 })?;
+            },
+            Msg::StructureCancel { pos } => {
+                writeln!(fmt, "NOCONSTRUCT {},{}", pos.0, pos.1)?;
             },
             Msg::StructureGone { pos } => {
                 writeln!(fmt, "DECONSTRUCT {},{}", pos.0, pos.1)?;
@@ -150,12 +165,20 @@ impl Assembly for Msg {
             Msg::Construction { pos, current, rate } => {
                 writeln!(fmt, "BUILD {},{} {} {}", pos.0, pos.1, current, rate)?;
             },
-            Msg::RevealItem { pos, item } => {
+            Msg::PlaceItem { pos, item }  => {
+                writeln!(fmt, "ITME {},{} {}", pos.0, pos.1, match item {
+                    MsgItem::None => "none",
+                    MsgItem::Decoy => "decoy",
+                    MsgItem::Mine => "mine",
+                    MsgItem::Trap => "flash",
+                })?;
+            },
+            Msg::RevealItem { pos, item }  => {
                 writeln!(fmt, "ITEM {},{} {}", pos.0, pos.1, match item {
                     MsgItem::None => "none",
                     MsgItem::Decoy => "decoy",
                     MsgItem::Mine => "mine",
-                    MsgItem::Flash => "flash",
+                    MsgItem::Trap => "flash",
                 })?;
             },
             Msg::Explode { pos } => {
@@ -163,6 +186,9 @@ impl Assembly for Msg {
             },
             Msg::Smoke { pos } => {
                 writeln!(fmt, "SMOKE {},{}", pos.0, pos.1)?;
+            },
+            Msg::Unsmoke { pos } => {
+                writeln!(fmt, "UNSMOKE {},{}", pos.0, pos.1)?;
             },
             Msg::Tremor => {
                 writeln!(fmt, "SHAKE")?;
@@ -295,11 +321,80 @@ impl Assembly for Msg {
                 };
                 Ok(1)
             }
-            "CIT" => {
+            "CITRES" => {
                 let Some(arg_cit) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
                 };
                 let Some(arg_res) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmError::TooManyArgs);
+                }
+                let Ok(cit) = arg_cit.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_cit.to_owned()));
+                };
+                let Ok(res) = arg_res.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_res.to_owned()));
+                };
+                if buffer.len() < 1 {
+                    return Err(MsgAsmError::BufferFull);
+                }
+                buffer[0] = Msg::CitRes {
+                    cit, res,
+                };
+                Ok(1)
+            }
+            "CITSPEND" => {
+                let Some(arg_cit) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                let Some(arg_spent) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmError::TooManyArgs);
+                }
+                let Ok(cit) = arg_cit.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_cit.to_owned()));
+                };
+                let Ok(spent) = arg_spent.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_spent.to_owned()));
+                };
+                if buffer.len() < 1 {
+                    return Err(MsgAsmError::BufferFull);
+                }
+                buffer[0] = Msg::CitSpend {
+                    cit, spent,
+                };
+                Ok(1)
+            }
+            "CITMONEY" => {
+                let Some(arg_cit) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                let Some(arg_money) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmError::TooManyArgs);
+                }
+                let Ok(cit) = arg_cit.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_cit.to_owned()));
+                };
+                let Ok(money) = arg_money.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_money.to_owned()));
+                };
+                if buffer.len() < 1 {
+                    return Err(MsgAsmError::BufferFull);
+                }
+                buffer[0] = Msg::CitMoney {
+                    cit, money,
+                };
+                Ok(1)
+            }
+            "CITINCOME" => {
+                let Some(arg_cit) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
                 };
                 let Some(arg_money) = components.next() else {
@@ -314,9 +409,6 @@ impl Assembly for Msg {
                 let Ok(cit) = arg_cit.parse() else {
                     return Err(MsgAsmError::BadArg(arg_cit.to_owned()));
                 };
-                let Ok(res) = arg_res.parse() else {
-                    return Err(MsgAsmError::BadArg(arg_res.to_owned()));
-                };
                 let Ok(money) = arg_money.parse() else {
                     return Err(MsgAsmError::BadArg(arg_money.to_owned()));
                 };
@@ -326,8 +418,38 @@ impl Assembly for Msg {
                 if buffer.len() < 1 {
                     return Err(MsgAsmError::BufferFull);
                 }
-                buffer[0] = Msg::CitUpdate {
-                    cit, res, money, income,
+                buffer[0] = Msg::CitIncome {
+                    cit, money, income,
+                };
+                Ok(1)
+            }
+            "CITTRADE" => {
+                let Some(arg_cit) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                let Some(arg_export) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                let Some(arg_import) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmError::TooManyArgs);
+                }
+                let Ok(cit) = arg_cit.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_cit.to_owned()));
+                };
+                let Ok(export) = arg_export.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_export.to_owned()));
+                };
+                let Ok(import) = arg_import.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_import.to_owned()));
+                };
+                if buffer.len() < 1 {
+                    return Err(MsgAsmError::BufferFull);
+                }
+                buffer[0] = Msg::CitTradeInfo {
+                    cit, export, import,
                 };
                 Ok(1)
             }
@@ -356,6 +478,22 @@ impl Assembly for Msg {
                 }
                 buffer[0] = Msg::RevealStructure {
                     pos, kind,
+                };
+                Ok(1)
+            }
+            "NOCONSTRUCT" => {
+                let Some(arg_pos) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmError::TooManyArgs);
+                }
+                let pos = parse_pos(arg_pos)?;
+                if buffer.len() < 1 {
+                    return Err(MsgAsmError::BufferFull);
+                }
+                buffer[0] = Msg::StructureCancel {
+                    pos
                 };
                 Ok(1)
             }
@@ -459,6 +597,34 @@ impl Assembly for Msg {
                 };
                 Ok(1)
             }
+            "ITME" => {
+                let Some(arg_pos) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                let Some(arg_item) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmError::TooManyArgs);
+                }
+                let pos = parse_pos(arg_pos)?;
+                let item = match arg_item.to_ascii_uppercase().as_str() {
+                    "NONE" => MsgItem::None,
+                    "DECOY" => MsgItem::Decoy,
+                    "MINE" => MsgItem::Mine,
+                    "FLASH" => MsgItem::Trap,
+                    other => {
+                        return Err(MsgAsmError::BadArg(other.to_owned()));
+                    }
+                };
+                if buffer.len() < 1 {
+                    return Err(MsgAsmError::BufferFull);
+                }
+                buffer[0] = Msg::PlaceItem {
+                    pos, item
+                };
+                Ok(1)
+            }
             "ITEM" => {
                 let Some(arg_pos) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
@@ -474,7 +640,7 @@ impl Assembly for Msg {
                     "NONE" => MsgItem::None,
                     "DECOY" => MsgItem::Decoy,
                     "MINE" => MsgItem::Mine,
-                    "FLASH" => MsgItem::Flash,
+                    "FLASH" => MsgItem::Trap,
                     other => {
                         return Err(MsgAsmError::BadArg(other.to_owned()));
                     }
@@ -516,6 +682,22 @@ impl Assembly for Msg {
                     return Err(MsgAsmError::BufferFull);
                 }
                 buffer[0] = Msg::Smoke {
+                    pos
+                };
+                Ok(1)
+            }
+            "UNSMOKE" => {
+                let Some(arg_pos) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmError::TooManyArgs);
+                }
+                let pos = parse_pos(arg_pos)?;
+                if buffer.len() < 1 {
+                    return Err(MsgAsmError::BufferFull);
+                }
+                buffer[0] = Msg::Unsmoke {
                     pos
                 };
                 Ok(1)
@@ -605,14 +787,14 @@ mod test {
             Msg::Capture { digit: 0, pos: Pos(-1,-2) },
             Msg::Capture { digit: 3, pos: Pos(6,7) },
             Msg::RevealItem { pos: Pos(3,-4), item: MsgItem::None },
-            Msg::RevealItem { pos: Pos(3,-3), item: MsgItem::Flash },
+            Msg::RevealItem { pos: Pos(3,-3), item: MsgItem::Trap },
             Msg::RevealItem { pos: Pos(3,-2), item: MsgItem::Mine },
             Msg::RevealItem { pos: Pos(3,-1), item: MsgItem::Decoy },
             Msg::Explode { pos: Pos(3, -1) },
             Msg::Explode { pos: Pos(7, 8) },
             Msg::Explode { pos: Pos(8, 9) },
             Msg::Explode { pos: Pos(-1, -2) },
-            Msg::CitUpdate { cit: 0, res: 200, money: 1503, income: 111 },
+            Msg::CitMoney { cit: 0, res: 200, money: 1503, income: 111 },
             Msg::RevealStructure { pos: Pos(10, 11), kind: MsgStructureKind::Tower },
             Msg::RevealStructure { pos: Pos(-10, 31), kind: MsgStructureKind::Road },
             Msg::RevealStructure { pos: Pos(15, -31), kind: MsgStructureKind::Wall },

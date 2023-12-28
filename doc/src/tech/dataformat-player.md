@@ -151,6 +151,9 @@ a protocol like QUIC, that allows more granular control of ordering and
 reliability, should be used.
 
 There are five classes of messages: PvP, Notification, Personal, Background, Unreliable.
+Messages can be freely "upgraded" to a higher class; that is, if there is a queue/buffer
+of messages to send, which contains messages from multiple different classes, they can
+all be bundled together and sent over the highest-class stream.
 
 PvP messages are all game updates that are part of a player's interaction with
 the game world and other players. Reliable, ordered, elevated (highest)
@@ -166,7 +169,7 @@ Reliable, ordered, lower priority.
 Background messages are things that are not an interactive part of gameplay.
 Reliable, unordered, lowest priority.
 
-Unreliable messages are realtime things that are fine to miss. Can be sent as
+Unreliable messages are realtime updates that are fine to miss. Can be sent as
 datagrams. They can also be omitted from replay files / spectation.
 
 ### Opcode Summary
@@ -238,8 +241,8 @@ Some message kinds ignore PlayerSubId. See the "Granularity" column in the table
 
 The next byte specifies the message kind (what happened):
 
-|Bits  |Meaning         |Granularity|
-|------|----------------|-----------|
+|Bits      |Meaning         |Granularity|
+|----------|----------------|-----------|
 |`00000000`| Joined         |PlayerSubId|
 |`00000001`| Ping/RTT Info  |PlayerSubId|
 |`00000010`| Stunned/Killed |PlayerId   |
@@ -377,12 +380,20 @@ For an odd number of tiles, the final digit is ignored (should be encoded as zer
 
 #### Structure Gone
 
-Something notable happened with a structure.
+The structure on the given tile is removed.
+
+Used when a built structure is destroyed or bulldozed.
+Used when a pending (unbuilt) structure is canceled.
 
 Assembly:
 ```
 DECONSTRUCT y,x
 ```
+(destroy existing)
+```
+NOCONSTRUCT y,x
+```
+(cancel pending)
 
 Encoding:
 
@@ -496,7 +507,10 @@ Reports how much money a city has.
 
 Assembly:
 ```
-CITMONEY i money [income]
+CITMONEY i money
+```
+```
+CITINCOME i money income
 ```
 
 |Bits      |Meaning         |
@@ -588,7 +602,7 @@ The Tile Kind is:
  - `010`: Mountain
  - `011`: Forest
  - `100`: Destroyed Land
- - `101`: (reserved)
+ - `101`: Foundation
  - `110`: Regular Land
  - `111`: Fertile Land
 
@@ -602,7 +616,7 @@ Used both when revealing foreign items and also when acking own deployed items.
 
 Assembly:
 ```
-ITEM y,x {none|decoy|mine|flash}
+ITEM y,x {none|decoy|mine|trap}
 ```
 
 Encoding:
@@ -616,7 +630,7 @@ The Item Kind is:
  - `000`: None
  - `001`: Decoy
  - `010`: Mine
- - `011`: Flashbang
+ - `011`: Trap
  - `1--`: (reserved)
 
 Followed by tile coordinate.
