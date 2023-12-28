@@ -36,7 +36,7 @@ pub trait Game: Sized {
     /// The host code should store the value along with a timer.
     /// When the time instant has passed, host code calls `Game::unsched`,
     /// passing the value that was stored back to the game code.
-    type SchedEvent: Eq + Hash + Send + Sync + 'static;
+    type SchedEvent: Clone + Eq + Hash + Send + Sync + 'static;
 
     /// For things that are triggered by player input
     ///
