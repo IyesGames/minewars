@@ -11,9 +11,12 @@ use crate::prelude::*;
 
 mod cli;
 mod config;
+
 mod hostauth;
 mod rpc;
 mod server;
+
+mod map;
 
 fn main() {
     let args = cli::Args::parse();
@@ -52,7 +55,11 @@ async fn load_config(path: &Path) -> AnyResult<Config> {
 async fn async_main(args: cli::Args) {
     let rt = ManagedRuntime::new();
 
+    let mapmanager = crate::map::MapManager::new();
+
     loop {
+        mapmanager.clear_cache().await;
+
         let softreset = rt.child_token();
 
         let mut config = match load_config(&args.config).await {
