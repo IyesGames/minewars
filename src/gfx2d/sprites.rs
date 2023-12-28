@@ -290,7 +290,7 @@ fn tile_gent_sprite_mgr(
             }
             TileGent::Item(ItemKind::Mine) => (super::sprite::GENT_MINE, Color::WHITE),
             TileGent::Item(ItemKind::Decoy) =>(super::sprite::GENT_DECOY, Color::WHITE),
-            TileGent::Item(ItemKind::Flashbang) => (super::sprite::GENT_FLASH, Color::WHITE),
+            TileGent::Item(ItemKind::Trap) => (super::sprite::GENT_FLASH, Color::WHITE),
             TileGent::Structure(kind) => {
                 (match kind {
                     StructureKind::Barricade => super::sprite::GENT_WALL,

@@ -337,7 +337,7 @@ impl<C: Coord> GameMinesweeper<C> {
                 return;
             },
             // minesweeper mode has no flashes, treat them as decoys
-            ItemKind::Decoy | ItemKind::Flashbang => {
+            ItemKind::Decoy | ItemKind::Trap => {
                 if self.mapdata[c].flag() != 0 {
                     self.mapdata[c].set_flag(0);
                     host.msg(Plids::all(true), MwEv::Map {
@@ -434,7 +434,7 @@ impl<C: Coord> GameMinesweeper<C> {
                     digit += 1;
                 }
                 // minesweeper mode has no flashes, treat them as decoys
-                if tile.item() == ItemKind::Decoy || tile.item() == ItemKind::Flashbang {
+                if tile.item() == ItemKind::Decoy || tile.item() == ItemKind::Trap {
                     asterisk = true;
                 }
             }

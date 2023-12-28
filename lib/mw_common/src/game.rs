@@ -20,7 +20,7 @@ pub enum ItemKind {
     Safe,
     Mine,
     Decoy,
-    Flashbang,
+    Trap,
 }
 
 /// The base variant of a map tile
