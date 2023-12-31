@@ -40,6 +40,7 @@ fn event_map<C: Coord>(
                     tile.set_owner(u8::from(*plid));
                 },
                 MapEv::Digit { digit, asterisk } => {
+                    tile.set_owner(u8::from(plid));
                     tile.set_digit(*digit);
                     tile.set_asterisk(*asterisk);
                 },

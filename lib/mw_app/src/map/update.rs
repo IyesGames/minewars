@@ -63,20 +63,29 @@ fn event_owner<C: Coord>(
         if ev.plid != viewing.0 {
             continue;
         }
-        if let MwEv::Map { pos, ev: MapEv::Owner { plid }} = ev.ev {
-            let e_tile = index.0[pos.into()];
-            if let Ok(mut owner) = q_tile.get_mut(e_tile) {
-                if owner.0 == viewing.0 && plid != viewing.0 {
-                    commands.entity(e_tile).insert(
-                        TileAlert(Timer::new(Duration::from_millis(1000), TimerMode::Once))
-                    );
-                }
-                owner.0 = plid;
-                if let Some(e_cit) = cits.by_pos.get(&pos) {
-                    let mut citowner = q_cit.get_mut(*e_cit).unwrap();
-                    citowner.0 = plid;
+        match ev.ev {
+            MwEv::Map { pos, ev: MapEv::Digit { .. }} => {
+                let e_tile = index.0[pos.into()];
+                if let Ok(mut owner) = q_tile.get_mut(e_tile) {
+                    owner.0 = viewing.0;
                 }
             }
+            MwEv::Map { pos, ev: MapEv::Owner { plid }} => {
+                let e_tile = index.0[pos.into()];
+                if let Ok(mut owner) = q_tile.get_mut(e_tile) {
+                    if owner.0 == viewing.0 && plid != viewing.0 {
+                        commands.entity(e_tile).insert(
+                            TileAlert(Timer::new(Duration::from_millis(1000), TimerMode::Once))
+                        );
+                    }
+                    owner.0 = plid;
+                    if let Some(e_cit) = cits.by_pos.get(&pos) {
+                        let mut citowner = q_cit.get_mut(*e_cit).unwrap();
+                        citowner.0 = plid;
+                    }
+                }
+            }
+            _ => continue,
         }
     }
 }
