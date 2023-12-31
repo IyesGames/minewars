@@ -55,6 +55,9 @@ pub trait Game: Sized {
 
     /// Process a player input
     fn input<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction);
+
+    /// Query the game for data / status updates to put in an unreliable datagram
+    fn unreliable<H: Host<Self>>(&mut self, _host: &mut H) {}
 }
 
 /// Abstract interface for writing multiple player streams at once.
