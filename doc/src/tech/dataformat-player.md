@@ -41,10 +41,11 @@ metadata about the game session, and the map data.
 ### Header
 
 It begins with a header:
- - `u8`: protocol version (must be `0x01`)
+ - (`u8`,`u8`,`u8`,`u8`): protocol version (must be `(0, 1, 0, 0)`)
  - `u8`: flags
  - `u8`: map size (radius)
- - `u8`: number of players and cities/regions
+ - `u8`: number of players
+ - `u8`: number of cities/regions
  - `u16`: length of player names data (0 for an anonymized stream)
  - `u16`: length of compressed map data in bytes
  - `u16`: length of uncompressed map data in bytes
@@ -56,13 +57,6 @@ The `flags` field is encoded as follows:
 |`----0---`| Game uses a hexagonal grid |
 |`----1---`| Game uses a square grid    |
 |`xxx--xxx`|(reserved bits)             |
-
-The player/city counts are encoded as follows:
-
-|Bits      |Meaning                       |
-|----------|------------------------------|
-|`----xxxx`| Number of cities/regions - 1 |
-|`xxxx----`| Number of Players            |
 
 #### Game Parameters
 
@@ -187,7 +181,10 @@ unused, reserved for future use.
 |`00000101`| City Spending       | Personal                       |
 |`00000110`| City ResInfo        | Personal                       |
 |`00000111`| City TradeInfo      | Personal                       |
-|`00001---`| --                  |                                |
+|`000010--`| --                  |                                |
+|`0000110-`| --                  |                                |
+|`00001110`| Flag                | PvP                            |
+|`00001111`| Unflag              | PvP                            |
 |`00010---`| --                  |                                |
 |`00011---`| --                  |                                |
 |`00100000`| Structure Gone      | PvP, Personal (cancel pending) |
@@ -247,8 +244,8 @@ The next byte specifies the message kind (what happened):
 |`00000001`| Ping/RTT Info  |PlayerSubId|
 |`00000010`| Stunned/Killed |PlayerId   |
 |`00000011`| Un-Stunned     |PlayerId   |
-|`00000100`| Blinded        |PlayerId   |
-|`00000101`| Un-Blinded     |PlayerId   |
+|`00000100`| (reserved)     |           |
+|`00000101`| (reserved)     |           |
 |`00000110`| Protected      |PlayerId   |
 |`00000111`| Un-Protected   |PlayerId   |
 |`00001000`| Eliminated     |PlayerId   |
@@ -257,8 +254,10 @@ The next byte specifies the message kind (what happened):
 |`00001011`| Kicked         |PlayerSubId|
 |`00001100`| Initiate Vote  |PlayerSubId|
 |`00001101`| Vote           |PlayerSubId|
-|`00001110`| Friendly-Chat  |PlayerSubId|
-|`00001111`| All-Chat       |PlayerSubId|
+|`00001110`| Vote Failed    |PlayerSubId|
+|`00001111`| Vote Success   |PlayerSubId|
+|`00010000`| Chat (All)     |PlayerSubId|
+|`00010001`| Chat (Friendly)|PlayerSubId|
 | ...      | (reserved)     |           |
 
 Then follows the data payload for the given message kind.
@@ -309,6 +308,40 @@ Encoding:
 |Bits      |Meaning         |
 |----------|----------------|
 |`00000011`| (opcode)       |
+
+Followed by the coordinate of the tile.
+
+#### Smoke Start
+
+A tile was smoked.
+
+Assembly:
+```
+FLAG y,x
+```
+
+Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00001110`| (opcode)       |
+
+Followed by the coordinate of the tile.
+
+#### Smoke End
+
+A tile is no longer smoked.
+
+Assembly:
+```
+UNFLAG y,x
+```
+
+Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00001111`| (opcode)       |
 
 Followed by the coordinate of the tile.
 
