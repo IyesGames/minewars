@@ -26,6 +26,11 @@ pub enum MwEv {
         plid: PlayerId,
         ev: PlayerEv,
     },
+    PlayerSub {
+        plid: PlayerId,
+        subplid: u8,
+        ev: PlayerSubEv,
+    },
     Map {
         pos: Pos,
         ev: MapEv,
@@ -35,17 +40,15 @@ pub enum MwEv {
         ev: CitEv,
     },
     Background(BackgroundEv),
+    Nop,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PlayerEv {
-    Joined,
-    Disconnected,
     Eliminated,
     Surrendered,
     Protected,
     Unprotected,
-    Kicked,
     Exploded {
         pos: Pos,
     },
@@ -53,23 +56,35 @@ pub enum PlayerEv {
         millis: u16,
     },
     TimeoutFinished,
-    Flash {
-        millis: u16,
-    },
-    FlashFinished,
     LivesRemain {
         lives: u8,
     },
     MatchTimeRemain {
         secs: u16,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlayerSubEv {
+    Joined {
+        name: String,
+    },
+    NetRttInfo {
+        millis: u8,
+    },
+    Disconnected,
+    Kicked,
     FriendlyChat(String),
     AllChat(String),
+    VoteStart(String),
+    VoteCast(String),
+    VoteFail(String),
+    VoteSuccess(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MapEv {
-    Tile {
+    TileKind {
         kind: TileKind,
     },
     Owner {
@@ -79,19 +94,19 @@ pub enum MapEv {
         digit: u8,
         asterisk: bool,
     },
-    Item {
+    PlaceItem {
+        kind: ItemKind,
+    },
+    RevealItem {
         kind: ItemKind,
     },
     Flag {
         plid: PlayerId,
     },
+    Unflag,
     Explode,
     Smoke {
         state: bool,
-    },
-    StructureBegin {
-        kind: StructureKind,
-        pts: u16,
     },
     StructureReveal {
         kind: StructureKind,
@@ -99,28 +114,36 @@ pub enum MapEv {
     StructureHp {
         hp: u8,
     },
+    StructureCancel,
+    StructureGone,
+    StructureBuildNew {
+        kind: StructureKind,
+        pts: u16,
+    },
     StructureProgress {
         current: u16,
         rate: u16,
     },
-    StructureGone,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CitEv {
-    Money {
-        current: u32,
-        income: u16,
-    },
-    Spent {
-        amount: u16,
-    },
-    ResAvailable {
+    ResUpdate {
         res: u16,
     },
+    MoneyTranaction {
+        amount: i16,
+    },
+    MoneyUpdate {
+        money: u32,
+    },
+    IncomeUpdate {
+        money: u32,
+        income: u16,
+    },
     TradePolicy {
-        import: u8,
         export: u8,
+        import: u8,
     },
 }
 

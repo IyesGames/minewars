@@ -349,7 +349,7 @@ impl<C: Coord> GameMinesweeper<C> {
                 }
                 host.msg(Plids::all(true), MwEv::Map {
                     pos: c.into(),
-                    ev: MapEv::Item {
+                    ev: MapEv::RevealItem {
                         kind: ItemKind::Decoy,
                     },
                 });
@@ -372,7 +372,7 @@ impl<C: Coord> GameMinesweeper<C> {
                 }
                 host.msg(Plids::all(true), MwEv::Map {
                     pos: c.into(),
-                    ev: MapEv::Item {
+                    ev: MapEv::RevealItem {
                         kind: ItemKind::Mine,
                     },
                 });
@@ -382,7 +382,7 @@ impl<C: Coord> GameMinesweeper<C> {
                 });
                 host.msg(Plids::all(true), MwEv::Map {
                     pos: c.into(),
-                    ev: MapEv::Tile {
+                    ev: MapEv::TileKind {
                         kind: TileKind::Destroyed,
                     },
                 });

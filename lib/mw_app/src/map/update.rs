@@ -42,7 +42,7 @@ fn event_kind<C: Coord>(
         if ev.plid != viewing.0 {
             continue;
         }
-        if let MwEv::Map { pos, ev: MapEv::Tile { kind }} = ev.ev {
+        if let MwEv::Map { pos, ev: MapEv::TileKind { kind }} = ev.ev {
             if let Ok(mut tilekind) = q_tile.get_mut(index.0[pos.into()]) {
                 *tilekind = kind;
             }
@@ -114,7 +114,8 @@ fn event_gents<C: Coord>(
             MwEv::Map { pos, ev: MapEv::Flag { plid }} => {
                 (pos, TileGent::Flag(plid))
             }
-            MwEv::Map { pos, ev: MapEv::Item { kind }} => {
+            | MwEv::Map { pos, ev: MapEv::PlaceItem { kind }}
+            | MwEv::Map { pos, ev: MapEv::RevealItem { kind }} => {
                 (pos, TileGent::Item(kind))
             }
             // TODO: structures

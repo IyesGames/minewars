@@ -49,15 +49,15 @@ pub enum Msg {
         pos: Pos,
         kind: MsgStructureKind,
     },
+    StructureHp {
+        pos: Pos,
+        hp: u8,
+    },
     StructureCancel {
         pos: Pos,
     },
     StructureGone {
         pos: Pos,
-    },
-    StructureHp {
-        pos: Pos,
-        hp: u8,
     },
     BuildNew {
         pos: Pos,
