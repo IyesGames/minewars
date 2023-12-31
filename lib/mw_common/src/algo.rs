@@ -34,6 +34,7 @@ where
     P: FnMut(C, C) -> FloodSelect,
 {
     while let Some(orig) = q.pop_front() {
+        let mut abort = false;
         let orig: C = orig.into();
         for c in orig.iter_n0() {
             match p(c, orig) {
@@ -45,9 +46,12 @@ where
                 }
                 FloodSelect::No => {}
                 FloodSelect::Abort => {
-                    break;
+                    abort = true;
                 }
             }
+        }
+        if abort {
+            break;
         }
     }
 }
