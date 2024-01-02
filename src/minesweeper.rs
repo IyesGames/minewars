@@ -10,9 +10,9 @@ use mw_common::grid::*;
 use mw_common::plid::*;
 use mw_common::game::*;
 
-pub struct MinesweeperGameplayPlugin;
+pub struct MinesweeperPlugin;
 
-impl Plugin for MinesweeperGameplayPlugin {
+impl Plugin for MinesweeperPlugin {
     fn build(&self, app: &mut App) {
         app.register_clicommand_noargs("minesweeper_singleplayer", cli_minesweeper_singleplayer);
         app.register_clicommand_noargs("minesweeper_playground", cli_minesweeper_playground);

@@ -16,10 +16,10 @@ use crate::prelude::*;
 mod assets;
 mod cli;
 mod input;
-mod game;
 mod gfx2d;
 mod locale;
 mod minimap;
+mod minesweeper;
 mod net;
 mod screens {
     pub mod loading;
@@ -131,9 +131,9 @@ fn main() {
         crate::ui::UiPlugin,
         crate::settings::SettingsPlugin,
         crate::gfx2d::Gfx2dPlugin,
-        crate::game::GameplayPlugin,
         crate::minimap::MinimapPlugin,
         crate::net::NetClientPlugin,
+        crate::minesweeper::MinesweeperPlugin,
     ));
 
     #[cfg(feature = "proprietary")]
