@@ -120,6 +120,10 @@ fn event_gents<C: Coord>(
             continue;
         }
         let (pos, gent) = match ev.ev {
+            | MwEv::Map { pos, ev: MapEv::Unflag }
+            | MwEv::Map { pos, ev: MapEv::Flag { plid: PlayerId::Neutral }} => {
+                (pos, TileGent::Empty)
+            }
             MwEv::Map { pos, ev: MapEv::Flag { plid }} => {
                 (pos, TileGent::Flag(plid))
             }
