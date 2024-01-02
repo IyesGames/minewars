@@ -183,8 +183,8 @@ unused, reserved for future use.
 |`00000111`| City TradeInfo      | Personal                       |
 |`000010--`| --                  |                                |
 |`0000110-`| --                  |                                |
-|`00001110`| Flag                | PvP                            |
-|`00001111`| Unflag              | PvP                            |
+|`00001110`| --                  |                                |
+|`00001111`| Flag State          | PvP                            |
 |`00010---`| --                  |                                |
 |`00011---`| --                  |                                |
 |`00100000`| Structure Gone      | PvP, Personal (cancel pending) |
@@ -311,37 +311,32 @@ Encoding:
 
 Followed by the coordinate of the tile.
 
-#### Smoke Start
+#### Flag State
 
-A tile was smoked.
-
-Assembly:
-```
-FLAG y,x
-```
-
-Encoding:
-
-|Bits      |Meaning         |
-|----------|----------------|
-|`00001110`| (opcode)       |
-
-Followed by the coordinate of the tile.
-
-#### Smoke End
-
-A tile is no longer smoked.
+Report the presence or absence of a flag on a given tile.
 
 Assembly:
 ```
-UNFLAG y,x
+FLAG p y,x
 ```
+(p == plid, 0 == no flag)
 
 Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
 |`00001111`| (opcode)       |
+
+Followed by:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`0000----`| (reserved)     |
+|`----pppp`| PlayerId       |
+
+Reserved bits must be zero.
+
+`p` is the PlayerId that placed the flag. Zero means no flag.
 
 Followed by the coordinate of the tile.
 

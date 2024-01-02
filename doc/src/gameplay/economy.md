@@ -144,7 +144,7 @@ Items:
  - Flashbang: 8.0
 
 Structures:
- - Road: 1.5
+ - Road: 1.0
  - Barricade: 20.0
  - WatchTower: 30.0
  - Bridge: 5.0
