@@ -6,16 +6,25 @@ use crate::grid::{Coord, Pos};
 pub enum FloodSelect {
     /// Tile does not qualify
     No,
+    /// Do no more iterations
+    Abort,
     /// Add tile to end of queue
     Yes,
     /// Add tile to start of queue (next tile to check)
     YesPrio,
-    /// Do no more iterations
-    Abort,
 }
 
 /// Type of the queue data structure (re)used for `flood`
 pub type FloodQ = std::collections::VecDeque<Pos>;
+
+impl From<FloodSelect> for bool {
+    fn from(value: FloodSelect) -> Self {
+        match value {
+            FloodSelect::No | FloodSelect::Abort => false,
+            FloodSelect::Yes | FloodSelect::YesPrio => true,
+        }
+    }
+}
 
 /// Floodfill algorithm
 ///
