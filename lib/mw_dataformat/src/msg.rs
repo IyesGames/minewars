@@ -121,7 +121,8 @@ impl From<mw_common::game::TileKind> for MsgTileKind {
     fn from(value: mw_common::game::TileKind) -> Self {
         match value {
             mw_common::game::TileKind::Water => MsgTileKind::Water,
-            mw_common::game::TileKind::Foundation => MsgTileKind::Foundation,
+            mw_common::game::TileKind::FoundationRoad => MsgTileKind::Foundation,
+            mw_common::game::TileKind::FoundationStruct => MsgTileKind::Foundation,
             mw_common::game::TileKind::Regular => MsgTileKind::Regular,
             mw_common::game::TileKind::Fertile => MsgTileKind::Fertile,
             mw_common::game::TileKind::Forest => MsgTileKind::Forest,

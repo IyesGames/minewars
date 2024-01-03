@@ -273,7 +273,8 @@ fn tile_kind<C: Coord>(
     for (mut index, mut color, kind, pos) in &mut q {
         index.0 = (i_base + match kind {
             TileKind::Water => super::sprite::TILE_WATER,
-            TileKind::Foundation => super::sprite::TILE_FOUNDATION,
+            TileKind::FoundationRoad => super::sprite::TILE_FOUNDATION,
+            TileKind::FoundationStruct => super::sprite::TILE_FOUNDATION,
             TileKind::Regular => super::sprite::TILE_LAND,
             TileKind::Fertile => super::sprite::TILE_FERTILE,
             TileKind::Forest => super::sprite::TILE_FOREST,

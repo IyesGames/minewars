@@ -30,13 +30,14 @@ pub enum ItemKind {
 #[bits = 3]
 pub enum TileKind {
     Water,
-    Foundation,
+    Destroyed,
     #[default]
     Regular,
     Fertile,
+    FoundationStruct,
+    FoundationRoad,
     Forest,
     Mountain,
-    Destroyed,
 }
 
 impl TileKind {
@@ -51,11 +52,12 @@ impl TileKind {
         match self {
             TileKind::Water |
             TileKind::Forest |
-            TileKind::Mountain => false,
+            TileKind::Mountain |
+            TileKind::FoundationStruct => false,
             TileKind::Regular |
             TileKind::Fertile |
             TileKind::Destroyed |
-            TileKind::Foundation => true,
+            TileKind::FoundationRoad => true,
         }
     }
 
@@ -67,7 +69,8 @@ impl TileKind {
             TileKind::Regular |
             TileKind::Fertile |
             TileKind::Destroyed |
-            TileKind::Foundation => false,
+            TileKind::FoundationRoad |
+            TileKind::FoundationStruct=> false,
         }
     }
 
@@ -75,7 +78,8 @@ impl TileKind {
         match self {
             TileKind::Water |
             TileKind::Destroyed |
-            TileKind::Foundation => false,
+            TileKind::FoundationRoad |
+            TileKind::FoundationStruct => false,
             TileKind::Regular |
             TileKind::Fertile |
             TileKind::Forest |
