@@ -1,15 +1,185 @@
+//! HUD (in-game UI)
+//!
+//! This file contains general helper functionality. Specific game modes are
+//! in sub-modules.
+
 use bevy::window::PrimaryWindow;
 
 use crate::{prelude::*, assets::UiAssets, ui, minimap::MinimapImage};
 
 use super::{tooltip::InfoAreaText, UiRoot};
 
+mod minewars;
+mod minesweeper;
+mod editor;
+
 pub(super) struct HudPlugin;
 
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::InGame), setup_hud);
-        app.add_systems(Update, minimap_image_scale_fixme.run_if(resource_exists::<MinimapImage>()));
+        app.add_systems(OnEnter(AppState::InGame), setup_hud_framework_desktop);
+        app.add_systems(Update, (
+            setup_minimap,
+            minimap_image_scale_fixme.run_if(resource_exists::<MinimapImage>()),
+        ));
+    }
+}
+
+/// Top-level root container
+#[derive(Component)]
+struct HudRoot;
+
+/// Top-info (typically mini-scoreboard, center of screen)
+#[derive(Component)]
+struct HudTopInfoArea;
+
+/// Notification Area
+#[derive(Component)]
+struct HudNotificationArea;
+
+/// Area for top gameplay controls (typically city list or menu)
+#[derive(Component)]
+struct HudTopControlArea;
+
+/// Main area (along the bottom on desktop, side on touch)
+#[derive(Component)]
+struct HudMainArea;
+
+/// Minimap container
+#[derive(Component)]
+struct HudMinimapArea;
+
+/// Container for toolbar
+#[derive(Component)]
+struct HudToolbarArea;
+
+/// Container for extra info / inspector
+#[derive(Component)]
+struct HudInfoArea;
+
+fn setup_hud_framework_desktop(
+    mut commands: Commands,
+) {
+    let root = commands.spawn((
+        StateDespawnMarker,
+        HudRoot,
+        UiRoot,
+        NodeBundle {
+            // background_color: BackgroundColor(Color::PINK),
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).id();
+    let mainarea = commands.spawn((
+        HudMainArea,
+        NodeBundle {
+            // background_color: BackgroundColor(Color::PINK),
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                top: Val::Auto,
+                bottom: Val::Px(0.0),
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::FlexEnd,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).id();
+    let minimap = commands.spawn((
+        HudMinimapArea,
+        NodeBundle {
+            style: Style {
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).id();
+    let toolbar = commands.spawn((
+        HudToolbarArea,
+        NodeBundle {
+            style: Style {
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).id();
+    let info = commands.spawn((
+        HudInfoArea,
+        NodeBundle {
+            style: Style {
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).id();
+    commands.entity(root).push_children(&[mainarea]);
+    commands.entity(mainarea).push_children(&[minimap, toolbar, info]);
+}
+
+fn setup_minimap(
+    mut commands: Commands,
+    minimap_image: Res<MinimapImage>,
+    q_container: Query<Entity, Added<HudMinimapArea>>,
+) {
+    for e in &q_container {
+        let minimap = commands.spawn((
+            NodeBundle {
+                style: Style {
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    padding: UiRect::all(Val::Px(4.0)),
+                    ..Default::default()
+                },
+                background_color: BackgroundColor(Color::WHITE),
+                ..Default::default()
+            },
+        )).id();
+        let minimap_inner = commands.spawn((
+            NodeBundle {
+                style: Style {
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..Default::default()
+                },
+                background_color: BackgroundColor(Color::rgb(0.0, 0.0, 0.0)),
+                ..Default::default()
+            },
+        )).id();
+        let minimap_image = commands.spawn((
+            ImageBundle {
+                image: UiImage {
+                    texture: minimap_image.0.clone(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            MinimapImageNode,
+        )).id();
+        commands.entity(e).push_children(&[minimap]);
+        commands.entity(minimap).push_children(&[minimap_inner]);
+        commands.entity(minimap_inner).push_children(&[minimap_image]);
+        dbg!("yaisehtna");
     }
 }
 
@@ -287,42 +457,42 @@ fn setup_hud(
     uiassets: Res<UiAssets>,
     minimap_image: Res<MinimapImage>,
 ) {
-    let root = commands.spawn((
-        StateDespawnMarker,
-        UiRoot,
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
-                top: Val::Px(0.0),
-                bottom: Val::Px(0.0),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::SpaceBetween,
-                align_items: AlignItems::Stretch,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-    )).id();
+    // let root = commands.spawn((
+    //     StateDespawnMarker,
+    //     UiRoot,
+    //     NodeBundle {
+    //         style: Style {
+    //             position_type: PositionType::Absolute,
+    //             left: Val::Px(0.0),
+    //             right: Val::Px(0.0),
+    //             top: Val::Px(0.0),
+    //             bottom: Val::Px(0.0),
+    //             flex_direction: FlexDirection::Column,
+    //             justify_content: JustifyContent::SpaceBetween,
+    //             align_items: AlignItems::Stretch,
+    //             ..Default::default()
+    //         },
+    //         ..Default::default()
+    //     },
+    // )).id();
 
-    let topcenter = commands.spawn((
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                bottom: Val::Auto,
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
-                top: Val::Px(0.0),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Start,
-                ..Default::default()
-            },
-            z_index: ZIndex::Global(1),
-            ..Default::default()
-        },
-    )).id();
+    // let topcenter = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             position_type: PositionType::Absolute,
+    //             bottom: Val::Auto,
+    //             left: Val::Px(0.0),
+    //             right: Val::Px(0.0),
+    //             top: Val::Px(0.0),
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Start,
+    //             ..Default::default()
+    //         },
+    //         z_index: ZIndex::Global(1),
+    //         ..Default::default()
+    //     },
+    // )).id();
     let bottom = commands.spawn((
         NodeBundle {
             style: Style {
@@ -384,79 +554,56 @@ fn setup_hud(
     //         ..Default::default()
     //     },
     // )).id();
-    let playerbar = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Row,
-                align_items: AlignItems::Start,
-                justify_content: JustifyContent::Start,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.2, 0.3, 0.0)),
-            ..Default::default()
-        },
-    )).id();
-    let player1 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.5, 0.0), 4);
-    let player2 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.5, 0.1), 2);
-    let player3 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.6, 0.5, 0.0), 1);
-    let player4 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.6, 0.0), 1);
-    let player5 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.4, 0.5, 0.0), 1);
-    let player6 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.4, 0.0), 1);
-    let notify_area = commands.spawn((
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                bottom: Val::Auto,
-                right: Val::Px(16.0),
-                left: Val::Auto,
-                top: Val::Px(96.0),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::End,
-                justify_content: JustifyContent::Start,
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.3, 0.3, 0.3)),
-            z_index: ZIndex::Global(3),
-            ..Default::default()
-        },
-    )).id();
-    let notify_text = commands.spawn((
-        // L10nKey(String::new()),
-        TextBundle {
-            text: Text::from_section(
-                "This is a notification from the game, yo!",
-                TextStyle {
-                    font: uiassets.font2.clone(),
-                    font_size: 16.0,
-                    color: Color::WHITE,
-                },
-            ),
-            ..Default::default()
-        },
-    )).id();
-    let minimap = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                padding: UiRect::all(Val::Px(4.0)),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.0, 0.0, 0.0)),
-            ..Default::default()
-        },
-    )).id();
-    let minimap_image = commands.spawn((
-        ImageBundle {
-            image: UiImage {
-                texture: minimap_image.0.clone(),
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        MinimapImageNode,
-    )).id();
+    // let playerbar = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Row,
+    //             align_items: AlignItems::Start,
+    //             justify_content: JustifyContent::Start,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.2, 0.3, 0.0)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let player1 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.5, 0.0), 4);
+    // let player2 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.5, 0.1), 2);
+    // let player3 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.6, 0.5, 0.0), 1);
+    // let player4 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.6, 0.0), 1);
+    // let player5 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.4, 0.5, 0.0), 1);
+    // let player6 = spawn_playericon(&mut commands, &uiassets, Color::rgb(0.5, 0.4, 0.0), 1);
+    // let notify_area = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             position_type: PositionType::Absolute,
+    //             bottom: Val::Auto,
+    //             right: Val::Px(16.0),
+    //             left: Val::Auto,
+    //             top: Val::Px(96.0),
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::End,
+    //             justify_content: JustifyContent::Start,
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.3, 0.3, 0.3)),
+    //         z_index: ZIndex::Global(3),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let notify_text = commands.spawn((
+    //     // L10nKey(String::new()),
+    //     TextBundle {
+    //         text: Text::from_section(
+    //             "This is a notification from the game, yo!",
+    //             TextStyle {
+    //                 font: uiassets.font2.clone(),
+    //                 font_size: 16.0,
+    //                 color: Color::WHITE,
+    //             },
+    //         ),
+    //         ..Default::default()
+    //     },
+    // )).id();
     // let inventory = commands.spawn((
     //     NodeBundle {
     //         style: Style {
@@ -576,117 +723,117 @@ fn setup_hud(
     //         ..Default::default()
     //     },
     // )).id();
-    let bot_midarea = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::ColumnReverse,
-                align_items: AlignItems::Start,
-                justify_content: JustifyContent::Start,
-                flex_grow: 1.0,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-    )).id();
-    let info_area = commands.spawn((
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Auto,
-                padding: UiRect {
-                    top: Val::Px(4.0),
-                    bottom: Val::Px(4.0),
-                    left: Val::Px(4.0),
-                    right: Val::Auto,
-                },
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.0, 0.0, 0.0)),
-            ..Default::default()
-        },
-    )).id();
-    let info_text = commands.spawn((
-        InfoAreaText,
-        // L10nKey(String::new()),
-        TextBundle {
-            text: Text::from_section(
-                "Info area text!",
-                TextStyle {
-                    font: uiassets.font2_light.clone(),
-                    font_size: 16.0,
-                    color: Color::WHITE,
-                },
-            ),
-            ..Default::default()
-        },
-    )).id();
-    let toolbar = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Row,
-                align_items: AlignItems::End,
-                justify_content: JustifyContent::Start,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-    )).id();
-    let tool1 = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                width: Val::Px(64.0),
-                height: Val::Px(64.0),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.3, 0.0, 0.3)),
-            ..Default::default()
-        },
-    )).id();
-    let tool2 = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                width: Val::Px(64.0),
-                height: Val::Px(64.0),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.4, 0.0, 0.3)),
-            ..Default::default()
-        },
-    )).id();
-    let tool3 = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                width: Val::Px(64.0),
-                height: Val::Px(64.0),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.3, 0.0, 0.4)),
-            ..Default::default()
-        },
-    )).id();
-    let tool4 = commands.spawn((
-        NodeBundle {
-            style: Style {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                width: Val::Px(64.0),
-                height: Val::Px(64.0),
-                ..Default::default()
-            },
-            background_color: BackgroundColor(Color::rgb(0.3, 0.1, 0.3)),
-            ..Default::default()
-        },
-    )).id();
+    // let bot_midarea = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::ColumnReverse,
+    //             align_items: AlignItems::Start,
+    //             justify_content: JustifyContent::Start,
+    //             flex_grow: 1.0,
+    //             ..Default::default()
+    //         },
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let info_area = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             width: Val::Percent(100.0),
+    //             height: Val::Auto,
+    //             padding: UiRect {
+    //                 top: Val::Px(4.0),
+    //                 bottom: Val::Px(4.0),
+    //                 left: Val::Px(4.0),
+    //                 right: Val::Auto,
+    //             },
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.0, 0.0, 0.0)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let info_text = commands.spawn((
+    //     InfoAreaText,
+    //     // L10nKey(String::new()),
+    //     TextBundle {
+    //         text: Text::from_section(
+    //             "Info area text!",
+    //             TextStyle {
+    //                 font: uiassets.font2_light.clone(),
+    //                 font_size: 16.0,
+    //                 color: Color::WHITE,
+    //             },
+    //         ),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let toolbar = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Row,
+    //             align_items: AlignItems::End,
+    //             justify_content: JustifyContent::Start,
+    //             ..Default::default()
+    //         },
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let tool1 = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             width: Val::Px(64.0),
+    //             height: Val::Px(64.0),
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.3, 0.0, 0.3)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let tool2 = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             width: Val::Px(64.0),
+    //             height: Val::Px(64.0),
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.4, 0.0, 0.3)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let tool3 = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             width: Val::Px(64.0),
+    //             height: Val::Px(64.0),
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.3, 0.0, 0.4)),
+    //         ..Default::default()
+    //     },
+    // )).id();
+    // let tool4 = commands.spawn((
+    //     NodeBundle {
+    //         style: Style {
+    //             flex_direction: FlexDirection::Column,
+    //             align_items: AlignItems::Center,
+    //             justify_content: JustifyContent::Center,
+    //             width: Val::Px(64.0),
+    //             height: Val::Px(64.0),
+    //             ..Default::default()
+    //         },
+    //         background_color: BackgroundColor(Color::rgb(0.3, 0.1, 0.3)),
+    //         ..Default::default()
+    //     },
+    // )).id();
 
     // let city1 = spawn_cityentry_unowned(&mut commands, &uiassets, 1);
     // let city2 = spawn_cityentry_owned(&mut commands, &uiassets, 2);
@@ -701,19 +848,17 @@ fn setup_hud(
     // commands.entity(citylist_owned).push_children(&[city2, city3, city5, city6]);
     // commands.entity(citylist_unowned).push_children(&[city1, city4, city7, city8, city9, city10]);
     // commands.entity(citylist).push_children(&[citylist_owned, citylist_unowned]);
-    commands.entity(topcenter).push_children(&[playerbar]);
-    commands.entity(playerbar).push_children(&[player1, player2, player3, player4, player5, player6]);
-    commands.entity(notify_area).push_children(&[notify_text]);
-    commands.entity(minimap).push_children(&[minimap_image]);
-    commands.entity(bottom).push_children(&[/*inventory, */minimap, bot_midarea]);
-    commands.entity(bot_midarea).push_children(&[info_area, toolbar]);
-    commands.entity(info_area).push_children(&[info_text]);
-    commands.entity(toolbar).push_children(&[tool1, tool2, tool3, tool4]);
+    // commands.entity(topcenter).push_children(&[playerbar]);
+    // commands.entity(playerbar).push_children(&[player1, player2, player3, player4, player5, player6]);
+    // commands.entity(notify_area).push_children(&[notify_text]);
+    // commands.entity(bot_midarea).push_children(&[info_area, toolbar]);
+    // commands.entity(info_area).push_children(&[info_text]);
+    // commands.entity(toolbar).push_children(&[tool1, tool2, tool3, tool4]);
     // commands.entity(inventory).push_children(&[inventory_text, inventory_contents]);
     // commands.entity(inventory_contents).push_children(&[inventory_mines, inventory_decoys]);
     // commands.entity(inventory_mines).push_children(&[inventory_mines_icon, inventory_mines_text]);
     // commands.entity(inventory_decoys).push_children(&[inventory_decoys_icon, inventory_decoys_text]);
-    commands.entity(root).push_children(&[/*citylist, */topcenter, notify_area, bottom]);
+    // commands.entity(root).push_children(&[/*citylist, */topcenter, notify_area, bottom]);
 }
 
 #[derive(Component)]

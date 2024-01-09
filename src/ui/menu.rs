@@ -1,3 +1,11 @@
+//! Everything to do with Game Menus
+//!
+//! This file contains general helper functionality. Specific menus are
+//! in sub-modules.
+//!
+//! These are the menus that players interact with. Not the menu bar inside
+//! the scenario editor.
+
 use crate::{prelude::*, locale::L10nKey, assets::UiAssets};
 
 use super::tooltip::InfoText;
