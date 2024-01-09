@@ -130,7 +130,7 @@ fn input_tool_event(
     mut evr_action: EventReader<InputAction>,
     mut evw_tool: EventWriter<ToolEvent>,
 ) {
-    for ev in evr_action.iter() {
+    for ev in evr_action.read() {
         match ev {
             InputAction::UseCurrentTool => {
                 evw_tool.send(ToolEvent {

@@ -134,7 +134,7 @@ pub fn setup_server_crypto(
         Some(client_ca) => {
             let mut roots = RootCertStore::empty();
             roots.add(client_ca)?;
-            crypto.with_client_cert_verifier(AllowAnyAuthenticatedClient::new(roots))
+            crypto.with_client_cert_verifier(Arc::new(AllowAnyAuthenticatedClient::new(roots)))
         },
         None => {
             crypto.with_no_client_auth()
@@ -162,7 +162,7 @@ pub fn setup_client_crypto(
 
     let crypto = match my_certs_key {
         Some((my_certs, my_key)) => {
-            crypto.with_single_cert(
+            crypto.with_client_auth_cert(
                 my_certs.into_iter().cloned().collect(),
                 my_key.clone()
             )?

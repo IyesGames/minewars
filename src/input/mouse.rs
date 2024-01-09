@@ -24,7 +24,7 @@ fn collect_actions_mousebtn(
     mut evr_mousebtn: EventReader<MouseButtonInput>,
     mut evw_action: EventWriter<InputAction>,
 ) {
-    for ev in evr_mousebtn.iter() {
+    for ev in evr_mousebtn.read() {
         if let Some(action) = settings.input.mouse.map.get(&ev.button) {
             match ev.state {
                 ButtonState::Pressed => {

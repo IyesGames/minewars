@@ -137,7 +137,7 @@ where
     EvIn: Into<G::InputAction> + Clone + Event,
 {
     let host = host.into_inner();
-    for ev in evr.iter() {
+    for ev in evr.read() {
         let action = ev.clone().into();
         host.game.input(&mut host.state, my_plid.0, action);
     }

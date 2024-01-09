@@ -8,7 +8,7 @@ impl Plugin for ToolPlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<Tool>();
         app.add_event::<ToolEvent>();
-        app.configure_set(Update, ToolEventHandlerSet.run_if(on_event::<ToolEvent>()));
+        app.configure_sets(Update, ToolEventHandlerSet.run_if(on_event::<ToolEvent>()));
     }
 }
 

@@ -727,15 +727,15 @@ fn minimap_image_scale_fixme(
     uiscale: Res<UiScale>,
     q_wnd: Query<&Window, With<PrimaryWindow>>,
 ) {
-    for ev in evr.iter() {
-        if let AssetEvent::Modified { handle } = ev {
-            if handle == &minimap_image.0 {
-                let img = ass_image.get(&handle).unwrap();
+    for ev in evr.read() {
+        if let AssetEvent::Modified { id } = ev {
+            if *id == minimap_image.0.id() {
+                let img = ass_image.get(*id).unwrap();
                 let wndscale = q_wnd.single().scale_factor();
                 let w = img.texture_descriptor.size.width as f64;
                 let h = img.texture_descriptor.size.height as f64;
-                let w = w / uiscale.scale / wndscale;
-                let h = h / uiscale.scale / wndscale;
+                let w = w / uiscale.0 / wndscale;
+                let h = h / uiscale.0 / wndscale;
                 for mut style in &mut q {
                     style.width = Val::Px(w as f32);
                     style.height = Val::Px(h as f32);

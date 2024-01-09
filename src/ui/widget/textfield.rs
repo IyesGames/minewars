@@ -196,7 +196,7 @@ fn textfield_input(
         return;
     }
 
-    for ev in evr_char.iter() {
+    for ev in evr_char.read() {
         if ev.char.is_control() {
             continue;
         }

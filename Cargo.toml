@@ -39,20 +39,20 @@ codegen-units = 1
 debug = false
 
 [features]
-dev = ["bevy/filesystem_watcher"]
+dev = ["bevy/file_watcher"]
 release = []
 proprietary = ["dep:mw_proprietary_client", "mw_app/proprietary"]
 
 [dependencies]
-anyhow = "1.0.75"
+anyhow = "1.0.79"
 directories = "5.0.1"
 enum-iterator = "1.4.1"
 fluent_content = "0.0.5"
 modular-bitfield = "0.11.2"
 num_cpus = "1.16.0"
-serde = "1.0.188"
-toml = "0.7.6"
-unic-langid = "0.9.1"
+serde = "1.0.195"
+toml = "0.8.8"
+unic-langid = "0.9.4"
 
 [dependencies.mw_common]
 path = "lib/mw_common"
@@ -87,7 +87,7 @@ git = "https://github.com/IyesGames/iyes_ui"
 features = ["iyes_cli"]
 
 [dependencies.bevy]
-version = "0.11.2"
+version = "0.12.1"
 # default-features = false
 features = [
     "multi-threaded",
@@ -116,11 +116,11 @@ features = [
 ]
 
 [dependencies.iyes_progress]
-version = "0.9.1"
+version = "0.10.0"
 features = []
 
 [dependencies.bevy_asset_loader]
-version = "0.17.0"
+version = "0.19.1"
 features = [
     "2d",
     "progress_tracking",
@@ -128,18 +128,19 @@ features = [
 ]
 
 [dependencies.bevy_common_assets]
-version = "0.7.0"
+version = "0.9.0"
 features = [
     "ron",
     "toml",
 ]
 
 [dependencies.bevy_fluent]
-version = "0.7.0"
+version = "0.8.0"
 features = []
 
 [dependencies.bevy_tweening]
-version = "0.8.0"
+version = "0.9.0"
 
 [dependencies.bevy_ecs_tilemap]
-version = "0.11.0"
+# version = "0.12.0"
+git = "https://github.com/StarArawn/bevy_ecs_tilemap"

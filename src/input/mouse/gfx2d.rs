@@ -33,7 +33,7 @@ fn mousemotion_pancamera(
 ) {
     let mut delta = Vec2::ZERO;
 
-    for ev in motion.iter() {
+    for ev in motion.read() {
         delta += ev.delta;
     }
 

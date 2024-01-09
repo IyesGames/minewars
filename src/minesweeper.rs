@@ -111,7 +111,7 @@ fn minesweeper_input(
     mut evr_tool: EventReader<ToolEvent>,
     mut evw: EventWriter<MinesweeperInputAction>,
 ) {
-    for ev in evr_tool.iter() {
+    for ev in evr_tool.read() {
         match (ev.tool, ev.state) {
             (Tool::Explore, ToolState::Select(pos)) => {
                 evw.send(MinesweeperInputAction::ExploreTile {

@@ -25,7 +25,7 @@ fn collect_actions_gamepad(
     mut evr_gamepad: EventReader<GamepadEvent>,
     mut evw_action: EventWriter<InputAction>,
 ) {
-    for ev in evr_gamepad.iter() {
+    for ev in evr_gamepad.read() {
         match ev {
             GamepadEvent::Button(btn) => {
                 if let Some(action) = settings.input.gamepad.buttonmap.get(&btn.button_type) {

@@ -12,8 +12,8 @@ proprietary = ["dep:mw_proprietary_auth"]
 mw_dataformat = { path = "../../lib/mw_dataformat" }
 mw_proto_auth = { path = "../../lib/mw_proto_auth" }
 mw_proto_hostauth = { path = "../../lib/mw_proto_hostauth" }
-toml = "0.7.8"
-anyhow = "1.0.75"
+toml = "0.8.8"
+anyhow = "1.0.79"
 ron = "0.8.1"
 
 [dependencies.mw_common]
@@ -25,17 +25,17 @@ git = "https://github.com/IyesGames/minewars-proprietary-shim"
 optional = true
 
 [dependencies.serde]
-version = "1.0.188"
+version = "1.0.195"
 features = [ "derive" ]
 
 [dependencies.clap]
-version = "4.4.3"
+version = "4.4.14"
 features = [ "derive" ]
 
 [dependencies.tracing-subscriber]
-version = "0.3.17"
+version = "0.3.18"
 features = ["env-filter"]
 
 [dependencies.tracing]
-version = "0.1.37"
+version = "0.1.40"
 features = ["async-await"]

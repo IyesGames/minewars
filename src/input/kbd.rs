@@ -26,7 +26,7 @@ fn collect_actions_key(
     // to ignore repeats
     kbd: Res<Input<ScanCode>>,
 ) {
-    for ev in evr_kbd.iter() {
+    for ev in evr_kbd.read() {
         if let Some(action) = settings.input.keyboard.scanmap.get(&ScanCode(ev.scan_code))
             .or_else(|| ev.key_code.and_then(|k| settings.input.keyboard.keymap.get(&k)))
         {

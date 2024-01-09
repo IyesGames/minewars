@@ -38,7 +38,7 @@ fn event_kind<C: Coord>(
     index: Res<MapTileIndex<C>>,
     mut q_tile: Query<&mut TileKind>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if ev.plid != viewing.0 {
             continue;
         }
@@ -59,7 +59,7 @@ fn event_owner<C: Coord>(
     mut q_tile: Query<&mut TileOwner>,
     mut q_cit: Query<&mut CitOwner>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if ev.plid != viewing.0 {
             continue;
         }
@@ -96,7 +96,7 @@ fn event_digit<C: Coord>(
     index: Res<MapTileIndex<C>>,
     mut q_tile: Query<&mut TileDigit>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if ev.plid != viewing.0 {
             continue;
         }
@@ -115,7 +115,7 @@ fn event_gents<C: Coord>(
     index: Res<MapTileIndex<C>>,
     mut q_tile: Query<&mut TileGent>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if ev.plid != viewing.0 {
             continue;
         }
@@ -153,7 +153,7 @@ fn event_explosion<C: Coord>(
     index: Res<MapTileIndex<C>>,
     mut q_tile: Query<(Entity, &MwTilePos, &mut TileGent)>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if ev.plid != viewing.0 {
             continue;
         }

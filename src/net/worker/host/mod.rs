@@ -35,7 +35,7 @@ async fn connect_host(
 pub(super) async fn host_session(
     endpoint: quinn::Endpoint,
     config: HostSessionConfig,
-    mut channels: Channels,
+    channels: Channels,
     cancel: CancellationToken,
 ) {
     let conn = tokio::select! {

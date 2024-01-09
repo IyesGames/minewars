@@ -17,27 +17,27 @@ path = "../mw_game_minesweeper"
 features = ["bevy"]
 
 [dependencies]
-anyhow = "1.0.75"
+anyhow = "1.0.79"
 derive_more = "0.99.17"
 directories = "5.0.1"
 enum-iterator = "1.4.1"
-enum-map = "2.6.1"
-glam = "0.24.1"
-hashbrown = "0.14.0"
+enum-map = "2.7.3"
+glam = "0.25.0"
+hashbrown = "0.14.3"
 modular-bitfield = "0.11.2"
 num = "0.4.1"
-num-derive = "0.4.0"
-num-traits = "0.2.16"
+num-derive = "0.4.1"
+num-traits = "0.2.17"
 rand = "0.8.5"
-thiserror = "1.0.47"
-tracing = "0.1.37"
+thiserror = "1.0.56"
+tracing = "0.1.40"
 
 [dependencies.serde]
-version = "1.0.188"
+version = "1.0.195"
 features = [ "derive" ]
 
 [dependencies.bevy]
-version = "0.11.2"
+version = "0.12.1"
 default-features = false
 features = [
 	"bevy_asset",

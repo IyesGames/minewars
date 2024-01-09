@@ -10,21 +10,21 @@ bevy = [ "dep:bevy" ]
 net = [ "dep:rustls", "dep:tokio", "dep:tokio-util", "dep:quinn"]
 
 [dependencies]
-anyhow = "1.0.75"
+anyhow = "1.0.79"
 derive_more = "0.99.17"
 enum-iterator = "1.4.1"
-enum-map = "2.6.1"
-glam = "0.24.1"
+enum-map = "2.7.3"
+glam = "0.25.0"
 modular-bitfield = "0.11.2"
 num = "0.4.1"
-num-derive = "0.4.0"
-num-traits = "0.2.16"
-thiserror = "1.0.47"
-tracing = "0.1.37"
+num-derive = "0.4.1"
+num-traits = "0.2.17"
+thiserror = "1.0.56"
+tracing = "0.1.40"
 rand_pcg = "0.3.1"
 
 [dependencies.hashbrown]
-version = "0.14.0"
+version = "0.14.3"
 features = ["serde"]
 
 [dependencies.rand]
@@ -36,11 +36,11 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.188"
+version = "1.0.195"
 features = [ "derive" ]
 
 [dependencies.bevy]
-version = "0.11.2"
+version = "0.12.1"
 default-features = false
 optional = true
 features = [
@@ -53,7 +53,7 @@ features = [
 ]
 
 [dependencies.tokio]
-version = "1.32.0"
+version = "1.35.1"
 optional = true
 features = [
     "full",
@@ -67,13 +67,13 @@ features = [
 ]
 
 [dependencies.rustls]
-version = "0.20.8" # must be whatever quinn uses
+version = "0.21" # must be whatever quinn uses
 optional = true
 default-features = false
 features = []
 
 [dependencies.quinn]
-version = "0.9.3"
+version = "0.10.2"
 optional = true
 default-features = false
 features = ["runtime-tokio", "tls-rustls"]

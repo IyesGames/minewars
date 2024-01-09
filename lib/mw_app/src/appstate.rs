@@ -8,20 +8,20 @@ impl Plugin for AppStatesPlugin {
         app.add_state::<AppState>();
         app.add_state::<SessionKind>();
         for state in enum_iterator::all::<AppState>() {
-            app.configure_set(Update, InStateSet(state).run_if(in_state(state)));
+            app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
             app.add_systems(
                 OnExit(state),
                 despawn_all_recursive::<With<StateDespawnMarker>>,
             );
         }
         for state in enum_iterator::all::<SessionKind>() {
-            app.configure_set(Update, InStateSet(state).run_if(in_state(state)));
+            app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
         }
         for state in enum_iterator::all::<GameMode>() {
-            app.configure_set(Update, InStateSet(state).run_if(in_state(state)));
-            app.configure_set(Update, InGameSet(Some(state)).in_set(InStateSet(state)).in_set(InStateSet(AppState::InGame)));
+            app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
+            app.configure_sets(Update, InGameSet(Some(state)).in_set(InStateSet(state)).in_set(InStateSet(AppState::InGame)));
         }
-        app.configure_set(Update, InGameSet(None).in_set(InStateSet(AppState::InGame)));
+        app.configure_sets(Update, InGameSet(None).in_set(InStateSet(AppState::InGame)));
     }
 }
 

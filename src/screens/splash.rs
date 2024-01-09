@@ -172,25 +172,25 @@ fn splash_skip<S: States>(skip_to: S) -> SystemConfigs {
 
         let mut done = false;
 
-        for ev in kbd.iter() {
+        for ev in kbd.read() {
             if let ButtonState::Pressed = ev.state {
                 done = true;
             }
         }
 
-        for ev in mouse.iter() {
+        for ev in mouse.read() {
             if let ButtonState::Pressed = ev.state {
                 done = true;
             }
         }
 
-        for ev in gamepad.iter() {
+        for ev in gamepad.read() {
             if let GamepadEvent::Button(_) = ev {
                 done = true;
             }
         }
 
-        for ev in touch.iter() {
+        for ev in touch.read() {
             if let TouchPhase::Started = ev.phase {
                 done = true;
             }

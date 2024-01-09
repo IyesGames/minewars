@@ -56,11 +56,6 @@ fn main() {
         ..Default::default()
     });
     #[cfg(feature = "dev")]
-    let bevy_plugins = bevy_plugins.set(bevy::asset::AssetPlugin {
-        watch_for_changes: bevy::asset::ChangeWatcher::with_delay(Duration::from_millis(250)),
-        ..default()
-    });
-    #[cfg(feature = "dev")]
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
         filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace,mw_app=trace".into(),
         level: bevy::log::Level::TRACE,

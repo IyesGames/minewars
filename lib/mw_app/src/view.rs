@@ -47,7 +47,7 @@ pub struct GameViewPlugin;
 impl Plugin for GameViewPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(update::ViewUpdatePlugin);
-        app.configure_set(
+        app.configure_sets(
             Update,
             ViewSwitchSet.run_if(resource_exists_and_changed::<PlidViewing>())
         );

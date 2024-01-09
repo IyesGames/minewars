@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 mw_common = { path = "../mw_common" }
-thiserror = "1.0.47"
+thiserror = "1.0.56"
 
 [dependencies.lz4_flex]
 version = "0.11.1"

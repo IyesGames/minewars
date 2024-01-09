@@ -6,7 +6,7 @@ pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.configure_set(Update, NeedsSettingsSet.run_if(resource_exists::<AllSettings>()));
+        app.configure_sets(Update, NeedsSettingsSet.run_if(resource_exists::<AllSettings>()));
     }
 }
 

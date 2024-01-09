@@ -94,7 +94,7 @@ fn inputaction_zoom(
     q_wnd: Query<&Window, With<PrimaryWindow>>,
     mut evr_action: EventReader<InputAction>,
 ) {
-    for ev in evr_action.iter() {
+    for ev in evr_action.read() {
         if let InputAction::ZoomCamera(lines) = ev {
             if *lines != 0.0 {
                 let wnd = q_wnd.single();
@@ -136,7 +136,7 @@ fn camera_control_zoom_mousewheel(
     let mut lines = 0.0;
 
     // accumulate all events into one variable
-    for ev in wheel.iter() {
+    for ev in wheel.read() {
         match ev.unit {
             MouseScrollUnit::Line => {
                 lines -= ev.y;

@@ -21,7 +21,7 @@ fn event_map<C: Coord>(
     plids: Res<PlayersIndex>,
     mut q_view: Query<&mut ViewMapData<C>>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         let plid = ev.plid;
         if let MwEv::Map { pos, ev } = &ev.ev {
             // Ignore event if we don't have a view for that plid set up

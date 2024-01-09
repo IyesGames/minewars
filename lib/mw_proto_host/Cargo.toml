@@ -8,15 +8,15 @@ edition = "2021"
 [dependencies]
 mw_common = { path = "../mw_common", features = ["net"] }
 mw_dataformat = { path = "../mw_dataformat" }
-thiserror = "1.0.48"
+thiserror = "1.0.56"
 rmp-serde = "1.1.2"
 
 [dependencies.serde]
-version = "1.0.188"
+version = "1.0.195"
 features = [ "derive" ]
 
 [dependencies.quinn]
-version = "0.9.3"
+version = "0.10.2"
 optional = true
 default-features = false
 features = ["runtime-tokio", "tls-rustls"]

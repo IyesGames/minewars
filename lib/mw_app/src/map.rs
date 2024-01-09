@@ -22,8 +22,8 @@ impl Plugin for MapPlugin {
         app.add_event::<RecomputeVisEvent>();
         app.init_resource::<GridCursorTileEntity>();
         for topo in enum_iterator::all::<Topology>() {
-            app.configure_set(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
-            app.configure_set(Update, NeedsMapSet.run_if(resource_exists::<MapDescriptor>()));
+            app.configure_sets(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
+            app.configure_sets(Update, NeedsMapSet.run_if(resource_exists::<MapDescriptor>()));
         }
         app.add_systems(Update, (
             grid_cursor_map_tile::<Hex>.in_set(MapTopologySet(Topology::Hex)),

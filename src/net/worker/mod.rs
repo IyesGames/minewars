@@ -62,7 +62,7 @@ async fn setup(config: &NetWorkerConfig) -> AnyResult<quinn::Endpoint> {
 }
 
 async fn async_main(rt: ManagedRuntime, config: NetWorkerConfig, mut channels: Channels) {
-    let mut endpoint = match setup(&config).await  {
+    let endpoint = match setup(&config).await  {
         Ok(endpoint) => endpoint,
         Err(e) => {
             error!("Could not set up networking: {:#}", e);
