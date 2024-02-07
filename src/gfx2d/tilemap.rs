@@ -304,9 +304,6 @@ fn tile_owner(
 ) {
     for (mut color, owner) in &mut q {
         color.0 = settings.player_colors.visible[owner.0.i()].into();
-        // FIXME: this is to work around bevy_ecs_tilemap broken sRGB
-        let rgba = color.0.as_linear_rgba_f32();
-        color.0 = Color::rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
     }
 }
 
@@ -420,9 +417,6 @@ fn gent_tilemap_mgr(
             }
             TileGent::Cit(_) => (super::sprite::GENT_CIT, Color::WHITE),
         };
-        // FIXME: this is to work around bevy_ecs_tilemap broken sRGB
-        let rgba = clr_gent.as_linear_rgba_f32();
-        let clr_gent = Color::rgba(rgba[0], rgba[1], rgba[2], rgba[3]);
 
         if let Some(spr_gent) = spr_gent {
             // there is an existing gent entity we can reuse
@@ -536,10 +530,7 @@ fn tilemap_reghighlight(
                 let mut lcha = settings.player_colors.visible[owner.i()];
                 lcha.0 *= 0.75;
                 lcha.1 *= 0.75;
-                let color = Color::from(lcha);
-                // FIXME: this is to work around bevy_ecs_tilemap broken sRGB
-                let rgba = color.as_linear_rgba_f32();
-                Color::rgba(rgba[0], rgba[1], rgba[2], rgba[3])
+                Color::from(lcha)
             } else {
                 return;
             };
