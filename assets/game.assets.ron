@@ -1,20 +1,26 @@
 ({
-    "game.tilemap.sprites": TextureAtlas (
-        path: "tilemap/sprites.ktx2",
+    "gfx3d.fallback_skin": File (
+        path: "gfx3d/dev.ass3d.toml",
+    ),
+    "gfx3d.fallback_skin.gltf": File (
+        path: "gfx3d/dev.gltf",
+    ),
+    "gfx2d.tilemap.sprites": TextureAtlas (
+        path: "gfx2d/sprites.ktx2",
         tile_size_x: 128.,
         tile_size_y: 128.,
         rows: 10,
         columns: 10,
     ),
-    "game.tilemap.roads6": TextureAtlas (
-        path: "tilemap/roads6.ktx2",
+    "gfx2d.tilemap.roads6": TextureAtlas (
+        path: "gfx2d/roads6.ktx2",
         tile_size_x: 128.,
         tile_size_y: 128.,
         rows: 8,
         columns: 8,
     ),
-    "game.tilemap.roads4": TextureAtlas (
-        path: "tilemap/roads4.ktx2",
+    "gfx2d.tilemap.roads4": TextureAtlas (
+        path: "gfx2d/roads4.ktx2",
         tile_size_x: 128.,
         tile_size_y: 128.,
         rows: 4,

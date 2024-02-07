@@ -1,0 +1,472 @@
+# MineWars 3D Asset Pack (Skin) Definition File
+# This file serves as an index to describe the contents of a GLTF file
+# that is expected to contain 3D asset data for all 3D assets needed in a
+# MineWars game.
+
+# GLTF file containing our assets
+gltf = "dev.gltf"
+
+# The name of the skin / asset pack
+name = "Development/Test Skin 0"
+
+# The scale of the tile grid: the diameter of a hexagon in world units
+tile_size = 64.0
+
+# Maximum height of the water surface
+water_hightide = -1.25
+# Minimum height of the water surface
+water_lowtide = -4.5
+
+# There are 3 LOD levels:
+#  - LOD0: Full detail, when zoomed in, tiles are large, few tiles visible on screen
+#    - Should be designed to be pretty, gameplay is secondary
+#      (players are only likely to zoom in so much if they want to appreciate the graphics,
+#      not practical to play the game at such zoom level)
+#    - May have debris, little details / props / decorations
+#    - May have lots of little animations for juiciness
+#  - LOD1: Normal detail, moderate zoom level, typical gameplay
+#    - Should be designed for gameplay: to minimize distraction and maximize readability/clarity
+#    - Limited props / decorations
+#    - Limited animations
+#  - LOD2: Low detail, far zoom level, when displaying an overview of most of / the whole map.
+#    - Should be designed for performance, gameplay is secondary
+#      (players are only likely to zoom out so much if they want to appreciate the map,
+#      not practical to play the game at such zoom level)
+#    - Minimum poly count
+#    - No animations, no props/decorations
+#    - Bake everything
+
+# Every individual asset is a GLTF Scene. It should be declared in this file by the name string
+# / ID that it has in the GLTF file. It is possible to declare multiple values for any single
+# asset, in which case the game will use them all at random to increase visual diversity.
+# Strive for a balance: use the fewest (ideally only one) number of models per asset for
+# performance reasons, but feel free to have more than one if it greatly improves aesthetics.
+
+# For assets that comprise the map grid, there are two "modes": Tile and TileSet.
+# All assets must be designed to fit a hexagonal grid where each hexagon has diameter `tile_size`.
+# They must connect/tile seamlessly.
+
+# TileSet: an array of 14 assets: 0, 1, 2A, 2B, 2C, 3A, 3B, 3C, 3D, 4A, 4B, 4C, 5, 6.
+# The game checks which neighboring tiles fit a specific criteria and picks the appropriate
+# asset from the TileSet. The 14 assets represent every possibility on a hexagonal grid.
+# The game may rotate the variants that have symmetry (0, 2C, 3D, 4C, 6) to increase
+# visual diversity.
+# Declared as an Array (the 14 variants) of Arrays (the models/alts for each).
+
+# Tile: a single hexagonal tile, assumed to be surrounded by flat land on all 6 sides.
+# The game may randomly rotate it by any multiple of 60° to increase visual diversity.
+# Declared as an Array (the models/alts for the tile).
+
+# For each LOD, declare the assets:
+
+[lod0]
+
+# Regular Land
+# (Tileset counts everything except Mountain and Water)
+tiles_regular = [ "LOD0_REGULAR_0" ]
+
+# Fertile Land
+# (Tileset counts non-Water)
+tiles_fertile = [ "LOD0_FERTILE_0" ]
+
+# Destroyed Land
+# (Tileset counts non-Water)
+tiles_destroyed = [ "LOD0_DESTROYED_0" ]
+
+# Harvested (ex-Mountain) Land
+# (Tileset counts Mountain + Harvested Mountain)
+tiles_harvested_mountain = [ "LOD0_HARVESTED_0" ]
+
+# Harvested (ex-Forest) Land
+# (Tileset counts Forest + Harvested Forest)
+tiles_harvested_forest = [ "LOD0_HARVESTED_0" ]
+
+# Harvested (ex-Fertile) Land
+# (Tileset counts non-Water)
+tiles_harvested_fertile = [ "LOD0_HARVESTED_0" ]
+
+# Harvested (ex-Regular) Land
+# (Tileset counts everything except Mountain and Water)
+tiles_harvested_regular = [ "LOD0_HARVESTED_0" ]
+
+# Water (coastline)
+# (Tileset counts Water)
+# Must not contain the actual water surface/volume, only the floor
+# (Recommend omitting variant 6)
+tiles_water = [
+    [ "LOD0_WTR_0_0" ],
+    [ "LOD0_WTR_1_0" ],
+    [ "LOD0_WTR_2A_0" ],
+    [ "LOD0_WTR_2B_0" ],
+    [ "LOD0_WTR_2C_0" ],
+    [ "LOD0_WTR_3A_0" ],
+    [ "LOD0_WTR_3B_0" ],
+    [ "LOD0_WTR_3C_0" ],
+    [ "LOD0_WTR_3D_0" ],
+    [ "LOD0_WTR_4A_0" ],
+    [ "LOD0_WTR_4B_0" ],
+    [ "LOD0_WTR_4C_0" ],
+    [ "LOD0_WTR_5_0" ],
+    [ ],
+]
+
+# Forest Base
+# (Tileset counts Forest + Harvested Forest)
+tiles_forest = [ "LOD0_FORESTFLOOR_0" ]
+
+# Additional tree models to populate forests with (spawn on top of tile)
+trees = [ "LOD0_TREE_0", "LOD0_TREE_1", "LOD0_TREE_2" ]
+
+# Clearance radius around trees at the densest part of a forest
+tree_radius_min = 1.0
+# Clearance radius around trees at the sparsest part of a forest
+tree_radius_max = 4.0
+
+# Mountain
+# (Tileset counts Mountain + Harvested Mountain)
+tiles_mountain = [
+    [ "LOD0_MTN_0_0" ],
+    [ "LOD0_MTN_1_0" ],
+    [ "LOD0_MTN_2A_0" ],
+    [ "LOD0_MTN_2B_0" ],
+    [ "LOD0_MTN_2C_0" ],
+    [ "LOD0_MTN_3A_0" ],
+    [ "LOD0_MTN_3B_0" ],
+    [ "LOD0_MTN_3C_0" ],
+    [ "LOD0_MTN_3D_0" ],
+    [ "LOD0_MTN_4A_0" ],
+    [ "LOD0_MTN_4B_0" ],
+    [ "LOD0_MTN_4C_0" ],
+    [ "LOD0_MTN_5_0" ],
+    [ "LOD0_MTN_6_0" ],
+]
+
+# Roads
+# (Tileset counts Road)
+tiles_road = [
+    [ ],
+    [ "LOD0_ROAD_1_0" ],
+    [ "LOD0_ROAD_2A_0" ],
+    [ "LOD0_ROAD_2B_0" ],
+    [ "LOD0_ROAD_2C_0" ],
+    [ "LOD0_ROAD_3A_0" ],
+    [ "LOD0_ROAD_3B_0" ],
+    [ "LOD0_ROAD_3C_0" ],
+    [ "LOD0_ROAD_3D_0" ],
+    [ "LOD0_ROAD_4A_0" ],
+    [ "LOD0_ROAD_4B_0" ],
+    [ "LOD0_ROAD_4C_0" ],
+    [ "LOD0_ROAD_5_0" ],
+    [ "LOD0_ROAD_6_0" ],
+]
+
+# Tile: Cit, replaces land/6 tile
+tile_cit = [ "LOD0_CIT_0" ]
+# Tile: Tower, replaces land/6 tile
+tile_tower = [ "LOD0_TOWER" ]
+# Tile: Middle part of Wall, connects to wall on opposite sides (2C-style), replaces land/6 tile
+tile_wallmid = [ "LOD0_WALL_MID" ]
+# Wall End Piece, spawned on top of a Mountain tile,
+# should connect to wall on one side and look OK if clipping into any mountain tile
+wall_mtn_interface = [ "LOD0_WALL_MTN" ]
+
+# TileSet: Bridge
+# (Tileset counts Land (non-Water, non-Forest, non-Mountain))
+# Should be designed to tile with both Road tiles and Land tiles.
+# Will be placed *on top of* the respective Water tiles.
+# Some configurations don't make sense and will never be used:
+# 0, 1, 2A, 3A, 4A, 5, 6
+# Only the following assets are required:
+# 2B, 2C, 3B, 3C, 3D, 4B, 4C
+tileset_bridge = [
+    [],
+    [],
+    [],
+    [ "LOD0_BRIDGE_2B_0" ],
+    [ "LOD0_BRIDGE_2C_0" ],
+    [],
+    [ "LOD0_BRIDGE_3B_0" ],
+    [ "LOD0_BRIDGE_3C_0" ],
+    [ "LOD0_BRIDGE_3D_0" ],
+    [],
+    [ "LOD0_BRIDGE_4B_0" ],
+    [ "LOD0_BRIDGE_4C_0" ],
+    [],
+    [],
+]
+
+# Items: to be positioned on top of land tiles
+item_mine = [ "LOD0_MINE" ]
+item_decoy = [ "LOD0_DECOY" ]
+item_trap = [ "LOD0_TRAP" ]
+
+# Flags: to be positioned on top of land tiles (like items)
+flag = [ "LOD0_FLAG_BASIC"]
+
+# Digits (array indexed by digit): to be positioned floating in the air, above tiles
+# Unlike other assets, multiple variants are not supported.
+digits = [
+    "LOD0_DIGIT_0",
+    "LOD0_DIGIT_1",
+    "LOD0_DIGIT_2",
+    "LOD0_DIGIT_3",
+    "LOD0_DIGIT_4",
+    "LOD0_DIGIT_5",
+    "LOD0_DIGIT_6",
+    "LOD0_DIGIT_7",
+    "LOD0_DIGIT_8",
+    "LOD0_DIGIT_9",
+]
+
+# Digits+asterisk (array indexed by digit): to be positioned floating in the air, above tiles
+# Unlike other assets, multiple variants are not supported.
+digits_asterisk = [
+    "LOD0_DIGAST_0",
+    "LOD0_DIGAST_1",
+    "LOD0_DIGAST_2",
+    "LOD0_DIGAST_3",
+    "LOD0_DIGAST_4",
+    "LOD0_DIGAST_5",
+    "LOD0_DIGAST_6",
+    "LOD0_DIGAST_7",
+    "LOD0_DIGAST_8",
+    "LOD0_DIGAST_9",
+]
+
+[lod1]
+
+tiles_regular = [ "LOD1_REGULAR_0" ]
+tiles_fertile = [ "LOD1_FERTILE_0" ]
+tiles_destroyed = [ "LOD1_DESTROYED_0" ]
+tiles_harvested_mountain = [ "LOD1_HARVESTED_0" ]
+tiles_harvested_forest = [ "LOD1_HARVESTED_0" ]
+tiles_harvested_fertile = [ "LOD1_HARVESTED_0" ]
+tiles_harvested_regular = [ "LOD1_HARVESTED_0" ]
+
+tiles_water = [
+    [ "LOD1_WTR_0_0" ],
+    [ "LOD1_WTR_1_0" ],
+    [ "LOD1_WTR_2A_0" ],
+    [ "LOD1_WTR_2B_0" ],
+    [ "LOD1_WTR_2C_0" ],
+    [ "LOD1_WTR_3A_0" ],
+    [ "LOD1_WTR_3B_0" ],
+    [ "LOD1_WTR_3C_0" ],
+    [ "LOD1_WTR_3D_0" ],
+    [ "LOD1_WTR_4A_0" ],
+    [ "LOD1_WTR_4B_0" ],
+    [ "LOD1_WTR_4C_0" ],
+    [ "LOD1_WTR_5_0" ],
+    [ ],
+]
+
+tiles_forest = [ "LOD1_FORESTFLOOR_0" ]
+trees = [ "LOD1_TREE_0", "LOD1_TREE_1", "LOD1_TREE_2" ]
+tree_radius_min = 1.0
+tree_radius_max = 6.0
+
+tiles_mountain = [
+    [ "LOD1_MTN_0_0" ],
+    [ "LOD1_MTN_1_0" ],
+    [ "LOD1_MTN_2A_0" ],
+    [ "LOD1_MTN_2B_0" ],
+    [ "LOD1_MTN_2C_0" ],
+    [ "LOD1_MTN_3A_0" ],
+    [ "LOD1_MTN_3B_0" ],
+    [ "LOD1_MTN_3C_0" ],
+    [ "LOD1_MTN_3D_0" ],
+    [ "LOD1_MTN_4A_0" ],
+    [ "LOD1_MTN_4B_0" ],
+    [ "LOD1_MTN_4C_0" ],
+    [ "LOD1_MTN_5_0" ],
+    [ "LOD1_MTN_6_0" ],
+]
+
+tiles_road = [
+    [ ],
+    [ "LOD1_ROAD_1_0" ],
+    [ "LOD1_ROAD_2A_0" ],
+    [ "LOD1_ROAD_2B_0" ],
+    [ "LOD1_ROAD_2C_0" ],
+    [ "LOD1_ROAD_3A_0" ],
+    [ "LOD1_ROAD_3B_0" ],
+    [ "LOD1_ROAD_3C_0" ],
+    [ "LOD1_ROAD_3D_0" ],
+    [ "LOD1_ROAD_4A_0" ],
+    [ "LOD1_ROAD_4B_0" ],
+    [ "LOD1_ROAD_4C_0" ],
+    [ "LOD1_ROAD_5_0" ],
+    [ "LOD1_ROAD_6_0" ],
+]
+
+tile_cit = [ "LOD1_CIT_0" ]
+tile_tower = [ "LOD1_TOWER" ]
+tile_wallmid = [ "LOD1_WALL_MID" ]
+wall_mtn_interface = [ "LOD1_WALL_MTN" ]
+tileset_bridge = [
+    [],
+    [],
+    [],
+    [ "LOD1_BRIDGE_2B_0" ],
+    [ "LOD1_BRIDGE_2C_0" ],
+    [],
+    [ "LOD1_BRIDGE_3B_0" ],
+    [ "LOD1_BRIDGE_3C_0" ],
+    [ "LOD1_BRIDGE_3D_0" ],
+    [],
+    [ "LOD1_BRIDGE_4B_0" ],
+    [ "LOD1_BRIDGE_4C_0" ],
+    [],
+    [],
+]
+
+item_mine = [ "LOD1_MINE" ]
+item_decoy = [ "LOD1_DECOY" ]
+item_trap = [ "LOD1_TRAP" ]
+
+flag = [ "LOD1_FLAG_BASIC"]
+
+digits = [
+    "LOD1_DIGIT_0",
+    "LOD1_DIGIT_1",
+    "LOD1_DIGIT_2",
+    "LOD1_DIGIT_3",
+    "LOD1_DIGIT_4",
+    "LOD1_DIGIT_5",
+    "LOD1_DIGIT_6",
+    "LOD1_DIGIT_7",
+    "LOD1_DIGIT_8",
+    "LOD1_DIGIT_9",
+]
+
+digits_asterisk = [
+    "LOD1_DIGAST_0",
+    "LOD1_DIGAST_1",
+    "LOD1_DIGAST_2",
+    "LOD1_DIGAST_3",
+    "LOD1_DIGAST_4",
+    "LOD1_DIGAST_5",
+    "LOD1_DIGAST_6",
+    "LOD1_DIGAST_7",
+    "LOD1_DIGAST_8",
+    "LOD1_DIGAST_9",
+]
+
+[lod2]
+
+tiles_regular = [ "LOD2_REGULAR_0" ]
+tiles_fertile = [ "LOD2_FERTILE_0" ]
+tiles_destroyed = [ "LOD2_DESTROYED_0" ]
+tiles_harvested_mountain = [ "LOD2_HARVESTED_0" ]
+tiles_harvested_forest = [ "LOD2_HARVESTED_0" ]
+tiles_harvested_fertile = [ "LOD2_HARVESTED_0" ]
+tiles_harvested_regular = [ "LOD2_HARVESTED_0" ]
+
+tiles_water = [
+    [ "LOD2_WTR_0_0" ],
+    [ "LOD2_WTR_1_0" ],
+    [ "LOD2_WTR_2A_0" ],
+    [ "LOD2_WTR_2B_0" ],
+    [ "LOD2_WTR_2C_0" ],
+    [ "LOD2_WTR_3A_0" ],
+    [ "LOD2_WTR_3B_0" ],
+    [ "LOD2_WTR_3C_0" ],
+    [ "LOD2_WTR_3D_0" ],
+    [ "LOD2_WTR_4A_0" ],
+    [ "LOD2_WTR_4B_0" ],
+    [ "LOD2_WTR_4C_0" ],
+    [ "LOD2_WTR_5_0" ],
+    [ ],
+]
+
+tiles_forest = [ "LOD2_FOREST_0" ]
+trees = []
+tree_radius_min = 0.0
+tree_radius_max = 0.0
+
+tiles_mountain = [
+    [ "LOD2_MTN_0_0" ],
+    [ "LOD2_MTN_1_0" ],
+    [ "LOD2_MTN_2A_0" ],
+    [ "LOD2_MTN_2B_0" ],
+    [ "LOD2_MTN_2C_0" ],
+    [ "LOD2_MTN_3A_0" ],
+    [ "LOD2_MTN_3B_0" ],
+    [ "LOD2_MTN_3C_0" ],
+    [ "LOD2_MTN_3D_0" ],
+    [ "LOD2_MTN_4A_0" ],
+    [ "LOD2_MTN_4B_0" ],
+    [ "LOD2_MTN_4C_0" ],
+    [ "LOD2_MTN_5_0" ],
+    [ "LOD2_MTN_6_0" ],
+]
+
+tiles_road = [
+    [ ],
+    [ "LOD2_ROAD_1_0" ],
+    [ "LOD2_ROAD_2A_0" ],
+    [ "LOD2_ROAD_2B_0" ],
+    [ "LOD2_ROAD_2C_0" ],
+    [ "LOD2_ROAD_3A_0" ],
+    [ "LOD2_ROAD_3B_0" ],
+    [ "LOD2_ROAD_3C_0" ],
+    [ "LOD2_ROAD_3D_0" ],
+    [ "LOD2_ROAD_4A_0" ],
+    [ "LOD2_ROAD_4B_0" ],
+    [ "LOD2_ROAD_4C_0" ],
+    [ "LOD2_ROAD_5_0" ],
+    [ "LOD2_ROAD_6_0" ],
+]
+
+tile_cit = [ "LOD2_CIT_0" ]
+tile_tower = [ "LOD2_TOWER" ]
+tile_wallmid = [ "LOD2_WALL_MID" ]
+wall_mtn_interface = [ "LOD2_WALL_MTN" ]
+tileset_bridge = [
+    [],
+    [],
+    [],
+    [ "LOD2_BRIDGE_2B_0" ],
+    [ "LOD2_BRIDGE_2C_0" ],
+    [],
+    [ "LOD2_BRIDGE_3B_0" ],
+    [ "LOD2_BRIDGE_3C_0" ],
+    [ "LOD2_BRIDGE_3D_0" ],
+    [],
+    [ "LOD2_BRIDGE_4B_0" ],
+    [ "LOD2_BRIDGE_4C_0" ],
+    [],
+    [],
+]
+
+item_mine = [ "LOD2_MINE" ]
+item_decoy = [ "LOD2_DECOY" ]
+item_trap = [ "LOD2_TRAP" ]
+
+flag = [ "LOD2_FLAG_BASIC"]
+
+digits = [
+    "LOD2_DIGIT_0",
+    "LOD2_DIGIT_1",
+    "LOD2_DIGIT_2",
+    "LOD2_DIGIT_3",
+    "LOD2_DIGIT_4",
+    "LOD2_DIGIT_5",
+    "LOD2_DIGIT_6",
+    "LOD2_DIGIT_7",
+    "LOD2_DIGIT_8",
+    "LOD2_DIGIT_9",
+]
+
+digits_asterisk = [
+    "LOD2_DIGAST_0",
+    "LOD2_DIGAST_1",
+    "LOD2_DIGAST_2",
+    "LOD2_DIGAST_3",
+    "LOD2_DIGAST_4",
+    "LOD2_DIGAST_5",
+    "LOD2_DIGAST_6",
+    "LOD2_DIGAST_7",
+    "LOD2_DIGAST_8",
+    "LOD2_DIGAST_9",
+]

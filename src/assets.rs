@@ -1,10 +1,19 @@
+use bevy::gltf::Gltf;
+
 use crate::prelude::*;
+
+use self::ass3d::Ass3dConfig;
+
+pub mod ass3d;
 
 pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.add_loading_state(LoadingState::new(AppState::AssetsLoading));
+        app.add_plugins(
+            bevy_common_assets::toml::TomlAssetPlugin::<ass3d::Ass3dConfig>::new(&["ass3d.toml"])
+        );
         app.add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
             AppState::AssetsLoading,
             "ui.assets.ron",
@@ -63,11 +72,15 @@ pub struct TitleLogo {
 
 #[derive(AssetCollection, Resource)]
 pub struct GameAssets {
-    #[asset(key = "game.tilemap.sprites")]
+    #[asset(key = "gfx3d.fallback_skin")]
+    pub fallback_3d: Handle<Ass3dConfig>,
+    #[asset(key = "gfx3d.fallback_skin.gltf")]
+    pub fallback_3d_gltf: Handle<Gltf>,
+    #[asset(key = "gfx2d.tilemap.sprites")]
     pub sprites: Handle<TextureAtlas>,
-    #[asset(key = "game.tilemap.roads6")]
+    #[asset(key = "gfx2d.tilemap.roads6")]
     pub roads6: Handle<TextureAtlas>,
-    #[asset(key = "game.tilemap.roads4")]
+    #[asset(key = "gfx2d.tilemap.roads4")]
     pub roads4: Handle<TextureAtlas>,
 }
 
