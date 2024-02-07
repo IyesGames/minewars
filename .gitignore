@@ -2,3 +2,6 @@
 .DS_Store
 /doc/book
 Cargo.lock
+*.blend1
+/proprietary
+*.exe
