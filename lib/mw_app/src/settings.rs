@@ -33,8 +33,9 @@ pub struct AllSettings {
 #[derive(Serialize, Deserialize)]
 pub enum MwRenderer {
     Sprites,
-    #[default]
     Tilemap,
+    #[default]
+    Simple3D,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -331,7 +332,7 @@ impl Default for UiHudSettings {
             bottom_layout_reverse: false,
             citylist: true,
             citylist_show_unowned: true,
-            minimap_scale: 3,
+            minimap_scale: 2,
         }
     }
 }
@@ -387,7 +388,7 @@ impl Default for PlayerPaletteSettings {
 impl Default for MapGenSettings {
     fn default() -> Self {
         MapGenSettings {
-            size: 24,
+            size: 32,
             topology: mw_common::grid::Topology::Hex,
             style: if PROPRIETARY {
                 MapGenStyle::MineWars

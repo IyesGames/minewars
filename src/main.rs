@@ -17,6 +17,7 @@ mod assets;
 mod cli;
 mod input;
 mod gfx2d;
+mod gfx3d;
 mod locale;
 mod minimap;
 mod minesweeper;
@@ -126,6 +127,7 @@ fn main() {
         crate::ui::UiPlugin,
         crate::settings::SettingsPlugin,
         crate::gfx2d::Gfx2dPlugin,
+        crate::gfx3d::Gfx3dPlugin,
         crate::minimap::MinimapPlugin,
         crate::net::NetClientPlugin,
         crate::minesweeper::MinesweeperPlugin,
