@@ -25,7 +25,7 @@ impl Plugin for Gfx2dTilemapPlugin {
                 setup_tilemap::<Sq>
                     .in_set(MapTopologySet(Topology::Sq)),
             )
-                .in_set(Gfx2dTileSetupSet)
+                .in_set(TilemapSetupSet)
                 .run_if(not(resource_exists::<TilemapInitted>())),
             (
                 tile_kind::<Hex>

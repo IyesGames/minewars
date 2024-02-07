@@ -32,12 +32,6 @@ pub enum Gfx2dSet {
     Tilemap,
 }
 
-#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct Gfx2dTileSetupSet;
-
-#[derive(Resource)]
-pub struct TilemapInitted;
-
 #[derive(Component)]
 struct CursorSprite;
 #[derive(Component)]

@@ -45,6 +45,12 @@ pub struct MapTopologySet(pub Topology);
 pub struct NeedsMapSet;
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TilemapSetupSet;
+
+#[derive(Resource)]
+pub struct TilemapInitted;
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MapUpdateSet {
     TileKind,
     TileOwner,
