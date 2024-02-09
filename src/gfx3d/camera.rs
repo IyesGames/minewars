@@ -1,4 +1,4 @@
-use bevy::{render::camera::ScalingMode, window::PrimaryWindow};
+use bevy::{input::mouse::MouseScrollUnit, render::camera::ScalingMode, window::PrimaryWindow};
 use mw_app::camera::{GameCamera, GridCursor, GridCursorSet};
 use mw_common::{game::MapDescriptor, grid::*};
 
@@ -18,9 +18,19 @@ impl Plugin for Gfx3dCameraPlugin {
             grid_cursor
                 .in_set(GridCursorSet)
                 .in_set(Gfx3dSet::Any)
-                .after(WorldCursorSet)
+                .after(WorldCursorSet),
+            pan_orbit_camera
+                .before(WorldCursorSet),
         ));
     }
+}
+
+#[derive(Component)]
+struct PanOrbitCamera {
+    center: Vec2,
+    radius: f32,
+    yaw: f32,
+    pitch: f32,
 }
 
 fn setup_game_camera_3d(
@@ -43,10 +53,16 @@ fn setup_game_camera_3d(
         GameCamera,
         UiCamera,
         Camera3dBundle {
-            projection: projection.into(),
+            // projection: projection.into(),
             transform,
             ..Default::default()
         },
+        PanOrbitCamera {
+            center: Vec2::ZERO,
+            radius: 1600.0,
+            yaw: 0.0,
+            pitch: 0.75,
+        }
     ));
     commands.spawn((
         DirectionalLightBundle {
@@ -61,32 +77,111 @@ fn setup_game_camera_3d(
     ));
 }
 
+fn pan_orbit_camera(
+    // FIXME: proper input
+    mut crs: ResMut<WorldCursor>,
+    kbd: Res<Input<KeyCode>>,
+    mousebtn: Res<Input<MouseButton>>,
+    mut ev_motion: EventReader<bevy::input::mouse::MouseMotion>,
+    mut ev_scroll: EventReader<bevy::input::mouse::MouseWheel>,
+    mut q_camera: Query<(&mut PanOrbitCamera, &mut Transform, &Camera)>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    mut init: Local<bool>,
+) {
+    let mut pan = Vec2::ZERO;
+    let mut rotation_move = Vec2::ZERO;
+    let mut scroll = 0.0;
+
+    if mousebtn.pressed(MouseButton::Right) {
+        if kbd.pressed(KeyCode::AltLeft) {
+            for ev in ev_motion.read() {
+                rotation_move += ev.delta;
+            }
+        } else {
+            for ev in ev_motion.read() {
+                pan += ev.delta;
+            }
+        }
+    }
+    for ev in ev_scroll.read() {
+        match ev.unit {
+            MouseScrollUnit::Pixel => {
+                scroll += ev.y;
+            }
+            MouseScrollUnit::Line => {
+                scroll -= ev.y * 64.0;
+            }
+        }
+    }
+    for (mut pan_orbit, mut transform, camera) in q_camera.iter_mut() {
+        let mut any = false;
+        if scroll != 0.0 {
+            any = true;
+            pan_orbit.radius += scroll;
+        }
+        if pan != Vec2::ZERO {
+            // pan.x = -pan.x;
+            // let mat = Mat2::from_angle(pan_orbit.yaw);
+            // pan_orbit.center += mat.mul_vec2(pan);
+            if let Some(cursor_position) = q_window.get_single().ok().and_then(|window| window.cursor_position()) {
+                let cursor_position_old = cursor_position - pan;
+                let camera_transform = GlobalTransform::from(*transform);
+                let groundpos_new = compute_cursor_to_ground_plane(cursor_position, &camera_transform, camera);
+                let groundpos_old = compute_cursor_to_ground_plane(cursor_position_old, &camera_transform, camera);
+                if let (Some(groundpos_new), Some(groundpos_old)) = (groundpos_new, groundpos_old) {
+                    any = true;
+                    pan_orbit.center -= groundpos_new - groundpos_old;
+                }
+            };
+        }
+        if rotation_move != Vec2::ZERO {
+            any = true;
+            pan_orbit.yaw -= rotation_move.x * 0.01;
+            pan_orbit.pitch += rotation_move.y * 0.01;
+        }
+        if any || !*init {
+            *init = true;
+            transform.rotation = Quat::from_euler(EulerRot::YXZ, pan_orbit.yaw, -pan_orbit.pitch, 0.0);
+            let v = -transform.rotation.mul_vec3(Vec3::NEG_Z);
+            transform.translation = Vec3::new(pan_orbit.center.x, 0.0, -pan_orbit.center.y)
+                + v * pan_orbit.radius;
+        }
+    }
+    ev_motion.clear();
+}
+
 fn cursor_to_ground_plane(
     mut wc: ResMut<WorldCursor>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<GameCamera>>,
 ) {
-    let (camera, camera_transform) = q_camera.single();
-    let window = q_window.single();
-
-    let Some(cursor_position) = window.cursor_position() else {
+    let Ok((camera, camera_transform)) = q_camera.get_single() else {
+        return;
+    };
+    let Some(cursor_position) = q_window.get_single().ok().and_then(|window| window.cursor_position()) else {
         return;
     };
 
+    let Some(newpos) = compute_cursor_to_ground_plane(cursor_position, camera_transform, camera) else {
+        return;
+    };
+
+    wc.pos_prev = wc.pos;
+    wc.pos = newpos;
+}
+
+fn compute_cursor_to_ground_plane(
+    cursor_position: Vec2,
+    camera_transform: &GlobalTransform,
+    camera: &Camera,
+) -> Option<Vec2> {
     let plane_origin = Vec3::ZERO;
     let plane_normal = Vec3::Y;
 
-    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-        return;
-    };
-
-    let Some(distance) = ray.intersect_plane(plane_origin, plane_normal) else {
-        return;
-    };
-
+    let ray = camera.viewport_to_world(camera_transform, cursor_position)?;
+    let distance = ray.intersect_plane(plane_origin, plane_normal)?;
     let global_cursor = ray.get_point(distance);
-    wc.pos_prev = wc.pos;
-    wc.pos = Vec2::new(global_cursor.x, -global_cursor.z);
+    Some(Vec2::new(global_cursor.x, -global_cursor.z))
 }
 
 
