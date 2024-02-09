@@ -1,6 +1,7 @@
 use bevy::ecs::system::RunSystemOnce;
 use bevy::gltf::Gltf;
-use bevy::render::mesh::shape::Plane;
+use bevy::render::mesh::shape::{Circle, Plane};
+use mw_app::camera::{GridCursor, GridCursorChangedSet};
 use mw_common::grid::*;
 use mw_app::map::*;
 
@@ -15,14 +16,20 @@ pub struct Gfx3dSimple3dPlugin;
 impl Plugin for Gfx3dSimple3dPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (
-            (setup_tilemap, setup_water)
+            (setup_tilemap, setup_water, setup_cursor)
                 .in_set(MapTopologySet(Topology::Hex))
                 .in_set(TilemapSetupSet)
                 .in_set(Gfx3dSet::Simple3D)
                 .run_if(not(resource_exists::<TilemapInitted>())),
+            update_cursor
+                .in_set(MapTopologySet(Topology::Hex))
+                .in_set(GridCursorChangedSet),
         ));
     }
 }
+
+#[derive(Component)]
+struct CursorMesh;
 
 fn setup_tilemap(
     world: &mut World,
@@ -81,6 +88,48 @@ fn setup_water(
             ..Default::default()
         },
     ));
+}
+
+fn setup_cursor(
+    world: &mut World,
+) {
+    let material = StandardMaterial {
+        base_color: Color::rgba(0.0, 0.0, 0.0, 0.5),
+        alpha_mode: AlphaMode::Blend,
+        ..Default::default()
+    };
+    let plane = Circle {
+        radius: TILE_SCALE / 2.0,
+        vertices: 6,
+    };
+    let handle_mesh = world.resource_mut::<Assets<Mesh>>().add(plane.into());
+    let handle_material = world.resource_mut::<Assets<StandardMaterial>>().add(material);
+    world.spawn((
+        CursorMesh,
+        PbrBundle {
+            mesh: handle_mesh,
+            material: handle_material,
+            transform: Transform::from_xyz(0.0, 0.125, 0.0)
+                .with_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
+            ..Default::default()
+        },
+    ));
+}
+
+fn update_cursor(
+    mut q_cursor: Query<&mut Transform, With<CursorMesh>>,
+    crs: Res<GridCursor>,
+) {
+    if !crs.is_changed() {
+        return;
+    }
+
+    let translation = Hex::from(crs.0).translation();
+    let mut transform = q_cursor.single_mut();
+    transform.translation.x =
+        (translation.x as f64 * 3f64.sqrt() * TILE_SCALE as f64 / 2.0) as f32;
+    transform.translation.z =
+        -translation.y * TILE_SCALE;
 }
 
 fn update_tile_scene(
