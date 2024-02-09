@@ -177,13 +177,13 @@ pub fn compute_tile_ass3d(
             }
             allowed_rotations >>= 1;
         }
-        *ass3d = dbg!(TileAss3d {
+        *ass3d = TileAss3d {
             kind: ass3d_kind,
             variant,
             rotation,
             neighmask,
             subvariant: rng.gen(),
-        });
+        };
     }
 }
 

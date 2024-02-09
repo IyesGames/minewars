@@ -144,14 +144,8 @@ impl Ass3dResolver {
                 Ass3dTileKind::Bridge =>
                     Self::resolve_tileset(ass_lod.tileset_bridge.as_ref(), lod, ass3d),
             };
-            if ass3d.kind == Ass3dTileKind::Water && ass3d.variant == Ass3dTileVariant::V2A {
-                dbg!(scene_name);
-            }
             if !scene_name.is_empty() {
                 if let Some(scene) = gltf.named_scenes.get(scene_name) {
-                    if ass3d.kind == Ass3dTileKind::Water && ass3d.variant == Ass3dTileVariant::V2A {
-                        dbg!(scene);
-                    }
                     return Some(ResolvedAsset {
                         scale: super::TILE_SCALE / skin.tile_size,
                         scene: scene.clone(),
