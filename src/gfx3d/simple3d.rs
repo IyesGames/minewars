@@ -24,7 +24,10 @@ impl Plugin for Gfx3dSimple3dPlugin {
             update_cursor
                 .in_set(MapTopologySet(Topology::Hex))
                 .in_set(GridCursorChangedSet),
-        ));
+            water_tide,
+        )
+            .in_set(Gfx3dSet::Simple3D)
+        );
     }
 }
 
@@ -67,6 +70,12 @@ fn setup_tilemap(
     debug!("Initialized map using Simple3D renderer.");
 }
 
+#[derive(Component)]
+struct WaterPlane;
+
+#[derive(Component)]
+struct TideWaterLevel;
+
 fn setup_water(
     world: &mut World,
 ) {
@@ -76,18 +85,43 @@ fn setup_water(
         alpha_mode: AlphaMode::Blend,
         ..Default::default()
     };
-    let plane = Plane::from_size(TILE_SCALE * 256.0);
+    let plane = Circle {
+        radius: TILE_SCALE * 128.0,
+        vertices: 6,
+    };
     let handle_mesh = world.resource_mut::<Assets<Mesh>>().add(plane.into());
     let handle_material = world.resource_mut::<Assets<StandardMaterial>>().add(material);
     world.spawn((
+        WaterPlane,
+        TideWaterLevel,
         PbrBundle {
             mesh: handle_mesh,
             material: handle_material,
-            // TODO: hightide/lowtide
-            transform: Transform::from_xyz(0.0, -2.5, 0.0),
+            transform: Transform::from_xyz(0.0, -2.5, 0.0)
+                .with_rotation(Quat::from_euler(EulerRot::ZYX, 0.0, 30f32.to_radians(), -std::f32::consts::FRAC_PI_2)),
             ..Default::default()
         },
     ));
+}
+
+fn water_tide(
+    time: Res<Time>,
+    mut q_water: Query<&mut Transform, With<TideWaterLevel>>,
+) {
+    // TODO: get this from asset pack
+    let lowtide = -5.0;
+    let hightide = -2.0;
+    const TIDE_CYCLE_TIME: f32 = 128.0;
+
+    let tide_delta = (hightide - lowtide) / 2.0;
+    let midtide = lowtide + tide_delta;
+    let waterlevel =
+        (time.elapsed_seconds_wrapped() * std::f32::consts::PI * 2.0 / TIDE_CYCLE_TIME)
+            .sin() * tide_delta + midtide;
+
+    for mut xf in &mut q_water {
+        xf.translation.y = waterlevel;
+    }
 }
 
 fn setup_cursor(
