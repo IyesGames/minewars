@@ -3,11 +3,11 @@
 RELDIR="release"
 
 EXE_MAIN="minewars"
-EXE_EXTRA="mw_host mw_auth mw_hostrpc mw_cert mw_datatool"
+EXE_EXTRA="mw_hostsrv mw_authsrv mw_hostrpc mw_certgen mw_datatool"
 
 MYOS="$(uname)"
 
-export CARGO_TARGET_DIR="./target-mwrel"
+export CARGO_TARGET_DIR="./target-release"
 
 macos() {
     APPNAME="MineWars"
@@ -114,8 +114,18 @@ linux-arm64() {
 }
 
 case "${1}" in
-    macos)
+    mac)
         macos
+        ;;
+    win)
+        win64
+        win32
+        ;;
+    lin)
+        linux-x64
+        linux-x86
+        linux-arm64
+        linux-arm
         ;;
     win32)
         win32
