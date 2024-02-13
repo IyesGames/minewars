@@ -21,6 +21,7 @@ impl Plugin for MapPlugin {
         app.add_plugins(update::MapUpdatePlugin);
         app.add_event::<RecomputeVisEvent>();
         app.init_resource::<GridCursorTileEntity>();
+        app.init_resource::<TileUpdateQueue>();
         for topo in enum_iterator::all::<Topology>() {
             app.configure_sets(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
             app.configure_sets(Update, NeedsMapSet.run_if(resource_exists::<MapDescriptor>()));
@@ -77,6 +78,14 @@ pub struct CitIndex {
     pub by_id: Vec<Entity>,
 }
 
+/// Keeps track of tile entities whose map data has changed.
+///
+/// This is used as a more efficient alternative to Bevy's change detection,
+/// because iterating queries with changed filters still requires accessing
+/// all entities.
+#[derive(Resource, Default)]
+pub struct TileUpdateQueue(Vec<Entity>);
+
 /// Map coordinate of a given tile.
 ///
 /// This uses our own grid coord types (Pos <-> {Hex, Sq}).
@@ -132,7 +141,6 @@ pub enum TileGent {
 }
 
 /// Visibility level of the given tile
-/// (see MW game design docs)
 #[derive(Component)]
 pub enum TileVisLevel {
     Fog,
@@ -211,6 +219,37 @@ pub struct CitRes {
     pub money: u32,
     pub income: u16,
     pub res: u16,
+}
+
+impl TileUpdateQueue {
+    pub fn clear(&mut self) {
+        self.0.clear()
+    }
+    pub fn is_marked_all(&self) -> bool {
+        self.0.get(0) != Some(&Entity::from_bits(u64::MAX))
+    }
+    pub fn iter(&self) -> impl Iterator<Item = &Entity> {
+        self.0.iter()
+    }
+    pub fn mark_all(&mut self) {
+        // add a sentinel value to indicate all tiles to be checked
+        self.0.clear();
+        self.0.push(Entity::from_bits(u64::MAX));
+    }
+    pub fn mark_one(&mut self, entity: Entity) {
+        // if we are already checking all tiles, no need to do anything
+        if self.is_marked_all() {
+            self.0.push(entity);
+        }
+    }
+    pub fn mark_coord<C: Coord>(&mut self, index: &MapTileIndex<C>, c: C) {
+        // if we are already checking all tiles, no need to do anything
+        if self.is_marked_all() {
+            if let Some(e) = index.0.get(c) {
+                self.0.push(*e);
+            }
+        }
+    }
 }
 
 fn grid_cursor_map_tile<C: Coord>(

@@ -96,7 +96,7 @@ fn do_write_settings(
         error!("Failed to create user preferences directory: {}", e);
     }
     if let Err(e) = std::fs::write(file, bytes) {
-        error!("Failed to write default settings to user prefs file: {}", e);
+        error!("Failed to write settings to user prefs file: {}", e);
     }
     info!("Settings written to: {:?}", file);
 }

@@ -388,14 +388,14 @@ impl Default for PlayerPaletteSettings {
 impl Default for MapGenSettings {
     fn default() -> Self {
         MapGenSettings {
-            size: 32,
+            size: 64,
             topology: mw_common::grid::Topology::Hex,
             style: if PROPRIETARY {
                 MapGenStyle::MineWars
             } else {
                 MapGenStyle::Flat
             },
-            land_bias: 48,
+            land_bias: 64,
             seed: None,
         }
     }

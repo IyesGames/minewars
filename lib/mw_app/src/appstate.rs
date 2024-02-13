@@ -47,6 +47,8 @@ pub enum AppState {
     MainMenu,
     /// Gameplay
     InGame,
+    /// Map Editor
+    Editor,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Default, States)]
