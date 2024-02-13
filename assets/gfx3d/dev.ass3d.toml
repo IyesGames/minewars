@@ -253,7 +253,7 @@ tiles_water = [
     [ "LOD1_WTR_3B_0" ],
     [ "LOD1_WTR_3C_0" ],
     [ "LOD1_WTR_3D_0" ],
-    [ "LOD1_WTR_4A_0" ],
+    [ "LOD1_WTR_4A_0", "LOD1_WTR_4A_1", "LOD1_WTR_4A_2" ],
     [ "LOD1_WTR_4B_0" ],
     [ "LOD1_WTR_4C_0" ],
     [ "LOD1_WTR_5_0" ],
