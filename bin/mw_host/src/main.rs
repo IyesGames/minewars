@@ -17,6 +17,7 @@ mod rpc;
 mod server;
 
 mod map;
+mod session;
 
 fn main() {
     let args = cli::Args::parse();
