@@ -1,4 +1,6 @@
 /target
+/target-cross
+/target-release
 .DS_Store
 /doc/book
 Cargo.lock
