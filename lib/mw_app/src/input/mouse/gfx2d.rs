@@ -1,8 +1,8 @@
 use bevy::input::mouse::MouseMotion;
 
-use mw_app::camera::{GameCamera, CameraControlSet};
-
 use crate::{prelude::*, gfx2d::Gfx2dSet};
+use crate::camera::{GameCamera, CameraControlSet};
+
 use super::*;
 
 pub struct Gfx2dMouseInputPlugin;

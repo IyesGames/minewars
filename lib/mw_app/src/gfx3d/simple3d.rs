@@ -1,13 +1,14 @@
 use bevy::ecs::system::RunSystemOnce;
 use bevy::gltf::Gltf;
-use bevy::render::mesh::shape::{Circle, Plane};
-use mw_app::camera::{GridCursor, GridCursorChangedSet};
+use bevy::render::mesh::shape::Circle;
 use mw_common::grid::*;
-use mw_app::map::*;
 
-use crate::assets::ass3d::Ass3dConfig;
-use crate::gfx3d::map::*;
 use crate::prelude::*;
+use crate::assets::ass3d::Ass3dConfig;
+use crate::camera::{GridCursor, GridCursorChangedSet};
+use crate::gfx3d::map::*;
+use crate::map::*;
+
 use super::*;
 use super::asset_resolver::Ass3dResolver;
 

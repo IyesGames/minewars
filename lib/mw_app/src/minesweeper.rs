@@ -1,14 +1,15 @@
-use crate::prelude::*;
-use mw_app::settings::MapGenStyle;
-use mw_app::tool::*;
-use mw_app::view::*;
-use mw_app::bevyhost::*;
-use mw_app::player::*;
 use mw_common::game::event::GameEvent;
 use mw_game_minesweeper::*;
 use mw_common::grid::*;
 use mw_common::plid::*;
 use mw_common::game::*;
+
+use crate::prelude::*;
+use crate::settings::MapGenStyle;
+use crate::tool::*;
+use crate::view::*;
+use crate::bevyhost::*;
+use crate::player::*;
 
 pub struct MinesweeperPlugin;
 
@@ -56,10 +57,10 @@ fn cli_minesweeper_playground(world: &mut World) {
             }
         }
         (true, MapGenStyle::MineWars) => {
-            #[cfg(feature = "proprietary")]
-            mw_proprietary_client::setup_minesweeper_playground_mwmap(
-                world, minesweeper_settings, &mapgen_settings,
-            );
+            // #[cfg(feature = "proprietary")]
+            // mw_app_proprietary::setup_minesweeper_playground_mwmap(
+            //     world, minesweeper_settings, &mapgen_settings,
+            // );
         }
     }
 }
@@ -71,7 +72,7 @@ fn setup_minesweeper_playground_flatmap<C: Coord>(
 ) {
     let n_plids = minesweeper_settings.n_plids;
     let dummy_map = MapData::<C, ()>::new(map_size, ());
-    mw_app::map::setup_map(world, &dummy_map, &[], |_| TileKind::Regular, |_| 0);
+    crate::map::setup_map(world, &dummy_map, &[], |_| TileKind::Regular, |_| 0);
     let game = GameMinesweeper::<C>::new(minesweeper_settings, &dummy_map, |_| TileKind::Regular);
     world.insert_resource(BevyHost::new(game, ()));
 

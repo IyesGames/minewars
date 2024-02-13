@@ -1,8 +1,9 @@
 use bevy::{input::mouse::MouseScrollUnit, render::camera::ScalingMode, window::PrimaryWindow};
-use mw_app::camera::{GameCamera, GridCursor, GridCursorSet};
 use mw_common::{game::MapDescriptor, grid::*};
 
 use crate::{prelude::*, ui::UiCamera};
+use crate::camera::{GameCamera, GridCursor, GridCursorSet};
+
 use super::*;
 
 pub struct Gfx3dCameraPlugin;

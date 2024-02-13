@@ -1,9 +1,9 @@
 use bevy::{input::mouse::{MouseWheel, MouseScrollUnit}, window::PrimaryWindow};
 use bevy_tweening::*;
 use mw_common::{game::MapDescriptor, grid::*};
-use mw_app::{camera::*, input::InputAction};
 
 use crate::{prelude::*, ui::UiCamera, input::GameInputSet};
+use crate::{camera::*, input::InputAction};
 
 use super::Gfx2dSet;
 

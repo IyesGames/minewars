@@ -6,15 +6,23 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+dev = ["bevy/file_watcher"]
+release = []
 proprietary = []
 
 [dependencies.mw_common]
 path = "../mw_common"
-features = [ "bevy" ]
+features = [ "bevy", "net" ]
 
 [dependencies.mw_game_minesweeper]
 path = "../mw_game_minesweeper"
-features = ["bevy"]
+features = [ "bevy" ]
+
+[dependencies.mw_proto_host]
+path = "../mw_proto_host"
+
+[dependencies.mw_proto_auth]
+path = "../mw_proto_auth"
 
 [dependencies]
 anyhow = "1.0.79"
@@ -22,15 +30,19 @@ derive_more = "0.99.17"
 directories = "5.0.1"
 enum-iterator = "1.4.1"
 enum-map = "2.7.3"
+fluent_content = "0.0.5"
 glam = "0.25.0"
 hashbrown = "0.14.3"
 modular-bitfield = "0.11.2"
 num = "0.4.1"
 num-derive = "0.4.1"
 num-traits = "0.2.17"
+num_cpus = "1.16.0"
 rand = "0.8.5"
 thiserror = "1.0.56"
+toml = "0.8.8"
 tracing = "0.1.40"
+unic-langid = "0.9.4"
 
 [dependencies.serde]
 version = "1.0.195"
@@ -38,17 +50,70 @@ features = [ "derive" ]
 
 [dependencies.bevy]
 version = "0.12.1"
-default-features = false
+# default-features = false
 features = [
-	"bevy_asset",
-	"bevy_core_pipeline",
-	"bevy_render",
-	"bevy_sprite",
-	"bevy_text",
-	"bevy_ui",
-	"serialize",
+    "android_shared_stdcxx",
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_core_pipeline",
+    "bevy_gilrs",
+    "bevy_gizmos",
+    "bevy_gltf",
+    "bevy_pbr",
+    "bevy_render",
+    "bevy_scene",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_winit",
+    "flac",
+    "ktx2",
+    "multi-threaded",
+    "png",
+    "serialize",
+    "tonemapping_luts",
+    "wayland",
+    "x11",
+    "zstd",
 ]
+
+[dependencies.iyes_progress]
+version = "0.10.0"
+features = []
+
+[dependencies.bevy_asset_loader]
+version = "0.19.1"
+features = [
+    "2d",
+    "progress_tracking",
+    "standard_dynamic_assets",
+]
+
+[dependencies.bevy_common_assets]
+version = "0.9.0"
+features = [
+    "ron",
+    "toml",
+]
+
+[dependencies.bevy_fluent]
+version = "0.8.0"
+features = []
+
+[dependencies.bevy_tweening]
+version = "0.9.0"
+
+[dependencies.bevy_ecs_tilemap]
+# version = "0.12.0"
+git = "https://github.com/StarArawn/bevy_ecs_tilemap"
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
 features = ["2d"]
+
+[dependencies.iyes_cli]
+git = "https://github.com/IyesGames/iyes_cli"
+
+[dependencies.iyes_ui]
+git = "https://github.com/IyesGames/iyes_ui"
+features = ["iyes_cli"]

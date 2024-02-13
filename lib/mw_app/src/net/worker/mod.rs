@@ -1,8 +1,7 @@
 use mw_common::net::{load_client_crypto, setup_quic_client};
 
 use crate::prelude::*;
-
-use mw_app::settings::NetWorkerConfig;
+use crate::settings::NetWorkerConfig;
 
 use super::*;
 

@@ -1,7 +1,8 @@
-use mw_app::{camera::{GridCursor, GridCursorSet}, map::{MapTileIndex, MwTilePos, TileGent}};
 use mw_common::{game::{StructureKind, TileKind}, grid::{Coord, Hex}};
 
 use crate::prelude::*;
+use crate::{camera::{GridCursor, GridCursorSet}, map::{MapTileIndex, MwTilePos, TileGent}};
+
 use super::*;
 
 pub struct Gfx3dMapPlugin;

@@ -7,18 +7,21 @@ readme = "README.md"
 publish = false
 
 # UNCOMMENT for my machine / local development
-# [patch."https://github.com/IyesGames/iyes_bevy_extras"]
-# iyes_bevy_extras = { path = "../../engine/iyes_bevy_extras" }
-# [patch."https://github.com/IyesGames/iyes_cli"]
-# iyes_cli = { path = "../../engine/iyes_cli" }
-# [patch."https://github.com/IyesGames/iyes_ui"]
-# iyes_ui = { path = "../../engine/iyes_ui" }
+[patch."https://github.com/IyesGames/iyes_bevy_extras"]
+iyes_bevy_extras = { path = "../../engine/iyes_bevy_extras" }
+[patch."https://github.com/IyesGames/iyes_cli"]
+iyes_cli = { path = "../../engine/iyes_cli" }
+[patch."https://github.com/IyesGames/iyes_ui"]
+iyes_ui = { path = "../../engine/iyes_ui" }
 
 # PROPRIETARY BUILDS
-# [patch."https://github.com/IyesGames/minewars-proprietary-shim"]
-# mw_proprietary_client = { path = "../minewars-proprietary/client" }
-# mw_proprietary_host = { path = "../minewars-proprietary/host" }
-# mw_proprietary_auth = { path = "../minewars-proprietary/auth" }
+[patch."https://github.com/IyesGames/minewars-proprietary-shim"]
+mw_app_proprietary = { path = "../minewars-proprietary/lib/mw_app_proprietary" }
+mw_host_proprietary = { path = "../minewars-proprietary/lib/mw_host_proprietary" }
+mw_auth_proprietary = { path = "../minewars-proprietary/lib/mw_auth_proprietary" }
+
+# [patch.crates-io]
+# bevy_ecs_tilemap = { path = "../../../src/bevy_ecs_tilemap"}
 
 [workspace]
 resolver = "2"
@@ -34,113 +37,19 @@ lto = false
 codegen-units = 8
 # release: Enable LTO and limit codegen units for better codegen
 [profile.release]
+opt-level = 3
 lto = true
 codegen-units = 1
 debug = false
 
 [features]
-dev = ["bevy/file_watcher"]
-release = []
-proprietary = ["dep:mw_proprietary_client", "mw_app/proprietary"]
-
-[dependencies]
-anyhow = "1.0.79"
-directories = "5.0.1"
-enum-iterator = "1.4.1"
-fluent_content = "0.0.5"
-modular-bitfield = "0.11.2"
-num_cpus = "1.16.0"
-serde = "1.0.195"
-toml = "0.8.8"
-unic-langid = "0.9.4"
-
-[dependencies.mw_common]
-path = "lib/mw_common"
-features = [ "bevy", "net" ]
+dev = ["mw_app/dev"]
+release = ["mw_app/release"]
+proprietary = ["mw_app/proprietary", "dep:mw_app_proprietary"]
 
 [dependencies.mw_app]
 path = "lib/mw_app"
 
-[dependencies.mw_game_minesweeper]
-path = "lib/mw_game_minesweeper"
-features = ["bevy"]
-
-[dependencies.mw_proto_host]
-path = "lib/mw_proto_host"
-
-[dependencies.mw_proto_auth]
-path = "lib/mw_proto_auth"
-
-[dependencies.mw_proprietary_client]
+[dependencies.mw_app_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
 optional = true
-
-[dependencies.iyes_bevy_extras]
-git = "https://github.com/IyesGames/iyes_bevy_extras"
-features = ["2d"]
-
-[dependencies.iyes_cli]
-git = "https://github.com/IyesGames/iyes_cli"
-
-[dependencies.iyes_ui]
-git = "https://github.com/IyesGames/iyes_ui"
-features = ["iyes_cli"]
-
-[dependencies.bevy]
-version = "0.12.1"
-# default-features = false
-features = [
-    "multi-threaded",
-    "android_shared_stdcxx",
-    "bevy_asset",
-    "bevy_scene",
-    "bevy_core_pipeline",
-    "bevy_render",
-    "bevy_gizmos",
-    "bevy_sprite",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_pbr",
-    "bevy_gltf",
-    "bevy_gilrs",
-    "bevy_winit",
-    "tonemapping_luts",
-    "png",
-    "ktx2",
-    "zstd",
-    "x11",
-    "wayland",
-    "bevy_audio",
-    "flac",
-    "serialize",
-]
-
-[dependencies.iyes_progress]
-version = "0.10.0"
-features = []
-
-[dependencies.bevy_asset_loader]
-version = "0.19.1"
-features = [
-    "2d",
-    "progress_tracking",
-    "standard_dynamic_assets",
-]
-
-[dependencies.bevy_common_assets]
-version = "0.9.0"
-features = [
-    "ron",
-    "toml",
-]
-
-[dependencies.bevy_fluent]
-version = "0.8.0"
-features = []
-
-[dependencies.bevy_tweening]
-version = "0.9.0"
-
-[dependencies.bevy_ecs_tilemap]
-# version = "0.12.0"
-git = "https://github.com/StarArawn/bevy_ecs_tilemap"

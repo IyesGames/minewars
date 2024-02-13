@@ -1,7 +1,6 @@
-use mw_app::map::NeedsMapSet;
-use mw_app::settings::MwRenderer;
-
 use crate::prelude::*;
+use crate::map::NeedsMapSet;
+use crate::settings::MwRenderer;
 
 pub mod asset_resolver;
 pub mod camera;

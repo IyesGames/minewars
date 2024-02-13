@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-proprietary = ["dep:mw_proprietary_auth"]
+proprietary = ["dep:mw_auth_proprietary"]
 
 [dependencies]
 mw_dataformat = { path = "../../lib/mw_dataformat" }
@@ -20,7 +20,7 @@ ron = "0.8.1"
 path = "../../lib/mw_common"
 features = [ "net" ]
 
-[dependencies.mw_proprietary_auth]
+[dependencies.mw_auth_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
 optional = true
 

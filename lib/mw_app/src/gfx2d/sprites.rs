@@ -1,15 +1,15 @@
-use crate::assets::GameAssets;
-use crate::prelude::*;
-
-use mw_app::camera::GridCursor;
-use mw_app::camera::GridCursorChangedSet;
-use mw_app::player::PlayersIndex;
-use mw_app::view::PlidViewing;
-use mw_app::view::ViewMapData;
 use mw_common::grid::*;
 use mw_common::game::*;
-use mw_app::map::*;
 use mw_common::plid::PlayerId;
+
+use crate::prelude::*;
+use crate::assets::GameAssets;
+use crate::camera::GridCursor;
+use crate::camera::GridCursorChangedSet;
+use crate::player::PlayersIndex;
+use crate::view::PlidViewing;
+use crate::view::ViewMapData;
+use crate::map::*;
 
 use super::*;
 

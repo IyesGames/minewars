@@ -1,8 +1,8 @@
-use mw_app::map::NeedsMapSet;
-use mw_app::settings::MwRenderer;
 use mw_common::{game::TileKind, grid::*};
 
 use crate::prelude::*;
+use crate::map::NeedsMapSet;
+use crate::settings::MwRenderer;
 
 pub mod camera;
 pub mod tilemap;

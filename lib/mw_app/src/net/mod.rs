@@ -1,7 +1,7 @@
-use mw_app::GameEventSet;
 use mw_common::game::event::GameEvent;
 
 use crate::prelude::*;
+use crate::GameEventSet;
 
 use self::worker::{NetWorkerControl, host::HostSessionConfig};
 

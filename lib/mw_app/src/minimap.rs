@@ -1,8 +1,8 @@
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
-use mw_app::map::{MwTilePos, TileOwner, NeedsMapSet, MapUpdateSet, TileAlert};
 use mw_common::{game::{MapDescriptor, TileKind}, grid::Topology};
 
 use crate::prelude::*;
+use crate::map::{MwTilePos, TileOwner, NeedsMapSet, MapUpdateSet, TileAlert};
 
 pub struct MinimapPlugin;
 

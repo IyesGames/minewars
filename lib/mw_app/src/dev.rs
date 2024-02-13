@@ -1,9 +1,8 @@
-use crate::prelude::*;
-
 use bevy::reflect::{DynamicEnum, DynamicVariant};
-
-use mw_app::GameEventSet;
 use mw_common::game::event::GameEvent;
+
+use crate::prelude::*;
+use crate::GameEventSet;
 
 pub struct DevPlugin;
 

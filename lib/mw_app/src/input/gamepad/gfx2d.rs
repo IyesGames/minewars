@@ -1,8 +1,9 @@
-use mw_app::camera::{GameCamera, CameraControlSet, GridCursorSet};
 use mw_common::game::MapDescriptor;
 use mw_common::grid::*;
 
 use crate::{prelude::*, gfx2d::Gfx2dSet};
+use crate::camera::{GameCamera, CameraControlSet, GridCursorSet};
+
 use super::*;
 
 pub struct Gfx2dGamepadInputPlugin;
