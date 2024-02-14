@@ -1,18 +1,9 @@
-pub mod prelude {
-    pub use mw_common::prelude::*;
-    pub use crate::config::Config;
-    pub use tracing::{error, warn, info, debug, trace};
-}
+use mw_auth::prelude::*;
 
 use clap::Parser;
 
-use crate::prelude::*;
-
-mod cli;
-mod config;
-
 fn main() {
-    let args = cli::Args::parse();
+    let args = mw_auth::cli::Args::parse();
 
     tracing::subscriber::set_global_default(
         tracing_subscriber::FmtSubscriber::builder()
@@ -32,30 +23,25 @@ fn main() {
         .build()
         .expect("Cannot create tokio runtime!");
 
-    rt.block_on(async_main(Arc::new(config)));
+    rt.block_on(async_main(args));
 }
 
-async fn load_config(path: &Path) -> AnyResult<Config> {
-    let config_bytes = tokio::fs::read(path).await
-        .context("Could not read config file")?;
-    let config_str = std::str::from_utf8(&config_bytes)
-        .context("Config file is not UTF-8")?;
-    let config: Config = toml::from_str(config_str)
-        .context("Error in config file")?;
-    Ok(config)
-}
-
-async fn async_main(config: Arc<Config>) {
+async fn async_main(args: mw_auth::cli::Args) {
     let rt = ManagedRuntime::new();
 
+    let persist = mw_auth::init(rt.clone()).await;
+    #[cfg(feature = "proprietary")]
+    let persist_proprietary = mw_auth_proprietary::init(rt.clone()).await;
+
     loop {
+        persist.do_soft_reset();
+        #[cfg(feature = "proprietary")]
+        persist_proprietary.do_soft_reset();
+
         let softreset = rt.child_token();
 
-        let mut config = match load_config(&args.config).await {
-            Ok(mut config) => {
-                config.apply_cli(&args);
-                Arc::new(config)
-            }
+        let config = match mw_auth::load_config(&args.config, &args).await {
+            Ok(config) => config,
             Err(e) => {
                 error!("Error loading config file: {:#}", e);
                 if rt.has_tasks() {
@@ -69,7 +55,14 @@ async fn async_main(config: Arc<Config>) {
             }
         };
 
-        // TODO
+        #[allow(unused_variables)]
+        let for_proprietary = mw_auth::setup_with_config(
+            rt.clone(), &persist, softreset.clone(), config.clone()
+        ).await;
+        #[cfg(feature = "proprietary")]
+        mw_auth_proprietary::setup_with_config(
+            rt.clone(), &persist_proprietary, softreset.clone(), config.clone(), for_proprietary
+        ).await;
 
         tokio::select! {
             _ = softreset.cancelled() => {

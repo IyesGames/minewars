@@ -1,26 +1,9 @@
-pub mod prelude {
-    pub use mw_common::prelude::*;
-    pub use crate::config::Config;
-    pub use tracing::{error, warn, info, debug, trace};
-    pub use tokio::sync::{Mutex, RwLock, Notify};
-}
+use mw_host::prelude::*;
 
 use clap::Parser;
 
-use crate::prelude::*;
-
-mod cli;
-mod config;
-
-mod hostauth;
-mod rpc;
-mod server;
-
-mod map;
-mod session;
-
 fn main() {
-    let args = cli::Args::parse();
+    let args = mw_host::cli::Args::parse();
 
     tracing::subscriber::set_global_default(
         tracing_subscriber::FmtSubscriber::builder()
@@ -43,31 +26,22 @@ fn main() {
     rt.block_on(async_main(args));
 }
 
-async fn load_config(path: &Path) -> AnyResult<Config> {
-    let config_bytes = tokio::fs::read(path).await
-        .context("Could not read config file")?;
-    let config_str = std::str::from_utf8(&config_bytes)
-        .context("Config file is not UTF-8")?;
-    let config: Config = toml::from_str(config_str)
-        .context("Error in config file")?;
-    Ok(config)
-}
-
-async fn async_main(args: cli::Args) {
+async fn async_main(args: mw_host::cli::Args) {
     let rt = ManagedRuntime::new();
 
-    let mapmanager = crate::map::MapManager::new();
+    let persist = mw_host::init(rt.clone()).await;
+    #[cfg(feature = "proprietary")]
+    let persist_proprietary = mw_host_proprietary::init(rt.clone()).await;
 
     loop {
-        mapmanager.clear_cache().await;
+        persist.do_soft_reset();
+        #[cfg(feature = "proprietary")]
+        persist_proprietary.do_soft_reset();
 
         let softreset = rt.child_token();
 
-        let mut config = match load_config(&args.config).await {
-            Ok(mut config) => {
-                config.apply_cli(&args);
-                Arc::new(config)
-            }
+        let config = match mw_host::load_config(&args.config, &args).await {
+            Ok(config) => config,
             Err(e) => {
                 error!("Error loading config file: {:#}", e);
                 if rt.has_tasks() {
@@ -81,29 +55,14 @@ async fn async_main(args: cli::Args) {
             }
         };
 
-        rt.spawn(
-            crate::server::host_main(
-                config.clone(),
-                rt.clone(),
-                softreset.clone(),
-            )
-        );
-
-        rt.spawn(
-            crate::hostauth::hostauth_main(
-                config.clone(),
-                rt.clone(),
-                softreset.clone(),
-            )
-        );
-
-        rt.spawn(
-            crate::rpc::rpc_main(
-                config.clone(),
-                rt.clone(),
-                softreset.clone(),
-            )
-        );
+        #[allow(unused_variables)]
+        let for_proprietary = mw_host::setup_with_config(
+            rt.clone(), &persist, softreset.clone(), config.clone()
+        ).await;
+        #[cfg(feature = "proprietary")]
+        mw_host_proprietary::setup_with_config(
+            rt.clone(), &persist_proprietary, softreset.clone(), config.clone(), for_proprietary
+        ).await;
 
         tokio::select! {
             _ = softreset.cancelled() => {

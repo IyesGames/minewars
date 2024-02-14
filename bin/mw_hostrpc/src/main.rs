@@ -20,7 +20,7 @@ async fn connect_sendrpc(args: Args) -> AnyResult<()> {
     let endpoint = setup_quic_client(crypto, "0.0.0.0:0".parse().unwrap())?;
 
     let conn = endpoint.connect(SocketAddr::new(args.server, args.port), "auth.iyes.games")?.await?;
-    let (mut tx, rx) = conn.open_bi().await?;
+    let (mut tx, mut rx) = conn.open_bi().await?;
     let mut buf = vec![];
     mw_proto_hostrpc::ser_request(&mut buf, &KillSession {
         session_id: 1503,

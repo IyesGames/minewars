@@ -6,11 +6,9 @@ pub mod prelude {
     #[cfg(feature = "bevy")]
     pub use bevy::prelude::*;
     #[cfg(feature = "bevy")]
-    pub use bevy::utils::{Duration, HashMap, HashSet, Instant};
+    pub use bevy::utils::{HashMap, HashSet};
     #[cfg(not(feature = "bevy"))]
     pub use hashbrown::{HashMap, HashSet};
-    #[cfg(not(feature = "bevy"))]
-    pub use std::time::{Duration, Instant};
     pub use num_traits;
     pub use num;
     pub use num_traits::{FromPrimitive, ToPrimitive};

@@ -1,7 +1,7 @@
 /// Convenience, to be imported in every file in the crate
 /// (and in proprietary)
 pub mod prelude {
-    pub use bevy::prelude::*;
+    pub use bevy::utils::{Duration, Instant};
     pub use bevy_asset_loader::prelude::*;
     pub use bevy_ecs_tilemap::prelude::*;
     pub use iyes_bevy_extras::prelude::*;

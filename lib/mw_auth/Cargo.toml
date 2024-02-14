@@ -1,30 +1,24 @@
 [package]
-name = "mw_host"
+name = "mw_auth"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-proprietary = ["dep:mw_host_proprietary"]
+proprietary = []
 
 [dependencies]
-mw_dataformat = { path = "../../lib/mw_dataformat" }
-mw_proto_host = { path = "../../lib/mw_proto_host" }
-mw_proto_hostrpc = { path = "../../lib/mw_proto_hostrpc" }
-mw_proto_hostauth = { path = "../../lib/mw_proto_hostauth" }
-modular-bitfield = "0.11.2"
+mw_dataformat = { path = "../mw_dataformat" }
+mw_proto_auth = { path = "../mw_proto_auth" }
+mw_proto_hostauth = { path = "../mw_proto_hostauth" }
 toml = "0.8.8"
 anyhow = "1.0.79"
 ron = "0.8.1"
 
 [dependencies.mw_common]
-path = "../../lib/mw_common"
+path = "../mw_common"
 features = [ "net" ]
-
-[dependencies.mw_host_proprietary]
-git = "https://github.com/IyesGames/minewars-proprietary-shim"
-optional = true
 
 [dependencies.serde]
 version = "1.0.195"

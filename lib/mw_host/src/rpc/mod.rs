@@ -100,7 +100,7 @@ async fn rpc_handle_connection(
 
     loop {
         match conn.accept_bi().await {
-            Ok((mut tx, rx)) => {
+            Ok((mut tx, mut rx)) => {
                 const IN_MAX_LEN: usize = 64 * 1024;
                 match rx.read_to_end(IN_MAX_LEN).await {
                     Ok(mut buf) => {

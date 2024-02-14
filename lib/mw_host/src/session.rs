@@ -30,8 +30,8 @@ impl<G: Game> Host<G> for TokioHost<G> {
     fn msg(&mut self, plids: Plids, event: G::OutEvent) {
         self.msg_q.push((plids, event));
     }
-    fn sched(&mut self, time: Instant, event: G::SchedEvent) {
-        let token_sched = if let Some(&token_kind) = self.schedkinds_cancels.get(&event) {
+    fn sched(&mut self, time: std::time::Instant, event: G::SchedEvent) {
+        let token_sched = if let Some(token_kind) = self.schedkinds_cancels.get(&event) {
             token_kind.child_token()
         } else {
             let token_kind = self.scheds_cancel.child_token();
@@ -39,7 +39,7 @@ impl<G: Game> Host<G> for TokioHost<G> {
             self.schedkinds_cancels.insert(event.clone(), token_kind);
             token_sched
         };
-        tokio::spawn(sched::<G>(token_sched, session, time, event));
+        // tokio::spawn(sched::<G>(token_sched, session, time, event));
     }
     fn desched_all(&mut self, event: G::SchedEvent) {
         if let Some(token) = self.schedkinds_cancels.remove(&event) {
@@ -54,7 +54,7 @@ impl<G: Game> Host<G> for TokioHost<G> {
 
 async fn sched<G: Game>(
     cancel: CancellationToken,
-    session: Arc<Mutex<Session<G>>>,
+    session: Arc<Mutex<SessionState<G>>>,
     time: Instant,
     event: G::SchedEvent,
 ) {
@@ -67,7 +67,8 @@ async fn sched<G: Game>(
                 _ = cancel.cancelled() => {
                     return;
                 }
-                session = session.lock() => {
+                mut session = session.lock() => {
+                    let session: &mut SessionState<G> = &mut *session;
                     session.game.unsched(&mut session.host, event);
                 }
             }

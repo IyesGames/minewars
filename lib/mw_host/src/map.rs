@@ -86,26 +86,27 @@ async fn load_or_generate_map(
         MapParams::Generate { map_topology, map_style, map_seed, map_size, map_n_cits, map_land_bias } => {
             match map_style {
                 MapStyle::Flat => {
-                    todo!()
+                    todo!();
                 }
                 MapStyle::MineWars => {
                     #[cfg(feature = "proprietary")]
-                    {
-                        let arc = tokio::task::block_in_place(|| {
-                            let (map, cits) = mw_proprietary_host::generate_minewars_map(
-                                q,
-                                *map_size,
-                                *map_seed,
-                                *map_land_bias,
-                                *map_n_cits,
-                            );
-                            Arc::new(Map {
-                                data: MapDataTopo::Hex(map),
-                                cits,
-                            })
-                        });
-                        Ok(arc)
-                    }
+                    todo!();
+                    // {
+                    //     let arc = tokio::task::block_in_place(|| {
+                    //         let (map, cits) = mw_proprietary_host::generate_minewars_map(
+                    //             q,
+                    //             *map_size,
+                    //             *map_seed,
+                    //             *map_land_bias,
+                    //             *map_n_cits,
+                    //         );
+                    //         Arc::new(Map {
+                    //             data: MapDataTopo::Hex(map),
+                    //             cits,
+                    //         })
+                    //     });
+                    //     Ok(arc)
+                    // }
                     #[cfg(not(feature = "proprietary"))]
                     {
                         bail!("MineWars map generation not available in open-source builds!");
