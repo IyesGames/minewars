@@ -10,31 +10,21 @@ pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_loading_state(LoadingState::new(AppState::AssetsLoading));
+        app.add_loading_state(
+            LoadingState::new(AppState::AssetsLoading)
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("ui.assets.ron")
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("splash.assets.ron")
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("game.assets.ron")
+                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("locale.assets.ron")
+                .load_collection::<UiAssets>()
+                .load_collection::<SplashAssets>()
+                .load_collection::<TitleLogo>()
+                .load_collection::<GameAssets>()
+                .load_collection::<LocaleAssets>()
+        );
         app.add_plugins(
             bevy_common_assets::toml::TomlAssetPlugin::<ass3d::Ass3dConfig>::new(&["ass3d.toml"])
         );
-        app.add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            AppState::AssetsLoading,
-            "ui.assets.ron",
-        );
-        app.add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            AppState::AssetsLoading,
-            "splash.assets.ron",
-        );
-        app.add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            AppState::AssetsLoading,
-            "game.assets.ron",
-        );
-        app.add_dynamic_collection_to_loading_state::<_, StandardDynamicAssetCollection>(
-            AppState::AssetsLoading,
-            "locale.assets.ron",
-        );
-        app.add_collection_to_loading_state::<_, UiAssets>(AppState::AssetsLoading);
-        app.add_collection_to_loading_state::<_, SplashAssets>(AppState::AssetsLoading);
-        app.add_collection_to_loading_state::<_, TitleLogo>(AppState::AssetsLoading);
-        app.add_collection_to_loading_state::<_, GameAssets>(AppState::AssetsLoading);
-        app.add_collection_to_loading_state::<_, LocaleAssets>(AppState::AssetsLoading);
     }
 }
 

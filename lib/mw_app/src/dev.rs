@@ -39,7 +39,7 @@ fn debug_progress(counter: Res<ProgressCounter>) {
 fn debug_gameevents(
     mut evr: EventReader<GameEvent>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         trace!("{:?}", ev);
     }
 }

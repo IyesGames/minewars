@@ -37,13 +37,13 @@ struct PanOrbitCamera {
 fn setup_game_camera_3d(
     mut commands: Commands,
 ) {
-    let projection = OrthographicProjection {
-        near: 0.0,
-        far: RENDER_RANGE,
-        scaling_mode: ScalingMode::FixedVertical(TILE_SCALE),
-        scale: 24.0,
-        ..Default::default()
-    };
+    // let projection = OrthographicProjection {
+    //     near: 0.0,
+    //     far: RENDER_RANGE,
+    //     scaling_mode: ScalingMode::FixedVertical(TILE_SCALE),
+    //     scale: 24.0,
+    //     ..Default::default()
+    // };
     // let mut transform = Transform::from_xyz(0.0, 0.0, -RENDER_RANGE / 2.0);
     // transform.rotate_x(-30f32.to_radians());
     // transform.rotate_y( 45f32.to_radians());
@@ -79,8 +79,6 @@ fn setup_game_camera_3d(
 }
 
 fn pan_orbit_camera(
-    // FIXME: proper input
-    mut crs: ResMut<WorldCursor>,
     kbd: Res<Input<KeyCode>>,
     mousebtn: Res<Input<MouseButton>>,
     mut ev_motion: EventReader<bevy::input::mouse::MouseMotion>,

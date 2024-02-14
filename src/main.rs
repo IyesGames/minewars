@@ -1,5 +1,3 @@
-use mw_app::prelude::*;
-
 fn main() {
     let mut app = mw_app::setup_bevy_app();
     app.add_plugins(mw_app::MinewarsAppPlugin);
