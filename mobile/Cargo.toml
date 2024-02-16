@@ -1,0 +1,38 @@
+[package]
+name = "minewars_mobile"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[features]
+dev = ["mw_app/dev"]
+release = ["mw_app/release"]
+proprietary = ["mw_app/proprietary", "dep:mw_app_proprietary"]
+
+[dependencies.mw_app]
+path = "../lib/mw_app"
+
+[dependencies.mw_app_proprietary]
+git = "https://github.com/IyesGames/minewars-proprietary-shim"
+optional = true
+
+[dependencies.bevy]
+version = "0.12.1"
+default-features = false
+
+[package.metadata.android]
+package = "com.iyesgames.minewars"
+apk_name = "MineWars"
+assets = "../assets"
+strip = "strip"
+build_targets = ["aarch64-linux-android"]
+# build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
+# build_targets = ["aarch64-linux-android", "armv7-linux-androideabi", "x86_64-linux-android"]
+
+[package.metadata.android.sdk]
+target_sdk_version = 31
+
+[lib]
+name = "minewars_mobile"
+crate-type = ["staticlib", "cdylib"]

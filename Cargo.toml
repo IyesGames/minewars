@@ -25,7 +25,7 @@ mw_auth_proprietary = { path = "../minewars-proprietary/lib/mw_auth_proprietary"
 
 [workspace]
 resolver = "2"
-members = ["lib/*", "bin/*"]
+members = ["lib/*", "bin/*", "mobile"]
 
 # dev: Enable max optimizations for dependencies, but not for our code
 [profile.dev.package."*"]
@@ -53,3 +53,7 @@ path = "lib/mw_app"
 [dependencies.mw_app_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
 optional = true
+
+[dependencies.bevy]
+version = "0.12.1"
+default-features = false

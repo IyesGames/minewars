@@ -9,6 +9,14 @@ pub mod prelude {
     pub use bevy::utils::{HashMap, HashSet};
     #[cfg(not(feature = "bevy"))]
     pub use hashbrown::{HashMap, HashSet};
+    #[cfg(all(feature = "bevy", not(feature = "net")))]
+    pub use bevy::utils::{Duration, Instant};
+    #[cfg(all(not(feature = "bevy"), feature = "net"))]
+    pub use tokio::time::{Duration, Instant};
+    #[cfg(all(not(feature = "bevy"), not(feature = "net")))]
+    pub use std::time::{Duration, Instant};
+    #[cfg(all(feature = "bevy", feature = "net"))]
+    pub use std::time::{Duration, Instant};
     pub use num_traits;
     pub use num;
     pub use num_traits::{FromPrimitive, ToPrimitive};
