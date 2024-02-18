@@ -5,6 +5,7 @@ use crate::map::NeedsMapSet;
 use crate::settings::MwRenderer;
 
 pub mod camera;
+#[cfg(feature = "gfx2d_tilemap")]
 pub mod tilemap;
 pub mod sprites;
 
@@ -20,6 +21,7 @@ impl Plugin for Gfx2dPlugin {
         app.configure_sets(Update, (
             Gfx2dSet::Any.in_set(NeedsMapSet).run_if(rc_gfx2d_any),
             Gfx2dSet::Sprites.in_set(NeedsMapSet).run_if(rc_gfx2d_sprites),
+            #[cfg(feature = "gfx2d_tilemap")]
             Gfx2dSet::Tilemap.in_set(NeedsMapSet).run_if(rc_gfx2d_tilemap),
         ));
     }
@@ -29,6 +31,7 @@ impl Plugin for Gfx2dPlugin {
 pub enum Gfx2dSet {
     Any,
     Sprites,
+    #[cfg(feature = "gfx2d_tilemap")]
     Tilemap,
 }
 
@@ -59,6 +62,7 @@ fn rc_gfx2d_sprites(
     settings.map(|s| s.renderer == MwRenderer::Sprites).unwrap_or(false)
 }
 
+#[cfg(feature = "gfx2d_tilemap")]
 fn rc_gfx2d_tilemap(
     settings: Option<Res<AllSettings>>,
 ) -> bool {

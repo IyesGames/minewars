@@ -1,4 +1,5 @@
 use bevy::render::render_resource::FilterMode;
+use bevy_ecs_tilemap::prelude::*;
 use mw_common::grid::*;
 use mw_common::game::*;
 use mw_common::plid::PlayerId;

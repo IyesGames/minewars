@@ -9,6 +9,9 @@ edition = "2021"
 dev = ["bevy/file_watcher"]
 release = []
 proprietary = []
+gfx2d = ["iyes_bevy_extras/2d"]
+gfx2d_tilemap = ["gfx2d", "dep:bevy_ecs_tilemap"]
+gfx3d = []
 
 [dependencies.mw_common]
 path = "../mw_common"
@@ -104,12 +107,12 @@ features = []
 version = "0.9.0"
 
 [dependencies.bevy_ecs_tilemap]
+optional = true
 # version = "0.12.0"
 git = "https://github.com/StarArawn/bevy_ecs_tilemap"
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
-features = ["2d"]
 
 [dependencies.iyes_cli]
 git = "https://github.com/IyesGames/iyes_cli"

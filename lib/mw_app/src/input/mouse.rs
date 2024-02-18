@@ -3,12 +3,14 @@ use bevy::input::{mouse::MouseButtonInput, ButtonState};
 use crate::prelude::*;
 use super::*;
 
+#[cfg(feature = "gfx2d")]
 mod gfx2d;
 
 pub struct MouseInputPlugin;
 
 impl Plugin for MouseInputPlugin {
     fn build(&self, app: &mut App) {
+        #[cfg(feature = "gfx2d")]
         app.add_plugins(gfx2d::Gfx2dMouseInputPlugin);
         app.add_systems(Update, (
             collect_actions_mousebtn

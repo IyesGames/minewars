@@ -3,7 +3,6 @@
 pub mod prelude {
     pub use bevy::utils::{Duration, Instant};
     pub use bevy_asset_loader::prelude::*;
-    pub use bevy_ecs_tilemap::prelude::*;
     pub use iyes_bevy_extras::prelude::*;
     pub use iyes_progress::prelude::*;
     pub use iyes_cli::prelude::*;
@@ -21,7 +20,9 @@ pub mod assets;
 pub mod bevyhost;
 pub mod cli;
 pub mod locale;
+#[cfg(feature = "gfx2d")]
 pub mod gfx2d;
+#[cfg(feature = "gfx3d")]
 pub mod gfx3d;
 pub mod camera;
 pub mod input;
@@ -53,7 +54,8 @@ impl Plugin for MinewarsAppPlugin {
     fn build(&self, app: &mut App) {
         // external plugins
         app.add_plugins((
-            TilemapPlugin,
+            #[cfg(feature = "gfx2d_tilemap")]
+            bevy_ecs_tilemap::TilemapPlugin,
             bevy_tweening::TweeningPlugin,
             bevy_fluent::FluentPlugin,
             ProgressPlugin::new(AppState::AssetsLoading).continue_to(AppState::SplashIyes),
@@ -79,7 +81,9 @@ impl Plugin for MinewarsAppPlugin {
                 crate::map::MapPlugin,
                 crate::view::GameViewPlugin,
                 crate::minimap::MinimapPlugin,
+                #[cfg(feature = "gfx2d")]
                 crate::gfx2d::Gfx2dPlugin,
+                #[cfg(feature = "gfx3d")]
                 crate::gfx3d::Gfx3dPlugin,
                 crate::ui::UiPlugin,
             ),

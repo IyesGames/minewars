@@ -3,12 +3,14 @@ use bevy::input::gamepad::GamepadEvent;
 use crate::prelude::*;
 use super::*;
 
+#[cfg(feature = "gfx2d")]
 mod gfx2d;
 
 pub struct GamepadInputPlugin;
 
 impl Plugin for GamepadInputPlugin {
     fn build(&self, app: &mut App) {
+        #[cfg(feature = "gfx2d")]
         app.add_plugins(gfx2d::Gfx2dGamepadInputPlugin);
         app.add_systems(Update, (
             collect_actions_gamepad
