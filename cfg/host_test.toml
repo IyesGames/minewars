@@ -4,25 +4,24 @@ log_debug = true
 
 [server]
 listen_players = ["0.0.0.0:13370"]
-cert = ["devcerts/host.cert.der", "devcerts/ca.cert.der"]
-key = "devcerts/host.key.der"
+cert = ["cert/host00.cert.der", "cert/hosts.ca.cert.der", "cert/root.ca.cert.der"]
+key = "cert/host00.key.der"
 ip_control = "Denylist"
 ip_list = []
-player_ca = ""
+player_ca = "cert/apps.ca.cert.der"
 allow_players_unexpected = true
 allow_players_nocert = true
 allow_players_anyip = true
 allow_anysession = true
 allow_spectators = true
-sessions = []
 
 [rpc]
 enable = true
 listen = ["127.0.0.1:13371"]
-cert = ["devcerts/hostrpc.cert.der", "devcerts/ca.cert.der"]
-key = "devcerts/hostrpc.key.der"
+cert = ["cert/host00rpc.cert.der", "cert/hosts.ca.cert.der", "cert/root.ca.cert.der"]
+key = "cert/host00rpc.key.der"
 require_client_cert = false
-client_ca = ""
+client_ca = "cert/hostrpc.cert.der"
 ip_control = "Denylist"
 ip_list = []
 allow_payloads = ["Minewars", "TomlRules"]
@@ -32,8 +31,8 @@ rpc_methods_list = []
 [hostauth]
 enable = false
 server = "127.0.0.1:13372"
-cert = ["devcerts/hostauth.cert.der", "devcerts/ca.cert.der"]
-key = "devcerts/hostauth.key.der"
+cert = ["cert/host00hostauth.cert.der", "cert/hosts.ca.cert.der", "cert/root.ca.cert.der"]
+key = "cert/host00hostauth.key.der"
 allow_payloads = ["Minewars", "TomlRules"]
 rpc_method_control = "Denylist"
 rpc_methods_list = []
@@ -43,7 +42,7 @@ max_sessions = 4
 autosession = "minewars_duel"
 autostart = { minewars_largeopenduos = 1, minesweeper4 = 1 }
 
-[[sessions.preset.minewars_duel]]
+[sessions.preset.minewars_duel]
 mode = "MineWars"
 autorestart = true
 open_session = false
@@ -57,7 +56,7 @@ map_size = 24
 map_n_cits = 5
 map_land_bias = 48
 
-[[sessions.preset.minesweeper4]]
+[sessions.preset.minesweeper4]
 mode = "Minesweeper"
 autorestart = true
 open_session = true
@@ -70,7 +69,7 @@ map_size = 48
 map_n_cits = 0
 map_land_bias = 48
 
-[[sessions.session.minewars_largeopenduos]]
+[sessions.session.minewars_largeopenduos]
 mode = "MineWars"
 autorestart = true
 open_session = true

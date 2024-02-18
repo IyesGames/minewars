@@ -238,4 +238,36 @@ impl Config {
             self.general.log_file = Some(log_file.clone());
         }
     }
+    pub fn reparent_paths(&mut self, config_path: &Path) {
+        let dir = if config_path.is_dir() {
+            config_path
+        } else {
+            let Some(parent) = config_path.parent() else {
+                return;
+            };
+            parent
+        };
+        self.rpc.key = reparent_path(dir, &self.rpc.key);
+        self.rpc.client_ca = reparent_path(dir, &self.rpc.client_ca);
+        for path in &mut self.rpc.cert {
+            *path = reparent_path(dir, path);
+        }
+        self.server.key = reparent_path(dir, &self.server.key);
+        self.server.player_ca = reparent_path(dir, &self.server.player_ca);
+        for path in &mut self.server.cert {
+            *path = reparent_path(dir, path);
+        }
+        self.hostauth.key = reparent_path(dir, &self.hostauth.key);
+        for path in &mut self.hostauth.cert {
+            *path = reparent_path(dir, path);
+        }
+    }
+}
+
+fn reparent_path(dir: &Path, path: &Path) -> PathBuf {
+    if path.is_relative() {
+        dir.join(path)
+    } else {
+        path.to_owned()
+    }
 }

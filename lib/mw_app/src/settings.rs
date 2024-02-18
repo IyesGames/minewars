@@ -198,11 +198,11 @@ impl Default for NetSettings {
             last_host_addr: "127.0.0.1:13370".parse().unwrap(),
             last_host_sessionid: 0,
             worker: NetWorkerConfig {
-                ca_cert: "cert/ca.cert.der".into(),
-                host_client_cert: vec!["cert/hostclient.cert.der".into(), "cert/ca.cert.der".into()],
-                host_client_key: "cert/hostclient.key.der".into(),
-                auth_client_cert: vec!["cert/authclient.cert.der".into(), "cert/ca.cert.der".into()],
-                auth_client_key: "cert/authclient.key.der".into(),
+                ca_cert: "cfg/cert/root.ca.cert.der".into(),
+                host_client_cert: vec!["cfg/cert/hostclient.cert.der".into(), "cfg/cert/apps.ca.cert.der".into(), "cfg/cert/root.ca.cert.der".into()],
+                host_client_key: "cfg/cert/hostclient.key.der".into(),
+                auth_client_cert: vec!["cfg/cert/authclient.cert.der".into(), "cfg/cert/apps.ca.cert.der".into(), "cfg/cert/root.ca.cert.der".into()],
+                auth_client_key: "cfg/cert/authclient.key.der".into(),
             },
         }
     }

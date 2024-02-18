@@ -28,6 +28,7 @@ pub async fn load_config(path: &Path, cli: &cli::Args) -> AnyResult<Arc<Config>>
         .context("Config file is not UTF-8")?;
     let mut config: Config = toml::from_str(config_str)
         .context("Error in config file")?;
+    config.reparent_paths(path);
     config.apply_cli(cli);
     Ok(Arc::new(config))
 }

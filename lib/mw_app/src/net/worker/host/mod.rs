@@ -16,8 +16,7 @@ impl HostSessionConfig {
             name.as_str()
         } else {
             // FIXME
-            "auth.iyes.games"
-            // "mw_generic_host"
+            "host00.localhost"
         }
     }
 }
