@@ -10,7 +10,7 @@ pub trait Host<G: Game>: Sized {
     /// Notify the Host about something that happened in the game world
     fn msg(&mut self, plids: Plids, event: G::OutEvent);
     /// Request an action to occur at a specific future time
-    fn sched(&mut self, time: Instant, event: G::SchedEvent);
+    fn sched(&mut self, time: std::time::Instant, event: G::SchedEvent);
     /// Cancel scheduled events equal to the value given
     fn desched_all(&mut self, event: G::SchedEvent);
     fn game_over(&mut self);

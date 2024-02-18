@@ -23,11 +23,11 @@ cargo r -- -d "../../${CERT_DIR}" gen-sub-ca \
 # Auth Server
 cargo r -- -d "../../${CERT_DIR}" gen-auth-server-cert \
     --ca auths.ca.cert.der --ca-key auths.ca.key.der \
-    -u "auth00.localhost/auth" \
+    -n "auth00.localhost" \
     auth00.cert.der auth00.key.der &&
 cargo r -- -d "../../${CERT_DIR}" gen-host-auth-server-cert \
     --ca auths.ca.cert.der --ca-key auths.ca.key.der \
-    -u "auth00.localhost/hostauth" \
+    -n "auth00.localhost" \
     auth00hostauth.cert.der auth00hostauth.key.der &&
 cargo r -- -d "../../${CERT_DIR}" gen-session-ca \
     --ca auth00.cert.der --ca-key auth00.key.der \
@@ -36,11 +36,11 @@ cargo r -- -d "../../${CERT_DIR}" gen-session-ca \
 # Host Server
 cargo r -- -d "../../${CERT_DIR}" gen-host-server-cert \
     --ca hosts.ca.cert.der --ca-key hosts.ca.key.der \
-    -u "host00.localhost/host" \
+    -n "host00.localhost" \
     host00.cert.der host00.key.der &&
 cargo r -- -d "../../${CERT_DIR}" gen-host-rpc-server-cert \
     --ca hosts.ca.cert.der --ca-key hosts.ca.key.der \
-    -u "host00.localhost/rpc" \
+    -n "host00.localhost" \
     host00rpc.cert.der host00rpc.key.der &&
 cargo r -- -d "../../${CERT_DIR}" gen-host-auth-client-cert \
     --ca hosts.ca.cert.der --ca-key hosts.ca.key.der \

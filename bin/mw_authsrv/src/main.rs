@@ -34,9 +34,9 @@ async fn async_main(args: mw_auth::cli::Args) {
     let persist_proprietary = mw_auth_proprietary::init(rt.clone()).await;
 
     loop {
-        persist.do_soft_reset();
+        persist.do_soft_reset().await;
         #[cfg(feature = "proprietary")]
-        persist_proprietary.do_soft_reset();
+        persist_proprietary.do_soft_reset().await;
 
         let softreset = rt.child_token();
 
