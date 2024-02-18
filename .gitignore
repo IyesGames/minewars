@@ -7,3 +7,4 @@ Cargo.lock
 *.blend1
 /proprietary
 *.exe
+/cfg/cert
