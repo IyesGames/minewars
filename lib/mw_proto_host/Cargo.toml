@@ -8,11 +8,11 @@ edition = "2021"
 [dependencies]
 mw_common = { path = "../mw_common", features = ["net"] }
 mw_dataformat = { path = "../mw_dataformat" }
-thiserror = "1.0.56"
+thiserror = "1.0.57"
 rmp-serde = "1.1.2"
 
 [dependencies.serde]
-version = "1.0.195"
+version = "1.0.196"
 features = [ "derive" ]
 
 [dependencies.quinn]

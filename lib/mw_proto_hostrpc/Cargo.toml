@@ -9,9 +9,9 @@ edition = "2021"
 mw_common = { path = "../mw_common" }
 mw_dataformat = { path = "../mw_dataformat" }
 ron = "0.8.1"
-thiserror = "1.0.56"
-toml = "0.8.8"
+thiserror = "1.0.57"
+toml = "0.8.10"
 
 [dependencies.serde]
-version = "1.0.195"
+version = "1.0.196"
 features = [ "derive" ]
