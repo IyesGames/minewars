@@ -43,13 +43,14 @@ codegen-units = 1
 debug = false
 
 [features]
-default = ["gfx2d_tilemap", "gfx3d"]
+default = ["gfx2d_tilemap", "gfx3d", "buttplug"]
 dev = ["mw_app/dev"]
 release = ["mw_app/release"]
 proprietary = ["mw_app/proprietary", "dep:mw_app_proprietary"]
 gfx2d = ["mw_app/gfx2d"]
 gfx2d_tilemap = ["mw_app/gfx2d_tilemap"]
 gfx3d = ["mw_app/gfx3d"]
+buttplug = ["mw_app/buttplug"]
 
 [dependencies.mw_app]
 path = "lib/mw_app"

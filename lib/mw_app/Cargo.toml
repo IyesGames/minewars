@@ -12,6 +12,7 @@ proprietary = []
 gfx2d = ["iyes_bevy_extras/2d"]
 gfx2d_tilemap = ["gfx2d", "dep:bevy_ecs_tilemap"]
 gfx3d = []
+buttplug = ["dep:buttplug"]
 
 [dependencies.mw_common]
 path = "../mw_common"
@@ -120,3 +121,14 @@ git = "https://github.com/IyesGames/iyes_cli"
 [dependencies.iyes_ui]
 git = "https://github.com/IyesGames/iyes_ui"
 features = ["iyes_cli"]
+
+[dependencies.buttplug]
+version = "7.1.13"
+optional = true
+default-features = false
+features = [
+    "tokio-runtime",
+    "websockets",
+    "websocket-server-manager",
+    "serialize-json",
+]
