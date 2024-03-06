@@ -9,8 +9,10 @@ use super::Coord;
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Add, AddAssign, Sub, SubAssign, Neg,
 )]
+#[derive(bytemuck::Pod, bytemuck::Zeroable)]
 #[derive(Serialize, Deserialize)]
 #[serde(from = "(i8, i8)", into = "(i8, i8)")]
+#[repr(C)]
 pub struct Pos(pub i8, pub i8);
 
 impl Pos {

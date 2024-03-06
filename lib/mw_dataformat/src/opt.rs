@@ -1,3 +1,7 @@
+//! Functionality related to (optional) optimization of the MineWars data
+//!
+//! This allows the data to be encoded more efficiently to reduce size.
+
 use mw_common::plid::PlayerId;
 
 use crate::msg::Msg;

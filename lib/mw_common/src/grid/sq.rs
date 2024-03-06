@@ -11,8 +11,10 @@ use super::{Coord, OutOfBoundsError};
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Add, AddAssign, Sub, SubAssign, Neg,
 )]
+#[derive(bytemuck::Pod, bytemuck::Zeroable)]
 #[derive(Serialize, Deserialize)]
 #[serde(from = "(i8, i8)", into = "(i8, i8)")]
+#[repr(C)]
 pub struct Sq(pub i8, pub i8);
 
 impl From<Pos> for Sq {

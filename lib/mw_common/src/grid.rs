@@ -71,6 +71,8 @@ pub trait Coord:
     + MulAssign<i8>
     + Mul<u8, Output = Self>
     + MulAssign<u8>
+    + bytemuck::Pod
+    + bytemuck::Zeroable
 {
     const N0: usize;
     const N1: usize;

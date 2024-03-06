@@ -9,6 +9,17 @@ pub enum MapDataTopo<D> {
     Hex(MapData<Hex, D>),
 }
 
+impl<D> From<MapData<Hex, D>> for MapDataTopo<D> {
+    fn from(value: MapData<Hex, D>) -> Self {
+        MapDataTopo::Hex(value)
+    }
+}
+impl<D> From<MapData<Sq, D>> for MapDataTopo<D> {
+    fn from(value: MapData<Sq, D>) -> Self {
+        MapDataTopo::Sq(value)
+    }
+}
+
 /// Map storage for a "radial" map, as a compact dense array.
 ///
 /// `C` is the type of coordinate.
@@ -83,6 +94,11 @@ impl<C: Coord, D> MapData<C, D> {
     /// Radius of map (number of rings)
     pub fn size(&self) -> u8 {
         self.size
+    }
+
+    /// Area of map (number of tiles)
+    pub fn map_area(&self) -> usize {
+        C::map_area(self.size)
     }
 
     /// Construct new map based on data from another map

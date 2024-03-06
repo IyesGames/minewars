@@ -1,3 +1,8 @@
+//! "Assembly Language" for Game Event Messages
+//!
+//! The idea is to help with debugging and development of the MineWars
+//! data stream by having a human-readable representation of the binary data.
+
 use std::fmt::Formatter;
 use mw_common::{grid::Pos, plid::PlayerId};
 use thiserror::Error;

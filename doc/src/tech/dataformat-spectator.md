@@ -24,14 +24,12 @@ In the case of a replay file, a header is prepended.
 
 The file header has the following structure:
  - `[u64; 3]`: checksums
- - `u16`: length of compressed frame data in bytes
- - `u16`: length of uncompressed frame data in bytes
+ - `u32`: length of compressed frame data in bytes
+ - `u32`: length of uncompressed frame data in bytes
 
 If compressed length == uncompressed length, the frames data is stored uncompressed.
 
 If compressed length < uncompressed length, all the frames are compressed as a single big LZ4 block.
-
-The compression is to be done using a special dictionary, see [compression dictionary](#compression-dictionary).
 
 ## Checksums
 
@@ -43,10 +41,10 @@ The file begins with 3 SeaHash checksums.
 
 The first checksum covers:
  - the remainder of the file header, incl. the following 2 checksums
- - the header part of the initialization sequence: everything until the city and map data
+ - the header part of the Initialization Sequence
 
 The second checksum covers:
- - the data payload of the initialization sequence: list of cities and map data
+ - the data of the Initialization Sequence (everything after the header)
 
 The third checksum covers:
  - all the frames data
@@ -167,9 +165,6 @@ It is constructed by concatenating the following data:
 
  - Every mountain coordinate on the map, in sorted order.
  - Every land coordinate on the map, in sorted order.
-
-All permutations of a given sample pattern are to be concatenated, before
-moving onto the next pattern.
 
 This effectively pre-seeds the compression algorithm with data sequences
 likely to occur early-game.

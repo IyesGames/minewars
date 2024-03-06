@@ -1,3 +1,5 @@
+//! Working with individual Game Update Messages
+
 use mw_common::{grid::Pos, plid::PlayerId};
 
 /// Logical representation of a protocol message.

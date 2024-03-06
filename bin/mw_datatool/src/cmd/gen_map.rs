@@ -1,0 +1,38 @@
+use std::io::BufWriter;
+
+use mw_common::{game::{MapGenTileData, TileKind}, grid::*};
+
+use crate::prelude::*;
+use crate::{CommonArgs, GenMapArgs};
+
+pub fn main(common: &CommonArgs, args: &GenMapArgs) -> AnyResult<()> {
+    let file = if let Some(out_path) = &common.output {
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(out_path)
+            .context("Cannot create output file!")?
+    } else {
+        bail!("Output filename must be specified!");
+    };
+    let mut buf = Vec::new();
+    let mut scratch = Vec::new();
+    let mut tile = MapGenTileData::default();
+    tile.set_kind(TileKind::Regular);
+    tile.set_region(0xFF);
+    let map: MapData<Hex, _> = MapData::new(args.size, tile);
+
+    let bufwriter = BufWriter::new(file);
+    let (b_file, b_is) = mw_dataformat::write::MwFileBuilder::new(bufwriter, &mut buf)?
+        .start_is()?;
+    let is = b_is
+        .with_map_lz4compressed(&map, true, &mut scratch)?
+        .with_cits([Pos(12, 17), Pos(7, 3)])?
+        .with_named_players(["iyes", "georgie", "gr.NET"])?
+        .finish()?;
+    let b_file = b_file.with_is(is)?;
+    b_file.finish()?;
+
+    Ok(())
+}

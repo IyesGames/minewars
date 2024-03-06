@@ -20,10 +20,12 @@ enum CliCommand {
     /// Generate a root CA certificate.
     GenRootCa(GenRootCaArgs),
     /// Generate a limited CA certificate.
+    ///
     /// For example, if we want to have a CA for a swarm of Host servers, instead of having
     /// them under the root CA directly.
     GenSubCa(GenSubCaArgs),
     /// Generate a CA certificate to use for session authentication.
+    ///
     /// This will be used by the Auth server (or RPC) to generate single-use certificates
     /// for players upon handoff to a Host server that has per-session player authentication enabled.
     GenSessionCa(GenSessionCaArgs),

@@ -5,4 +5,18 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# [features]
+# proprietary = ["dep:mw_game_minewars"]
+
 [dependencies]
+anyhow = "1.0.79"
+
+[dependencies.mw_common]
+path = "../../lib/mw_common"
+
+[dependencies.mw_dataformat]
+path = "../../lib/mw_dataformat"
+
+[dependencies.clap]
+version = "4.5.1"
+features = ["derive"]

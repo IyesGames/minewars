@@ -27,7 +27,7 @@ All **time durations** are encoded as:
 |`10xxxxxx`| (`x` + 12) centiseconds |
 |`11xxxxxx`| (`x` + 7) deciseconds   |
 
-**PlayerId**: a value between 1-6 inclusive.
+**PlayerId**: a value between 1-15 inclusive.
 
 You will also need to bring a LZ4 implementation supporting **raw blocks**
 and dictionary data. The `lz4_flex` Rust crate is perfect. :)
@@ -46,9 +46,9 @@ It begins with a header:
  - `u8`: map size (radius)
  - `u8`: number of players
  - `u8`: number of cities/regions
+ - `u16`: length of the whole Initialization Sequence / offset at which Messages will start
  - `u16`: length of player names data (0 for an anonymized stream)
- - `u16`: length of compressed map data in bytes
- - `u16`: length of uncompressed map data in bytes
+ - `u32`: length of compressed map data in bytes
 
 The `flags` field is encoded as follows:
 
@@ -57,23 +57,6 @@ The `flags` field is encoded as follows:
 |`----0---`| Game uses a hexagonal grid |
 |`----1---`| Game uses a square grid    |
 |`xxx--xxx`|(reserved bits)             |
-
-#### Game Parameters
-
-Then follow the parameters used for the game rules, in this game.
-
-// TODO
-
-### Data Payload
-
-#### Player Names
-
-If the file is not anonymized, then follow the display names of each player,
-encoded as: `u8` length in bytes, followed by UTF-8 encoded data.
-
-#### City Locations
-
-Then follows the list of city coordinates.
 
 #### Map Data
 
@@ -124,6 +107,21 @@ Hex example:
 
 After the map data, regions are encoded the same way: one byte per tile, in
 concentric ring order. The byte is the city/region ID for that tile.
+
+### City Locations
+
+Then follows the list of city coordinates.
+
+### Player Names
+
+If the file is not anonymized, then follow the display names of each player,
+encoded as: `u8` length in bytes, followed by UTF-8 encoded data.
+
+### Game Parameters / Rules
+
+Then follow the parameters used for the game rules, in this game.
+
+// TODO
 
 ## Gameplay Messages
 
