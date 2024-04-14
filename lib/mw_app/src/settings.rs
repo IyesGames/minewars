@@ -1,4 +1,5 @@
 use mw_game_minesweeper::MinesweeperSettings;
+use ron::ser::PrettyConfig;
 
 use crate::{prelude::*, input::{InputAction, AnalogInput}, tool::Tool};
 
@@ -429,17 +430,17 @@ fn load_or_init_settings(
 
             let mut settings = AllSettings::default();
             if let Some(dir) = dir {
-                let path = dir.join("settings.toml");
+                let path = dir.join("settings.ron");
                 match std::fs::read(&path) {
                     Ok(bytes) => {
                         if let Ok(s) = std::str::from_utf8(&bytes) {
-                            match toml::from_str(s) {
+                            match ron::from_str(s) {
                                 Ok(loaded) => {
                                     info!("Settings successfully loaded from: {:?}", path);
                                     settings = loaded;
                                 },
                                 Err(e) => {
-                                    error!("Error parsing user prefs from TOML: {}", e);
+                                    error!("Error parsing user prefs from RON: {}", e);
                                     // if there was a problem with the file, early return,
                                     // we don't want to overwrite it
                                     return settings;
@@ -471,7 +472,7 @@ pub fn write_settings(
         ).map(|dirs| dirs.preference_dir().to_owned());
 
         if let Some(dir) = dir {
-            let path = dir.join("settings.toml");
+            let path = dir.join("settings.ron");
             do_write_settings(&settings, &dir, &path);
         }
     });
@@ -482,8 +483,8 @@ fn do_write_settings(
     dir: &std::path::Path,
     file: &std::path::Path,
 ) {
-    let bytes = toml::to_string(&settings)
-        .expect("Settings could not be serialized to toml!");
+    let bytes = ron::ser::to_string_pretty(&settings, PrettyConfig::new())
+        .expect("Settings could not be serialized to ron!");
     if let Err(e) = std::fs::create_dir_all(dir) {
         error!("Failed to create user preferences directory: {}", e);
     }
