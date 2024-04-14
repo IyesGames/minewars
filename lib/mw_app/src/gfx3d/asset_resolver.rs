@@ -1,12 +1,11 @@
 use bevy::asset::RecursiveDependencyLoadState;
 use bevy::gltf::Gltf;
-use mw_common::grid::Hex;
 
 use crate::prelude::*;
 
 use crate::assets::ass3d::*;
 
-use super::map::{Ass3dTileKind, Ass3dTileVariant, TileAss3d};
+use super::map::{Ass3dTileKind, TileAss3d};
 
 pub struct Gfx3dAssetResolverPlugin;
 

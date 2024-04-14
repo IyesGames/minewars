@@ -1,4 +1,4 @@
-use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
+use bevy::render::{render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat}};
 use mw_common::{game::{MapDescriptor, TileKind}, grid::Topology};
 
 use crate::prelude::*;
@@ -14,7 +14,7 @@ impl Plugin for MinimapPlugin {
                 .in_set(NeedsMapSet)
                 .in_set(NeedsSettingsSet)
                 .after(MapUpdateSet::TileOwner) // PERF ?
-                .run_if(resource_exists::<MinimapImage>()),
+                .run_if(resource_exists::<MinimapImage>),
         ));
     }
 }
@@ -26,11 +26,16 @@ fn setup_minimap(
     mut commands: Commands,
     mut ass_image: ResMut<Assets<Image>>,
 ) {
-    let image = Image::new_fill(Extent3d {
-        width: 256,
-        height: 256,
-        depth_or_array_layers: 1,
-    }, TextureDimension::D2, &[0, 0, 0, 0], TextureFormat::Rgba8UnormSrgb);
+    let image = Image::new_fill(
+        Extent3d {
+            width: 256,
+            height: 256,
+            depth_or_array_layers: 1,
+        }, TextureDimension::D2,
+        &[0, 0, 0, 0],
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::all(),
+    );
     let handle = ass_image.add(image);
     commands.insert_resource(MinimapImage(handle));
 }
@@ -74,6 +79,7 @@ fn update_minimap(
             TextureDimension::D2,
             &[0, 0, 0, 0],
             TextureFormat::Rgba8UnormSrgb,
+            RenderAssetUsages::all(),
         );
     }
 

@@ -6,7 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-dev = ["bevy/file_watcher"]
+dev = [
+    "bevy/file_watcher",
+    "bevy/bevy_debug_stepping",
+    "bevy/glam_assert",
+    "bevy/dynamic_linking",
+]
 release = []
 proprietary = []
 gfx2d = ["iyes_bevy_extras/2d"]
@@ -43,6 +48,7 @@ num-derive = "0.4.2"
 num-traits = "0.2.18"
 num_cpus = "1.16.0"
 rand = "0.8.5"
+ron = "0.8.1"
 thiserror = "1.0.57"
 toml = "0.8.10"
 tracing = "0.1.40"
@@ -53,40 +59,48 @@ version = "1.0.196"
 features = [ "derive" ]
 
 [dependencies.bevy]
-version = "0.12.1"
-# default-features = false
+version = "0.13.2"
+default-features = false
 features = [
-    "android_shared_stdcxx",
+    "animation",
     "bevy_asset",
     "bevy_audio",
-    "bevy_core_pipeline",
     "bevy_gilrs",
-    "bevy_gizmos",
-    "bevy_gltf",
-    "bevy_pbr",
-    "bevy_render",
     "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
     "bevy_sprite",
     "bevy_text",
     "bevy_ui",
-    "bevy_winit",
-    "flac",
-    "ktx2",
     "multi-threaded",
     "png",
-    "serialize",
-    "tonemapping_luts",
-    "wayland",
-    "x11",
+    "jpeg",
+    "webp",
+    "hdr",
+    "dds",
+    "ktx2",
     "zstd",
+    "vorbis",
+    "flac",
+    "wav",
+    "x11",
+    "wayland",
+    "bevy_gizmos",
+    "android_shared_stdcxx",
+    "tonemapping_luts",
+    "default_font",
+    "serialize",
 ]
 
 [dependencies.iyes_progress]
-version = "0.10.0"
+version = "0.11.0"
 features = []
 
 [dependencies.bevy_asset_loader]
-version = "0.19.1"
+version = "0.20"
 features = [
     "2d",
     "progress_tracking",
@@ -94,22 +108,21 @@ features = [
 ]
 
 [dependencies.bevy_common_assets]
-version = "0.9.0"
+version = "0.10.0"
 features = [
     "ron",
     "toml",
 ]
 
 [dependencies.bevy_fluent]
-version = "0.8.0"
+version = "0.9.0"
 features = []
 
 [dependencies.bevy_tweening]
-version = "0.9.0"
+version = "0.10.0"
 
 [dependencies.bevy_ecs_tilemap]
 optional = true
-# version = "0.12.0"
 git = "https://github.com/StarArawn/bevy_ecs_tilemap"
 
 [dependencies.iyes_bevy_extras]

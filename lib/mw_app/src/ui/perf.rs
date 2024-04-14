@@ -99,7 +99,7 @@ fn fps_text_update_system(
     mut query: Query<&mut Text, With<FpsText>>,
 ) {
     for mut text in &mut query {
-        if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
+        if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
             if let Some(value) = fps.smoothed() {
                 text.sections[1].value = format!("{value:.2}");
                 text.sections[1].style.color = if value >= 120.0 {
@@ -133,7 +133,7 @@ fn rtt_text_update_system(
         if let Some(rtt) = netinfo.rtt {
             let millis = rtt.as_secs_f64() * 1000.0;
             text.sections[1].value = format!("{millis:.2}");
-            let fps = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS)
+            let fps = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS)
                 .and_then(|fps| fps.smoothed())
                 .unwrap_or(0.0);
             text.sections[1].style.color = if fps == 0.0 {

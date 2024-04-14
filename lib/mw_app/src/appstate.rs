@@ -4,9 +4,9 @@ pub struct AppStatesPlugin;
 
 impl Plugin for AppStatesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<GameMode>();
-        app.add_state::<AppState>();
-        app.add_state::<SessionKind>();
+        app.init_state::<GameMode>();
+        app.init_state::<AppState>();
+        app.init_state::<SessionKind>();
         for state in enum_iterator::all::<AppState>() {
             app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
             app.add_systems(

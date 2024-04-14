@@ -126,11 +126,13 @@ pub fn setup_bevy_app() -> App {
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
         filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace,mw_app=trace".into(),
         level: bevy::log::Level::TRACE,
+        update_subscriber: None,
     });
     #[cfg(not(feature = "dev"))]
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
         filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=info,mw_app=info".into(),
         level: bevy::log::Level::INFO,
+        update_subscriber: None,
     });
     let compute_threads = {
         let physical = num_cpus::get_physical();

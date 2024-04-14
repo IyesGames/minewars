@@ -1,6 +1,5 @@
 use bevy::ecs::system::RunSystemOnce;
 use bevy::gltf::Gltf;
-use bevy::render::mesh::shape::Circle;
 use mw_common::grid::*;
 
 use crate::prelude::*;
@@ -21,7 +20,7 @@ impl Plugin for Gfx3dSimple3dPlugin {
                 .in_set(MapTopologySet(Topology::Hex))
                 .in_set(TilemapSetupSet)
                 .in_set(Gfx3dSet::Simple3D)
-                .run_if(not(resource_exists::<TilemapInitted>())),
+                .run_if(not(resource_exists::<TilemapInitted>)),
             update_cursor
                 .in_set(MapTopologySet(Topology::Hex))
                 .in_set(GridCursorChangedSet),
@@ -38,10 +37,6 @@ struct CursorMesh;
 fn setup_tilemap(
     world: &mut World,
 ) {
-    // let scene = world.resource::<Assets<Gltf>>()
-    //     .get(&world.resource::<GameAssets>().fallback_3d_gltf)
-    //     .unwrap()
-    //     .named_scenes.get("LOD1_MTN_0_0").unwrap().clone();
     let index = world.remove_resource::<MapTileIndex<Hex>>().unwrap();
     for (c, &e) in index.0.iter() {
         let translation = c.translation();
@@ -86,11 +81,13 @@ fn setup_water(
         alpha_mode: AlphaMode::Blend,
         ..Default::default()
     };
-    let plane = Circle {
-        radius: TILE_SCALE * 128.0,
-        vertices: 6,
+    let plane = RegularPolygon {
+        circumcircle: Circle {
+            radius: TILE_SCALE * 128.0,
+        },
+        sides: 6,
     };
-    let handle_mesh = world.resource_mut::<Assets<Mesh>>().add(plane.into());
+    let handle_mesh = world.resource_mut::<Assets<Mesh>>().add(plane);
     let handle_material = world.resource_mut::<Assets<StandardMaterial>>().add(material);
     world.spawn((
         WaterPlane,
@@ -133,11 +130,13 @@ fn setup_cursor(
         alpha_mode: AlphaMode::Blend,
         ..Default::default()
     };
-    let plane = Circle {
-        radius: TILE_SCALE / 2.0,
-        vertices: 6,
+    let plane = RegularPolygon {
+        circumcircle: Circle {
+            radius: TILE_SCALE / 2.0,
+        },
+        sides: 6,
     };
-    let handle_mesh = world.resource_mut::<Assets<Mesh>>().add(plane.into());
+    let handle_mesh = world.resource_mut::<Assets<Mesh>>().add(plane);
     let handle_material = world.resource_mut::<Assets<StandardMaterial>>().add(material);
     world.spawn((
         CursorMesh,

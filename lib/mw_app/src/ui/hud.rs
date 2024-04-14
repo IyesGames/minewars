@@ -20,7 +20,7 @@ impl Plugin for HudPlugin {
         app.add_systems(OnEnter(AppState::InGame), setup_hud_framework_desktop);
         app.add_systems(Update, (
             setup_minimap,
-            minimap_image_scale_fixme.run_if(resource_exists::<MinimapImage>()),
+            minimap_image_scale_fixme.run_if(resource_exists::<MinimapImage>),
         ));
     }
 }
@@ -179,7 +179,6 @@ fn setup_minimap(
         commands.entity(e).push_children(&[minimap]);
         commands.entity(minimap).push_children(&[minimap_inner]);
         commands.entity(minimap_inner).push_children(&[minimap_image]);
-        dbg!("yaisehtna");
     }
 }
 
@@ -879,8 +878,8 @@ fn minimap_image_scale_fixme(
                 let wndscale = q_wnd.single().scale_factor();
                 let w = img.texture_descriptor.size.width as f64;
                 let h = img.texture_descriptor.size.height as f64;
-                let w = w / uiscale.0 / wndscale;
-                let h = h / uiscale.0 / wndscale;
+                let w = w / uiscale.0 as f64 / wndscale as f64;
+                let h = h / uiscale.0 as f64 / wndscale as f64;
                 for mut style in &mut q {
                     style.width = Val::Px(w as f32);
                     style.height = Val::Px(h as f32);

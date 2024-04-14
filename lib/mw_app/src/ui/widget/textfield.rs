@@ -43,7 +43,7 @@ fn textfield_focus_on_press(
     ), (
         Changed<Interaction>, With<TextInput>, Without<UiDisabled>,
     )>,
-    mousebtn: Res<Input<MouseButton>>,
+    mousebtn: Res<ButtonInput<MouseButton>>,
 ) {
     let last = focus.0;
     if mousebtn.just_pressed(MouseButton::Left) {
@@ -127,7 +127,7 @@ fn textfield_input(
     mut commands: Commands,
     mut focus: ResMut<TextInputFocus>,
     mut evr_char: EventReader<ReceivedCharacter>,
-    kbd: Res<Input<KeyCode>>,
+    kbd: Res<ButtonInput<KeyCode>>,
     q_textfield: Query<&TextInput>,
     mut q_text: Query<(Entity, &mut Text, &TextInputHandler), With<TextFieldText>>,
 ) {
@@ -148,7 +148,7 @@ fn textfield_input(
         return;
     };
 
-    if kbd.just_pressed(KeyCode::Return) {
+    if kbd.just_pressed(KeyCode::Enter) {
         focus.0 = None;
         let mut s = String::new();
         s.push_str(&text.sections[0].value);
@@ -168,14 +168,14 @@ fn textfield_input(
         return;
     }
 
-    if kbd.just_pressed(KeyCode::Left) {
+    if kbd.just_pressed(KeyCode::ArrowLeft) {
         if let Some(lastchar) = text.sections[0].value.pop() {
             text.sections[2].value.insert(0, lastchar);
         }
         evr_char.clear();
         return;
     }
-    if kbd.just_pressed(KeyCode::Right) {
+    if kbd.just_pressed(KeyCode::ArrowRight) {
         if !text.sections[2].value.is_empty() {
             let lastchar = text.sections[2].value.remove(0);
             text.sections[0].value.push(lastchar);
@@ -183,7 +183,7 @@ fn textfield_input(
         evr_char.clear();
         return;
     }
-    if kbd.just_pressed(KeyCode::Back) {
+    if kbd.just_pressed(KeyCode::Backspace) {
         text.sections[0].value.pop();
         evr_char.clear();
         return;
@@ -197,13 +197,14 @@ fn textfield_input(
     }
 
     for ev in evr_char.read() {
-        if ev.char.is_control() {
+        let c = ev.char.chars().next().unwrap();
+        if c.is_control() {
             continue;
         }
-        if !handler.validate(ev.char) {
+        if !handler.validate(c) {
             continue;
         }
-        text.sections[0].value.push(ev.char);
+        text.sections[0].value.push(c);
     }
 }
 

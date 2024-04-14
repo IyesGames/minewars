@@ -27,7 +27,7 @@ impl Plugin for Gfx2dTilemapPlugin {
                     .in_set(MapTopologySet(Topology::Sq)),
             )
                 .in_set(TilemapSetupSet)
-                .run_if(not(resource_exists::<TilemapInitted>())),
+                .run_if(not(resource_exists::<TilemapInitted>)),
             (
                 tile_kind::<Hex>
                     .in_set(MapTopologySet(Topology::Hex)),
@@ -37,9 +37,9 @@ impl Plugin for Gfx2dTilemapPlugin {
                 digit_tilemap_mgr.after(MapUpdateSet::TileDigit),
                 gent_tilemap_mgr.after(MapUpdateSet::TileGent),
                 overlay_tilemap_mgr,
-                tilemap_reghighlight.run_if(resource_changed::<GridCursorTileEntity>()),
+                tilemap_reghighlight.run_if(resource_changed::<GridCursorTileEntity>),
             )
-                .run_if(resource_exists::<TilemapInitted>()),
+                .run_if(resource_exists::<TilemapInitted>),
         ).in_set(Gfx2dSet::Tilemap));
     }
 }
@@ -92,7 +92,6 @@ fn prealloc_tilemap(
 
 fn preprocess_tilemap_assets(
     gas: Res<GameAssets>,
-    ast: Res<Assets<TextureAtlas>>,
     proc: ResMut<ArrayTextureLoader>,
 ) {
     let tile_size = TilemapTileSize {
@@ -100,7 +99,7 @@ fn preprocess_tilemap_assets(
     };
     proc.add(TilemapArrayTexture {
         texture: TilemapTexture::Single(
-            ast.get(&gas.sprites).unwrap().texture.clone(),
+            gas.sprites_img.clone(),
         ),
         tile_size,
         filter: Some(FilterMode::Linear),
@@ -108,7 +107,7 @@ fn preprocess_tilemap_assets(
     });
     proc.add(TilemapArrayTexture {
         texture: TilemapTexture::Single(
-            ast.get(&gas.roads6).unwrap().texture.clone(),
+            gas.roads6_img.clone(),
         ),
         tile_size,
         filter: Some(FilterMode::Linear),
@@ -116,7 +115,7 @@ fn preprocess_tilemap_assets(
     });
     proc.add(TilemapArrayTexture {
         texture: TilemapTexture::Single(
-            ast.get(&gas.roads4).unwrap().texture.clone(),
+            gas.roads4_img.clone(),
         ),
         tile_size,
         filter: Some(FilterMode::Linear),
@@ -129,12 +128,11 @@ fn setup_tilemap<C: Coord>(
 ) {
     let (img_sprites, img_roads) = {
         let gas = world.resource::<GameAssets>();
-        let ast = world.resource::<Assets<TextureAtlas>>();
         (
-            ast.get(&gas.sprites).unwrap().texture.clone(),
+            gas.sprites_img.clone(),
             match C::TOPOLOGY {
-                Topology::Hex => ast.get(&gas.roads6).unwrap().texture.clone(),
-                Topology::Sq => ast.get(&gas.roads4).unwrap().texture.clone(),
+                Topology::Hex => gas.roads6_img.clone(),
+                Topology::Sq => gas.roads4_img.clone(),
             },
         )
     };
@@ -466,7 +464,7 @@ fn overlay_tilemap_mgr(
                 ts_overlay.remove(&tilepos);
             }
             if let Some(mut color) = opt_color {
-                color.0.set_a(spr_expl.timer.percent_left());
+                color.0.set_a(spr_expl.timer.fraction_remaining());
             }
         } else {
             // we have an entity with no sprite, set up the sprite

@@ -66,12 +66,18 @@ pub struct GameAssets {
     pub fallback_3d: Handle<Ass3dConfig>,
     #[asset(key = "gfx3d.fallback_skin.gltf")]
     pub fallback_3d_gltf: Handle<Gltf>,
-    #[asset(key = "gfx2d.tilemap.sprites")]
-    pub sprites: Handle<TextureAtlas>,
-    #[asset(key = "gfx2d.tilemap.roads6")]
-    pub roads6: Handle<TextureAtlas>,
-    #[asset(key = "gfx2d.tilemap.roads4")]
-    pub roads4: Handle<TextureAtlas>,
+    #[asset(key = "gfx2d.tilemap.sprites.image")]
+    pub sprites_img: Handle<Image>,
+    #[asset(key = "gfx2d.tilemap.sprites.layout")]
+    pub sprites_layout: Handle<TextureAtlasLayout>,
+    #[asset(key = "gfx2d.tilemap.roads6.image")]
+    pub roads6_img: Handle<Image>,
+    #[asset(key = "gfx2d.tilemap.roads6.layout")]
+    pub roads6_layout: Handle<TextureAtlasLayout>,
+    #[asset(key = "gfx2d.tilemap.roads4.image")]
+    pub roads4_img: Handle<Image>,
+    #[asset(key = "gfx2d.tilemap.roads4.layout")]
+    pub roads4_layout: Handle<TextureAtlasLayout>,
 }
 
 #[derive(AssetCollection, Resource)]

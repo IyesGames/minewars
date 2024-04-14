@@ -23,7 +23,7 @@ impl Plugin for Gfx2dCameraPlugin {
         );
         app.add_systems(Update, (
             grid_cursor
-                .run_if(resource_changed::<WorldCursor>()),
+                .run_if(resource_changed::<WorldCursor>),
         )
          .in_set(GridCursorSet)
          .in_set(Gfx2dSet::Any)
@@ -100,7 +100,10 @@ fn inputaction_zoom(
                 let wnd = q_wnd.single();
                 let (e_cam, proj) = q_cam.single();
 
-                let newscale = ((proj.scale as f64 / wnd.scale_factor()).round() + *lines as f64).clamp(1.0, 8.0) * wnd.scale_factor();
+                let newscale = (
+                    (proj.scale as f64 / wnd.scale_factor() as f64).round()
+                        + *lines as f64
+                ).clamp(1.0, 8.0) * wnd.scale_factor() as f64;
 
                 let dur = Duration::from_millis(settings.camera.zoom_tween_duration_ms as u64);
                 let tween = Animator::new(Tween::new(
@@ -169,7 +172,10 @@ fn camera_control_zoom_mousewheel(
         let wnd = q_wnd.single();
         let (e_cam, proj) = q_cam.single();
 
-        let newscale = ((proj.scale as f64 / wnd.scale_factor()).round() + lines as f64).clamp(1.0, 8.0) * wnd.scale_factor();
+        let newscale = (
+            (proj.scale as f64 / wnd.scale_factor() as f64).round()
+                + lines as f64
+        ).clamp(1.0, 8.0) * wnd.scale_factor() as f64;
 
         let dur = Duration::from_millis(settings.camera.zoom_tween_duration_ms as u64);
         let tween = Animator::new(Tween::new(

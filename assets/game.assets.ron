@@ -5,22 +5,28 @@
     "gfx3d.fallback_skin.gltf": File (
         path: "gfx3d/dev.gltf",
     ),
-    "gfx2d.tilemap.sprites": TextureAtlas (
+    "gfx2d.tilemap.sprites.image": File (
         path: "gfx2d/sprites.ktx2",
+    ),
+    "gfx2d.tilemap.sprites.layout": TextureAtlasLayout (
         tile_size_x: 128.,
         tile_size_y: 128.,
         rows: 10,
         columns: 10,
     ),
-    "gfx2d.tilemap.roads6": TextureAtlas (
+    "gfx2d.tilemap.roads6.image": File (
         path: "gfx2d/roads6.ktx2",
+    ),
+    "gfx2d.tilemap.roads6.layout": TextureAtlasLayout (
         tile_size_x: 128.,
         tile_size_y: 128.,
         rows: 8,
         columns: 8,
     ),
-    "gfx2d.tilemap.roads4": TextureAtlas (
+    "gfx2d.tilemap.roads4.image": File (
         path: "gfx2d/roads4.ktx2",
+    ),
+    "gfx2d.tilemap.roads4.layout": TextureAtlasLayout (
         tile_size_x: 128.,
         tile_size_y: 128.,
         rows: 4,

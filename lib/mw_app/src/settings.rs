@@ -6,10 +6,10 @@ pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.configure_sets(Update, NeedsSettingsSet.run_if(resource_exists::<AllSettings>()));
+        app.configure_sets(Update, NeedsSettingsSet.run_if(resource_exists::<AllSettings>));
         app.add_systems(Update,
             load_or_init_settings
-                .run_if(not(resource_exists::<SettingsLoaded>())));
+                .run_if(not(resource_exists::<SettingsLoaded>)));
         app.add_systems(Update, (
             loadscreen_wait_settings.track_progress().run_if(in_state(AppState::AssetsLoading)),
         ));
@@ -42,8 +42,8 @@ pub struct AllSettings {
 #[derive(Serialize, Deserialize)]
 pub enum MwRenderer {
     Sprites,
-    Tilemap,
     #[default]
+    Tilemap,
     Simple3D,
 }
 
@@ -78,7 +78,6 @@ pub struct MouseSettings {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct KeyboardSettings {
-    pub scanmap: HashMap<ScanCode, InputAction>,
     pub keymap: HashMap<KeyCode, InputAction>,
 }
 
@@ -223,38 +222,37 @@ impl Default for KeyboardSettings {
         let mut keymap = HashMap::default();
         #[cfg(feature = "dev")]
         keymap.insert(KeyCode::Backslash, InputAction::DevDebug);
-        keymap.insert(KeyCode::Grave, InputAction::OpenDevConsole);
+        keymap.insert(KeyCode::Backquote, InputAction::OpenDevConsole);
         keymap.insert(KeyCode::Tab, InputAction::CycleToolNext);
-        keymap.insert(KeyCode::Return, InputAction::ConfirmCurrentTool);
-        keymap.insert(KeyCode::Back, InputAction::CancelCurrentTool);
+        keymap.insert(KeyCode::Enter, InputAction::ConfirmCurrentTool);
+        keymap.insert(KeyCode::Backspace, InputAction::CancelCurrentTool);
         keymap.insert(KeyCode::Delete, InputAction::CancelCurrentTool);
         keymap.insert(KeyCode::Space, InputAction::UseCurrentTool);
-        keymap.insert(KeyCode::Q, InputAction::SwitchTool(Tool::DeployMine));
-        keymap.insert(KeyCode::W, InputAction::SwitchTool(Tool::DeployDecoy));
-        keymap.insert(KeyCode::E, InputAction::SwitchTool(Tool::DeployTrap));
-        keymap.insert(KeyCode::R, InputAction::SwitchTool(Tool::Smoke));
-        keymap.insert(KeyCode::A, InputAction::SwitchTool(Tool::Explore));
-        keymap.insert(KeyCode::S, InputAction::SwitchTool(Tool::Flag));
-        keymap.insert(KeyCode::D, InputAction::SwitchTool(Tool::Reveal));
-        keymap.insert(KeyCode::F, InputAction::SwitchTool(Tool::Strike));
-        keymap.insert(KeyCode::G, InputAction::SwitchTool(Tool::Harvest));
-        keymap.insert(KeyCode::Z, InputAction::SwitchTool(Tool::RemoveStructure));
-        keymap.insert(KeyCode::X, InputAction::SwitchTool(Tool::BuildRoad));
-        keymap.insert(KeyCode::C, InputAction::SwitchTool(Tool::BuildBridge));
-        keymap.insert(KeyCode::V, InputAction::SwitchTool(Tool::BuildWall));
-        keymap.insert(KeyCode::B, InputAction::SwitchTool(Tool::BuildTower));
-        keymap.insert(KeyCode::Plus, InputAction::ZoomCamera(1.0));
+        keymap.insert(KeyCode::KeyQ, InputAction::SwitchTool(Tool::DeployMine));
+        keymap.insert(KeyCode::KeyW, InputAction::SwitchTool(Tool::DeployDecoy));
+        keymap.insert(KeyCode::KeyE, InputAction::SwitchTool(Tool::DeployTrap));
+        keymap.insert(KeyCode::KeyR, InputAction::SwitchTool(Tool::Smoke));
+        keymap.insert(KeyCode::KeyA, InputAction::SwitchTool(Tool::Explore));
+        keymap.insert(KeyCode::KeyS, InputAction::SwitchTool(Tool::Flag));
+        keymap.insert(KeyCode::KeyD, InputAction::SwitchTool(Tool::Reveal));
+        keymap.insert(KeyCode::KeyF, InputAction::SwitchTool(Tool::Strike));
+        keymap.insert(KeyCode::KeyG, InputAction::SwitchTool(Tool::Harvest));
+        keymap.insert(KeyCode::KeyZ, InputAction::SwitchTool(Tool::RemoveStructure));
+        keymap.insert(KeyCode::KeyX, InputAction::SwitchTool(Tool::BuildRoad));
+        keymap.insert(KeyCode::KeyC, InputAction::SwitchTool(Tool::BuildBridge));
+        keymap.insert(KeyCode::KeyV, InputAction::SwitchTool(Tool::BuildWall));
+        keymap.insert(KeyCode::KeyB, InputAction::SwitchTool(Tool::BuildTower));
+        keymap.insert(KeyCode::Equal, InputAction::ZoomCamera(1.0));
         keymap.insert(KeyCode::Minus, InputAction::ZoomCamera(-1.0));
         keymap.insert(KeyCode::BracketRight, InputAction::RotateCamera(1.0));
         keymap.insert(KeyCode::BracketLeft, InputAction::RotateCamera(-1.0));
-        keymap.insert(KeyCode::Left, InputAction::PanCamera(Vec2::NEG_X));
-        keymap.insert(KeyCode::Right, InputAction::PanCamera(Vec2::X));
-        keymap.insert(KeyCode::Down, InputAction::PanCamera(Vec2::NEG_Y));
-        keymap.insert(KeyCode::Up, InputAction::PanCamera(Vec2::Y));
+        keymap.insert(KeyCode::ArrowLeft, InputAction::PanCamera(Vec2::NEG_X));
+        keymap.insert(KeyCode::ArrowRight, InputAction::PanCamera(Vec2::X));
+        keymap.insert(KeyCode::ArrowDown, InputAction::PanCamera(Vec2::NEG_Y));
+        keymap.insert(KeyCode::ArrowUp, InputAction::PanCamera(Vec2::Y));
         keymap.insert(KeyCode::ControlLeft, InputAction::Analog(AnalogInput::PanCamera));
         keymap.insert(KeyCode::AltLeft, InputAction::Analog(AnalogInput::RotateCamera));
         KeyboardSettings {
-            scanmap: default(),
             keymap,
         }
     }
@@ -397,7 +395,7 @@ impl Default for PlayerPaletteSettings {
 impl Default for MapGenSettings {
     fn default() -> Self {
         MapGenSettings {
-            size: 64,
+            size: 24,
             topology: mw_common::grid::Topology::Hex,
             style: if PROPRIETARY {
                 MapGenStyle::MineWars

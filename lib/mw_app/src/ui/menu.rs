@@ -27,7 +27,7 @@ impl Plugin for MenuPlugin {
         ));
         app.add_systems(Update, (
             menu_butt_interact_visual.in_set(NeedsSettingsSet),
-            butt_back_showhide.run_if(resource_changed::<MenuStack>())
+            butt_back_showhide.run_if(resource_changed::<MenuStack>)
         ));
     }
 }

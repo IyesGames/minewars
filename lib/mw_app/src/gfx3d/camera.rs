@@ -10,7 +10,7 @@ pub struct Gfx3dCameraPlugin;
 
 impl Plugin for Gfx3dCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dSet::Any));
+        // app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dSet::Any));
         app.add_systems(Update, (
             cursor_to_ground_plane
                 .in_set(InGameSet(None))
@@ -79,8 +79,8 @@ fn setup_game_camera_3d(
 }
 
 fn pan_orbit_camera(
-    kbd: Res<Input<KeyCode>>,
-    mousebtn: Res<Input<MouseButton>>,
+    kbd: Res<ButtonInput<KeyCode>>,
+    mousebtn: Res<ButtonInput<MouseButton>>,
     mut ev_motion: EventReader<bevy::input::mouse::MouseMotion>,
     mut ev_scroll: EventReader<bevy::input::mouse::MouseWheel>,
     mut q_camera: Query<(&mut PanOrbitCamera, &mut Transform, &Camera)>,
@@ -175,10 +175,10 @@ fn compute_cursor_to_ground_plane(
     camera: &Camera,
 ) -> Option<Vec2> {
     let plane_origin = Vec3::ZERO;
-    let plane_normal = Vec3::Y;
+    let plane = Plane3d::new(Vec3::Y);
 
     let ray = camera.viewport_to_world(camera_transform, cursor_position)?;
-    let distance = ray.intersect_plane(plane_origin, plane_normal)?;
+    let distance = ray.intersect_plane(plane_origin, plane)?;
     let global_cursor = ray.get_point(distance);
     Some(Vec2::new(global_cursor.x, -global_cursor.z))
 }

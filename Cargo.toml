@@ -34,7 +34,7 @@ opt-level = 3
 [profile.dev]
 debug = false
 lto = false
-codegen-units = 8
+codegen-units = 10
 # release: Enable LTO and limit codegen units for better codegen
 [profile.release]
 opt-level = 3
@@ -60,5 +60,5 @@ git = "https://github.com/IyesGames/minewars-proprietary-shim"
 optional = true
 
 [dependencies.bevy]
-version = "0.12.1"
+version = "0.13.2"
 default-features = false

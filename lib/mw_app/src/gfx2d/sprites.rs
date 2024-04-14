@@ -25,7 +25,7 @@ impl Plugin for Gfx2dSpritesPlugin {
                     .in_set(MapTopologySet(Topology::Sq)),
             )
                 .in_set(TilemapSetupSet)
-                .run_if(not(resource_exists::<TilemapInitted>())),
+                .run_if(not(resource_exists::<TilemapInitted>)),
             (
                 tile_kind::<Hex>
                     .in_set(MapTopologySet(Topology::Hex)),
@@ -37,7 +37,7 @@ impl Plugin for Gfx2dSpritesPlugin {
                 explosion_sprite_mgr,
                 sprites_reghighlight,
             )
-                .run_if(resource_exists::<TilemapInitted>()),
+                .run_if(resource_exists::<TilemapInitted>),
         ).in_set(Gfx2dSet::Sprites));
         app.add_systems(OnEnter(AppState::InGame), (
             setup_cursor,
@@ -80,11 +80,11 @@ fn setup_cursor(
     commands.spawn((
         CursorSpriteBundle {
             sprite: SpriteSheetBundle {
-                sprite: TextureAtlasSprite {
+                atlas: TextureAtlas {
                     index: i,
-                    ..Default::default()
+                    layout: gass.sprites_layout.clone(),
                 },
-                texture_atlas: gass.sprites.clone(),
+                texture: gass.sprites_img.clone(),
                 transform: Transform::from_xyz(0.0, 0.0, super::zpos::CURSOR),
                 ..Default::default()
             },
@@ -118,7 +118,10 @@ fn cursor_sprite<C: Coord>(
 fn setup_tilemap<C: Coord>(
     world: &mut World,
 ) {
-    let texture_atlas = world.resource::<GameAssets>().sprites.clone();
+    let (sprites_layout, sprites_img) = {
+        let gas = world.resource::<GameAssets>();
+        (gas.sprites_layout.clone(), gas.sprites_img.clone())
+    };
     let index = world.remove_resource::<MapTileIndex<C>>().unwrap();
     let (sprite_index, width, height) = match C::TOPOLOGY {
         Topology::Hex => (
@@ -135,10 +138,13 @@ fn setup_tilemap<C: Coord>(
         world.entity_mut(e).insert((
             BaseSprite,
             SpriteSheetBundle {
-                texture_atlas: texture_atlas.clone(),
-                sprite: TextureAtlasSprite {
-                    color: Color::WHITE,
+                texture: sprites_img.clone(),
+                atlas: TextureAtlas {
                     index: sprite_index,
+                    layout: sprites_layout.clone(),
+                },
+                sprite: Sprite {
+                    color: Color::WHITE,
                     ..Default::default()
                 },
                 transform: Transform::from_xyz(trans.x * width, trans.y * height, super::zpos::TILE),
@@ -153,7 +159,7 @@ fn setup_tilemap<C: Coord>(
 
 fn tile_kind<C: Coord>(
     mut q: Query<
-        (&mut TextureAtlasSprite, &TileKind, &MwTilePos),
+        (&mut TextureAtlas, &mut Sprite, &TileKind, &MwTilePos),
         (With<BaseSprite>, Changed<TileKind>)
     >,
     plids: Res<PlayersIndex>,
@@ -165,8 +171,8 @@ fn tile_kind<C: Coord>(
         Topology::Sq => super::sprite::TILES4,
     };
 
-    for (mut spr, kind, pos) in &mut q {
-        spr.index = i_base + match kind {
+    for (mut atlas, mut spr, kind, pos) in &mut q {
+        atlas.index = i_base + match kind {
             TileKind::Water => super::sprite::TILE_WATER,
             TileKind::FoundationRoad => super::sprite::TILE_FOUNDATION,
             TileKind::FoundationStruct => super::sprite::TILE_FOUNDATION,
@@ -195,7 +201,7 @@ fn tile_kind<C: Coord>(
 
 fn tile_owner(
     settings: Res<AllSettings>,
-    mut q: Query<(&mut TextureAtlasSprite, &TileOwner), Changed<TileOwner>>,
+    mut q: Query<(&mut Sprite, &TileOwner), Changed<TileOwner>>,
 ) {
     for (mut spr, owner) in &mut q {
         spr.color = settings.player_colors.visible[owner.0.i()].into();
@@ -209,7 +215,7 @@ fn tile_digit_sprite_mgr(
         (Entity, &MwTilePos, &TileDigit, &Transform, Option<&TileDigitEntity>),
         (With<BaseSprite>, Changed<TileDigit>)
     >,
-    mut q_digit: Query<&mut TextureAtlasSprite, With<DigitSprite>>,
+    mut q_digit: Query<&mut TextureAtlas, With<DigitSprite>>,
 ) {
     for (e, coord, digit, xf, spr_digit) in q_tile.iter() {
         let mut trans = xf.translation;
@@ -225,8 +231,8 @@ fn tile_digit_sprite_mgr(
             // there is an existing digit entity we can reuse (or despawn)
             if digit.0 > 0 {
                 let e_digit = spr_digit.0;
-                let mut sprite = q_digit.get_mut(e_digit).unwrap();
-                sprite.index = i_dig;
+                let mut atlas = q_digit.get_mut(e_digit).unwrap();
+                atlas.index = i_dig;
             } else {
                 commands.entity(spr_digit.0).despawn();
                 commands.entity(e).remove::<TileDigitEntity>();
@@ -235,11 +241,11 @@ fn tile_digit_sprite_mgr(
             // create a new digit entity
             let e_digit = commands.spawn((
                 SpriteSheetBundle {
-                    sprite: TextureAtlasSprite {
+                    atlas: TextureAtlas {
                         index: i_dig,
-                        ..Default::default()
+                        layout: assets.sprites_layout.clone(),
                     },
-                    texture_atlas: assets.sprites.clone(),
+                    texture: assets.sprites_img.clone(),
                     transform: Transform::from_translation(trans),
                     ..Default::default()
                 },
@@ -260,7 +266,7 @@ fn tile_gent_sprite_mgr(
         (Entity, &MwTilePos, &TileGent, &Transform, Option<&TileGentEntity>),
         (With<BaseSprite>, Changed<TileGent>)
     >,
-    mut q_gent: Query<&mut TextureAtlasSprite, With<GentSprite>>,
+    mut q_gent: Query<(&mut TextureAtlas, &mut Sprite), With<GentSprite>>,
 ) {
     for (e, coord, gent, xf, spr_gent) in q_tile.iter() {
         let mut trans = xf.translation;
@@ -306,19 +312,22 @@ fn tile_gent_sprite_mgr(
         if let Some(spr_gent) = spr_gent {
             // there is an existing gent entity we can reuse
             let e_gent = spr_gent.0;
-            let mut sprite = q_gent.get_mut(e_gent).unwrap();
-            sprite.index = i_gent;
+            let (mut atlas, mut sprite) = q_gent.get_mut(e_gent).unwrap();
+            atlas.index = i_gent;
             sprite.color = clr_gent;
         } else {
             // create a new gent entity
             let e_gent = commands.spawn((
                 SpriteSheetBundle {
-                    sprite: TextureAtlasSprite {
-                        index: i_gent,
+                    sprite: Sprite {
                         color: clr_gent,
                         ..Default::default()
                     },
-                    texture_atlas: assets.sprites.clone(),
+                    atlas: TextureAtlas {
+                        index: i_gent,
+                        layout: assets.sprites_layout.clone(),
+                    },
+                    texture: assets.sprites_img.clone(),
                     transform: Transform::from_translation(trans),
                     ..Default::default()
                 },
@@ -335,7 +344,7 @@ fn explosion_sprite_mgr(
     time: Res<Time>,
     assets: Res<GameAssets>,
     mut q_expl: Query<(
-        Entity, &TileExplosion, Option<&mut ExplosionSprite>, Option<&mut TextureAtlasSprite>,
+        Entity, &TileExplosion, Option<&mut ExplosionSprite>, Option<&mut Sprite>,
     )>,
     q_tile: Query<&Transform, With<BaseSprite>>,
 ) {
@@ -346,7 +355,7 @@ fn explosion_sprite_mgr(
             if spr_expl.timer.finished() {
                 commands.entity(e).despawn_recursive();
             }
-            sprite.color.set_a(spr_expl.timer.percent_left());
+            sprite.color.set_a(spr_expl.timer.fraction_remaining());
         } else {
             // we have an entity with no sprite, set up the sprite
             let xf = q_tile.get(expl.0).unwrap();
@@ -361,11 +370,11 @@ fn explosion_sprite_mgr(
                     timer: Timer::new(Duration::from_millis(1000), TimerMode::Once),
                 },
                 SpriteSheetBundle {
-                    sprite: TextureAtlasSprite {
+                    atlas: TextureAtlas {
                         index: i_expl,
-                        ..Default::default()
+                        layout: assets.sprites_layout.clone(),
                     },
-                    texture_atlas: assets.sprites.clone(),
+                    texture: assets.sprites_img.clone(),
                     transform: Transform::from_translation(trans),
                     ..Default::default()
                 },
@@ -418,12 +427,15 @@ fn sprites_reghighlight(
                     commands.spawn((
                         RegHighlightSprite,
                         SpriteSheetBundle {
-                            sprite: TextureAtlasSprite {
-                                index,
+                            sprite: Sprite {
                                 color,
                                 ..Default::default()
                             },
-                            texture_atlas: assets.sprites.clone(),
+                            atlas: TextureAtlas {
+                                index,
+                                layout: assets.sprites_layout.clone(),
+                            },
+                            texture: assets.sprites_img.clone(),
                             transform: Transform::from_translation(trans),
                             ..Default::default()
                         },

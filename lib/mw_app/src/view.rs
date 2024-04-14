@@ -49,7 +49,7 @@ impl Plugin for GameViewPlugin {
         app.add_plugins(update::ViewUpdatePlugin);
         app.configure_sets(
             Update,
-            ViewSwitchSet.run_if(resource_exists_and_changed::<PlidViewing>())
+            ViewSwitchSet.run_if(resource_exists_and_changed::<PlidViewing>)
         );
         app.add_systems(Update, (
             kbd_viewswitch,
@@ -274,7 +274,7 @@ fn switch_view_update_map_roads<C: Coord>(
 }
 
 fn kbd_viewswitch(
-    kbd: Res<Input<KeyCode>>,
+    kbd: Res<ButtonInput<KeyCode>>,
     mut viewing: ResMut<PlidViewing>,
     mut playingas: ResMut<PlidPlayingAs>,
     players: Res<PlayersIndex>,

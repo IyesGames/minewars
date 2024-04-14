@@ -26,20 +26,18 @@ fn collect_actions_key(
     mut evr_kbd: EventReader<KeyboardInput>,
     mut evw_action: EventWriter<InputAction>,
     // to ignore repeats
-    kbd: Res<Input<ScanCode>>,
+    kbd: Res<ButtonInput<KeyCode>>,
 ) {
     for ev in evr_kbd.read() {
-        if let Some(action) = settings.input.keyboard.scanmap.get(&ScanCode(ev.scan_code))
-            .or_else(|| ev.key_code.and_then(|k| settings.input.keyboard.keymap.get(&k)))
-        {
-            if kbd.just_pressed(ScanCode(ev.scan_code)) {
+        if let Some(action) = settings.input.keyboard.keymap.get(&ev.key_code) {
+            if kbd.just_pressed(ev.key_code) {
                 activate_input(
                     *action,
                     AnalogSource::MouseMotion,
                     &mut evw_action, &mut analogs,
                 );
             }
-            if kbd.just_released(ScanCode(ev.scan_code)) {
+            if kbd.just_released(ev.key_code) {
                 deactivate_input(
                     *action,
                     AnalogSource::MouseMotion,

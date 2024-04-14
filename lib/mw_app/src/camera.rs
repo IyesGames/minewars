@@ -23,7 +23,7 @@ impl Plugin for MwCameraPlugin {
                 .in_set(InGameSet(None)),
             GridCursorChangedSet
                 .after(GridCursorSet)
-                .run_if(resource_changed::<GridCursor>())
+                .run_if(resource_changed::<GridCursor>)
         ));
     }
 }

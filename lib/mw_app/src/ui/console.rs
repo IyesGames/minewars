@@ -25,11 +25,11 @@ struct ConsoleCommandHistory(Vec<String>);
 
 fn toggle_console(
     mut commands: Commands,
-    kbd: Res<Input<KeyCode>>,
+    kbd: Res<ButtonInput<KeyCode>>,
     query_existing: Query<Entity, With<UiConsole>>,
     ui_assets: Option<Res<UiAssets>>,
 ) {
-    if kbd.just_pressed(KeyCode::Grave) {
+    if kbd.just_pressed(KeyCode::Backquote) {
         if query_existing.is_empty() {
             // spawn console
             let console = commands
@@ -98,7 +98,7 @@ fn toggle_console(
 fn console_text_input(
     mut commands: Commands,
     mut evr_char: EventReader<ReceivedCharacter>,
-    kbd: Res<Input<KeyCode>>,
+    kbd: Res<ButtonInput<KeyCode>>,
     mut query: Query<(
         &mut Text,
         &mut UiConsolePromptHistoryEntry,
@@ -113,7 +113,7 @@ fn console_text_input(
         evr_char.clear();
         return;
     }
-    if kbd.just_pressed(KeyCode::Return) {
+    if kbd.just_pressed(KeyCode::Enter) {
         for (text, _, prompt) in &query {
             history.0.push(text.sections[1].value.clone());
             commands.run_clicommand(&text.sections[1].value);
@@ -122,7 +122,7 @@ fn console_text_input(
         evr_char.clear();
         return;
     }
-    if kbd.just_pressed(KeyCode::Back) {
+    if kbd.just_pressed(KeyCode::Backspace) {
         for (mut text, mut hisentry, prompt) in &mut query {
             if text.sections[1].value.is_empty() {
                 commands.entity(prompt.0).despawn_recursive();
@@ -133,7 +133,7 @@ fn console_text_input(
         evr_char.clear();
         return;
     }
-    if kbd.just_pressed(KeyCode::Up) {
+    if kbd.just_pressed(KeyCode::ArrowUp) {
         for (mut text, mut hisentry, _) in &mut query {
             if let Some(i) = hisentry.0.as_mut() {
                 if *i > 0 {
@@ -149,7 +149,7 @@ fn console_text_input(
         evr_char.clear();
         return;
     }
-    if kbd.just_pressed(KeyCode::Down) {
+    if kbd.just_pressed(KeyCode::ArrowDown) {
         for (mut text, mut hisentry, _) in &mut query {
             if let Some(i) = hisentry.0.as_mut() {
                 if *i < history.0.len() - 1 {
@@ -163,7 +163,7 @@ fn console_text_input(
     }
     for ev in evr_char.read() {
         for (mut text, mut hisentry, _) in &mut query {
-            text.sections[1].value.push(ev.char);
+            text.sections[1].value.push(ev.char.chars().next().unwrap());
             hisentry.0 = None;
         }
     }

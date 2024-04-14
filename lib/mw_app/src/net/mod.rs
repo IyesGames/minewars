@@ -13,12 +13,12 @@ impl Plugin for NetClientPlugin {
     fn build(&self, app: &mut App) {
         app.register_clicommand_noargs("host_connect_last", cli_host_connect_last);
         app.init_resource::<NetInfo>();
-        app.configure_sets(Update, NeedsNetSet.run_if(resource_exists::<NetWorkerThread>()));
+        app.configure_sets(Update, NeedsNetSet.run_if(resource_exists::<NetWorkerThread>));
         app.add_systems(Update, (
             net_manager,
             setup_networkerthread
-                .run_if(resource_added::<AllSettings>())
-                .run_if(not(resource_exists::<NetWorkerThread>())),
+                .run_if(resource_added::<AllSettings>)
+                .run_if(not(resource_exists::<NetWorkerThread>)),
             net_gameevent.in_set(GameEventSet).in_set(NeedsNetSet),
             net_status.in_set(NeedsNetSet),
         ));

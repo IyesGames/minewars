@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 use bevy::{
-    core_pipeline::clear_color::ClearColorConfig,
+    render::camera::ClearColorConfig,
     ecs::{schedule::SystemConfigs, system::BoxedSystem},
     input::{gamepad::GamepadEvent, keyboard::KeyboardInput, mouse::MouseButtonInput},
 };
@@ -59,8 +59,9 @@ fn setup_splashscreen<S: States>(next: S) -> SystemConfigs {
         commands.spawn((
             StateDespawnMarker,
             Camera2dBundle {
-                camera_2d: Camera2d {
+                camera: Camera {
                     clear_color: ClearColorConfig::Custom(Color::BLACK),
+                    ..Default::default()
                 },
                 ..Default::default()
             },
@@ -142,7 +143,7 @@ fn splash_fade<S: States>(
         } else if fade.timer_intro.duration().as_secs_f32() > 0.0 && !fade.timer_intro.finished() {
             fade.timer_intro.tick(t.delta());
             all_finished = false;
-            let remain = fade.timer_intro.percent();
+            let remain = fade.timer_intro.fraction();
             sprite.color.set_a(remain);
         } else if !fade.timer_on.finished() {
             fade.timer_on.tick(t.delta());
@@ -151,7 +152,7 @@ fn splash_fade<S: States>(
         } else if !fade.timer_fade.finished() {
             fade.timer_fade.tick(t.delta());
             all_finished = false;
-            let remain = fade.timer_fade.percent_left();
+            let remain = fade.timer_fade.fraction_remaining();
             sprite.color.set_a(remain);
         }
     }

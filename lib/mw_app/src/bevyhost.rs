@@ -48,7 +48,7 @@ where
             OnEnter(SessionKind::BevyHost),
             init::<G>
                 .in_set(BevyHostSet::All)
-                .run_if(resource_exists::<BevyHost<G>>())
+                .run_if(resource_exists::<BevyHost<G>>)
         );
         app.configure_sets(Update, (
             BevyHostSet::PostGame.after(BevyHostSet::Game),
@@ -67,7 +67,7 @@ where
         ).in_set(BevyHostSet::All)
          .in_set(InGameSet(None))
          .in_set(InStateSet(SessionKind::BevyHost))
-         .run_if(resource_exists::<BevyHost<G>>())
+         .run_if(resource_exists::<BevyHost<G>>)
         );
     }
 }
