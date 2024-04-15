@@ -1,6 +1,7 @@
-use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use bevy::{diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, ecs::system::{lifetimeless::SRes, SystemParam}};
+use iyes_perf_ui::prelude::*;
 
-use crate::{prelude::*, assets::UiAssets};
+use crate::{assets::UiAssets, net::NetInfo, prelude::*};
 
 use super::*;
 
@@ -8,162 +9,137 @@ pub struct PerfUiPlugin;
 
 impl Plugin for PerfUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnExit(AppState::AssetsLoading), setup_perfui);
-        app.add_systems(Update, (fps_text_update_system, rtt_text_update_system));
+        app.add_plugins(iyes_perf_ui::PerfUiPlugin);
+        app.add_perf_ui_entry_type::<PerfUiNetRtt>();
+        app.add_systems(Startup, setup_perfui);
+        app.add_systems(Update, (
+            toggle_perfui
+                .before(iyes_perf_ui::PerfUiSet::Setup),
+        ));
     }
 }
-
-#[derive(Component)]
-struct FpsText;
-
-#[derive(Component)]
-struct RttText;
 
 fn setup_perfui(
     mut commands: Commands,
-    settings: Res<AllSettings>,
-    uiassets: Res<UiAssets>,
 ) {
-    let root = commands.spawn((
-        NodeBundle {
-            background_color: BackgroundColor(Color::BLACK.with_a(0.5)),
-            z_index: ZIndex::Global(9999),
-            style: Style {
-                position_type: PositionType::Absolute,
-                left: Val::Auto,
-                right: Val::Percent(1.),
-                bottom: Val::Auto,
-                top: Val::Percent(1.),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::FlexStart,
-                align_items: AlignItems::FlexStart,
-                padding: UiRect::all(Val::Px(4.0)),
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-    )).id();
-    let text_fps = commands.spawn((
-        FpsText,
-        TextBundle {
-            text: Text::from_sections([
-                TextSection {
-                    value: "FPS: ".into(),
-                    style: TextStyle {
-                        font: uiassets.font2_bold.clone(),
-                        font_size: 16.0 * settings.ui.text_scale,
-                        color: Color::WHITE,
-                    }
-                },
-                TextSection {
-                    value: "0".into(),
-                    style: TextStyle {
-                        font: uiassets.font2_bold.clone(),
-                        font_size: 16.0 * settings.ui.text_scale,
-                        color: Color::RED,
-                    }
-                },
-            ]),
-            ..Default::default()
-        },
-    )).id();
-    let text_rtt = commands.spawn((
-        RttText,
-        TextBundle {
-            text: Text::from_sections([
-                TextSection {
-                    value: "Ping: ".into(),
-                    style: TextStyle {
-                        font: uiassets.font2_bold.clone(),
-                        font_size: 16.0 * settings.ui.text_scale,
-                        color: Color::WHITE,
-                    }
-                },
-                TextSection {
-                    value: "N/A".into(),
-                    style: TextStyle {
-                        font: uiassets.font2_bold.clone(),
-                        font_size: 16.0 * settings.ui.text_scale,
-                        color: Color::WHITE,
-                    }
-                },
-            ]),
-            ..Default::default()
-        },
-    )).id();
-    commands.entity(root).push_children(&[text_fps, text_rtt]);
+    commands.spawn((
+        PerfUiCompleteBundle::default(),
+        PerfUiNetRtt::default(),
+    ));
 }
 
-fn fps_text_update_system(
-    diagnostics: Res<DiagnosticsStore>,
-    mut query: Query<&mut Text, With<FpsText>>,
+fn toggle_perfui(
+    mut commands: Commands,
+    q_root: Query<Entity, With<PerfUiRoot>>,
+    kbd: Res<ButtonInput<KeyCode>>,
 ) {
-    for mut text in &mut query {
-        if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
-            if let Some(value) = fps.smoothed() {
-                text.sections[1].value = format!("{value:.2}");
-                text.sections[1].style.color = if value >= 120.0 {
-                    Color::GREEN
-                } else if value >= 60.0 {
-                    Color::rgb(
-                        (1.0 - (value - 60.0) / (120.0 - 60.0)) as f32,
-                        1.0,
-                        0.0,
-                    )
-                } else if value >= 30.0 {
-                    Color::rgb(
-                        1.0,
-                        ((value - 30.0) / (60.0 - 30.0)) as f32,
-                        0.0,
-                    )
-                } else {
-                    Color::RED
-                }
-            }
+    if kbd.just_pressed(KeyCode::F12) {
+        if let Ok(e) = q_root.get_single() {
+            // despawn the existing Perf UI
+            commands.entity(e).despawn_recursive();
+        } else {
+            // create a simple Perf UI with default settings
+            // and all entries provided by the crate:
+            commands.spawn((
+                PerfUiCompleteBundle::default(),
+                PerfUiNetRtt::default(),
+            ));
         }
     }
 }
 
-fn rtt_text_update_system(
-    diagnostics: Res<DiagnosticsStore>,
-    netinfo: Res<crate::net::NetInfo>,
-    mut query: Query<&mut Text, With<RttText>>,
-) {
-    for mut text in &mut query {
-        if let Some(rtt) = netinfo.rtt {
-            let millis = rtt.as_secs_f64() * 1000.0;
-            text.sections[1].value = format!("{millis:.2}");
-            let fps = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS)
-                .and_then(|fps| fps.smoothed())
-                .unwrap_or(0.0);
-            text.sections[1].style.color = if fps == 0.0 {
-                Color::WHITE
-            } else {
-                let frame_time = 1.0 / fps * 1000.0;
-                let frame_time2 = frame_time * 2.0;
-                if millis >= frame_time2 {
-                    Color::RED
-                } else if millis >= frame_time {
-                    Color::rgb(
-                        1.0,
-                        ((frame_time2 - millis) / frame_time) as f32,
-                        0.0,
-                    )
-                } else if millis >= 0.0 {
-                    Color::rgb(
-                        (1.0 - (frame_time - millis) / frame_time) as f32,
-                        1.0,
-                        0.0,
-                    )
-                } else {
-                    Color::GREEN
-                }
-            };
-        } else {
-            if text.sections[1].value != "N/A" {
-                text.sections[1].value = "N/A".into();
-                text.sections[1].style.color = Color::WHITE;
-            }
+/// Custom Perf UI entry to show the time since the last mouse click
+#[derive(Component)]
+pub struct PerfUiNetRtt {
+    /// The label text to display, to allow customization
+    pub label: String,
+    /// Should we display units?
+    pub display_units: bool,
+    /// Highlight the value if it goes above this threshold
+    pub threshold_highlight: Option<f32>,
+    /// Support color gradients!
+    pub color_gradient: ColorGradient,
+    /// Width for formatting the string
+    pub digits: u8,
+    /// Precision for formatting the string
+    pub precision: u8,
+    /// Required to ensure the entry appears in the correct place in the Perf UI
+    pub sort_key: i32,
+}
+
+impl Default for PerfUiNetRtt {
+    fn default() -> Self {
+        PerfUiNetRtt {
+            label: String::new(),
+            display_units: true,
+            threshold_highlight: Some(50.0),
+            color_gradient: ColorGradient::new_preset_gyr(10.0, 20.0, 40.0).unwrap(),
+            digits: 3,
+            precision: 2,
+            sort_key: iyes_perf_ui::utils::next_sort_key(),
         }
+    }
+}
+
+// Implement the trait for integration into the Perf UI
+impl PerfUiEntry for PerfUiNetRtt {
+    type Value = f64;
+    type SystemParam = Option<SRes<NetInfo>>;
+
+    fn label(&self) -> &str {
+        if self.label.is_empty() {
+            "Network Ping"
+        } else {
+            &self.label
+        }
+    }
+
+    fn sort_key(&self) -> i32 {
+        self.sort_key
+    }
+
+    fn update_value(
+        &self,
+        netinfo: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+    ) -> Option<Self::Value> {
+        netinfo.as_mut()
+            .and_then(|netinfo| netinfo.rtt)
+            .map(|rtt| rtt.as_secs_f64() * 1000.0)
+    }
+
+    fn format_value(
+        &self,
+        value: &Self::Value,
+    ) -> String {
+        let mut s = iyes_perf_ui::utils::format_pretty_float(self.digits, self.precision, *value);
+        if self.display_units {
+            s.push_str(" ms");
+        }
+        s
+    }
+
+    fn width_hint(&self) -> usize {
+        let w = iyes_perf_ui::utils::width_hint_pretty_float(self.digits, self.precision);
+        if self.display_units {
+            w + 3
+        } else {
+            w
+        }
+    }
+
+    fn value_color(
+        &self,
+        value: &Self::Value,
+    ) -> Option<Color> {
+        self.color_gradient.get_color_for_value(*value as f32)
+    }
+
+    fn value_highlight(
+        &self,
+        value: &Self::Value,
+    ) -> bool {
+        self.threshold_highlight
+            .map(|t| (*value as f32) > t)
+            .unwrap_or(false)
     }
 }

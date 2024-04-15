@@ -107,7 +107,7 @@ pub fn setup_bevy_app() -> App {
         primary_window: Some(Window {
             title: "MineWars™ PRE-ALPHA".into(),
             // present_mode: bevy::window::PresentMode::Fifo,
-            present_mode: bevy::window::PresentMode::Immediate,
+            present_mode: bevy::window::PresentMode::AutoNoVsync,
             // mode: bevy::window::WindowMode::Fullscreen,
             resizable: true,
             resolution: bevy::window::WindowResolution::new(800.0, 600.0),
@@ -169,6 +169,10 @@ pub fn setup_bevy_app() -> App {
         //     .disable::<bevy::render::pipelined_rendering::PipelinedRenderingPlugin>()
         bevy_plugins
     );
-    app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default());
+    app.add_plugins((
+        bevy::diagnostic::FrameTimeDiagnosticsPlugin,
+        bevy::diagnostic::EntityCountDiagnosticsPlugin,
+        bevy::diagnostic::SystemInformationDiagnosticsPlugin,
+    ));
     app
 }
