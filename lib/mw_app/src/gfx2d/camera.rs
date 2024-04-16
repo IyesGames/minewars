@@ -2,32 +2,32 @@ use bevy::{input::mouse::{MouseWheel, MouseScrollUnit}, window::PrimaryWindow};
 use bevy_tweening::*;
 use mw_common::{game::MapDescriptor, grid::*};
 
-use crate::{prelude::*, ui::UiCamera, input::GameInputSet};
+use crate::{input::GameInputSet, map::{GridCursorTileEntity, MapTileIndex, MapTopologySet}, prelude::*, ui::UiCamera};
 use crate::{camera::*, input::InputAction};
 
-use super::Gfx2dSet;
+use super::Gfx2dModeSet;
 
 pub struct Gfx2dCameraPlugin;
 
 impl Plugin for Gfx2dCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(iyes_bevy_extras::d2::WorldCursorPlugin);
-        app.add_systems(OnEnter(AppState::InGame), setup_game_camera_2d.in_set(Gfx2dSet::Any));
+        app.add_systems(OnEnter(AppState::InGame), setup_game_camera_2d.in_set(Gfx2dModeSet::Any));
         app.add_systems(Update, (
             camera_control_zoom_mousewheel,
             inputaction_zoom
                 .in_set(GameInputSet::ProcessEvents),
         )
-         .in_set(CameraControlSet)
-         .in_set(Gfx2dSet::Any)
+         .in_set(Gfx2dModeSet::Any)
+         .in_set(SetStage::Provide(CameraControlSS))
         );
         app.add_systems(Update, (
-            grid_cursor
-                .run_if(resource_changed::<WorldCursor>),
+            grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
+            grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
         )
-         .in_set(GridCursorSet)
-         .in_set(Gfx2dSet::Any)
-         .after(iyes_bevy_extras::d2::WorldCursorSet)
+         .in_set(Gfx2dModeSet::Any)
+         .in_set(SetStage::Provide(GridCursorSS))
+         .in_set(SetStage::WantChanged(WorldCursorSS))
         );
         app.add_systems(Update, component_animator_system::<OrthographicProjection>);
     }
@@ -41,12 +41,14 @@ fn setup_game_camera_2d(
     world.spawn((StateDespawnMarker, GameCamera, UiCamera, WorldCursorCamera, camera));
 }
 
-fn grid_cursor(
+fn grid_cursor<C: Coord>(
     crs_in: Res<WorldCursor>,
     mut crs_out: ResMut<GridCursor>,
     mapdesc: Res<MapDescriptor>,
+    index: Option<Res<MapTileIndex<C>>>,
+    mut cursor_tile: ResMut<GridCursorTileEntity>,
 ) {
-    match mapdesc.topology {
+    match C::TOPOLOGY {
         Topology::Hex => {
             let tdim = Vec2::new(super::sprite::WIDTH6, super::sprite::HEIGHT6);
             let conv = bevy::math::Mat2::from_cols_array(
@@ -58,6 +60,10 @@ fn grid_cursor(
                 let new_pos = Pos::from(new);
                 if crs_out.0 != new_pos {
                     crs_out.0 = new_pos;
+                    let new_e = index.and_then(|inner| inner.0.get(new_pos.into()).cloned());
+                    if cursor_tile.0 != new_e {
+                        cursor_tile.0 = new_e;
+                    }
                 }
             }
         }
@@ -69,6 +75,10 @@ fn grid_cursor(
                 let new_pos = Pos::from(new);
                 if crs_out.0 != new_pos {
                     crs_out.0 = new_pos;
+                    let new_e = index.and_then(|inner| inner.0.get(new_pos.into()).cloned());
+                    if cursor_tile.0 != new_e {
+                        cursor_tile.0 = new_e;
+                    }
                 }
             }
         }

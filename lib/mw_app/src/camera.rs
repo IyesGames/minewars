@@ -16,15 +16,16 @@ impl Plugin for MwCameraPlugin {
         app.add_event::<CameraJumpTo>();
         app.add_event::<ScreenShakeEvent>();
         app.init_resource::<GridCursor>();
-        app.configure_sets(Update, (
-            CameraControlSet
-                .in_set(InGameSet(None)),
-            GridCursorSet
-                .in_set(InGameSet(None)),
-            GridCursorChangedSet
-                .after(GridCursorSet)
-                .run_if(resource_changed::<GridCursor>)
-        ));
+        app.configure_stage_set(
+            Update,
+            CameraControlSS,
+            rc_camera_changed,
+        );
+        app.configure_stage_set(
+            Update,
+            GridCursorSS,
+            resource_changed::<GridCursor>,
+        );
     }
 }
 
@@ -44,14 +45,17 @@ pub enum ScreenShakeEvent {
     Strong,
 }
 
-#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
-pub struct CameraControlSet;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct GridCursorSet;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct GridCursorChangedSet;
-
 #[derive(Resource, Default)]
 pub struct GridCursor(pub Pos);
+
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
+pub struct CameraControlSS;
+
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
+pub struct GridCursorSS;
+
+fn rc_camera_changed(
+    q_camera: Query<(), (Changed<Transform>, With<GameCamera>)>,
+) -> bool {
+    !q_camera.is_empty()
+}

@@ -1,8 +1,8 @@
 use crate::prelude::*;
 
-pub struct AppStatesPlugin;
+pub struct AppOrganizationPlugin;
 
-impl Plugin for AppStatesPlugin {
+impl Plugin for AppOrganizationPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameMode>();
         app.init_state::<AppState>();

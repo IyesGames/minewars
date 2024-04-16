@@ -1,8 +1,8 @@
 use mw_common::game::MapDescriptor;
 use mw_common::grid::*;
 
-use crate::{prelude::*, gfx2d::Gfx2dSet};
-use crate::camera::{GameCamera, CameraControlSet, GridCursorSet};
+use crate::{prelude::*, gfx2d::Gfx2dModeSet};
+use crate::camera::{CameraControlSS, GameCamera, GridCursorSS};
 
 use super::*;
 
@@ -14,16 +14,16 @@ impl Plugin for Gfx2dGamepadInputPlugin {
             joystick_pancamera
                 .run_if(rc_joystick_pancamera),
         )
-          .in_set(CameraControlSet)
-          .in_set(Gfx2dSet::Any)
+          .in_set(SetStage::Provide(CameraControlSS))
+          .in_set(Gfx2dModeSet::Any)
           .in_set(GameInputSet::Process)
         );
         app.add_systems(Update, (
             joystick_gridcursormove
                 .run_if(rc_joystick_gridcursormove),
         )
-          .in_set(GridCursorSet)
-          .in_set(Gfx2dSet::Any)
+          .in_set(SetStage::Want(GridCursorSS))
+          .in_set(Gfx2dModeSet::Any)
           .in_set(GameInputSet::Process)
         );
     }

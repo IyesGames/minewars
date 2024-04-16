@@ -40,7 +40,7 @@ impl Plugin for Gfx2dTilemapPlugin {
                 tilemap_reghighlight.run_if(resource_changed::<GridCursorTileEntity>),
             )
                 .run_if(resource_exists::<TilemapInitted>),
-        ).in_set(Gfx2dSet::Tilemap));
+        ).in_set(Gfx2dModeSet::Tilemap));
     }
 }
 

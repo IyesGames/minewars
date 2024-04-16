@@ -8,14 +8,14 @@ pub mod prelude {
     pub use iyes_cli::prelude::*;
     pub use iyes_ui::prelude::*;
     pub use mw_common::prelude::*;
-    pub use crate::appstate::*;
+    pub use crate::apporg::*;
     pub use crate::settings::{AllSettings, NeedsSettingsSet};
     pub use crate::PROPRIETARY;
 }
 
 pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
-pub mod appstate;
+pub mod apporg;
 pub mod assets;
 pub mod bevyhost;
 pub mod cli;
@@ -64,7 +64,7 @@ impl Plugin for MinewarsAppPlugin {
         app.add_event::<mw_common::game::event::GameEvent>();
         app.add_plugins((
             (
-                crate::appstate::AppStatesPlugin,
+                crate::apporg::AppOrganizationPlugin,
             ),
             (
                 crate::assets::AssetsPlugin,

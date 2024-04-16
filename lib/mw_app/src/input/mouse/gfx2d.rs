@@ -1,7 +1,7 @@
 use bevy::input::mouse::MouseMotion;
 
-use crate::{prelude::*, gfx2d::Gfx2dSet};
-use crate::camera::{GameCamera, CameraControlSet};
+use crate::{prelude::*, gfx2d::Gfx2dModeSet};
+use crate::camera::{GameCamera, CameraControlSS};
 
 use super::*;
 
@@ -10,12 +10,12 @@ pub struct Gfx2dMouseInputPlugin;
 impl Plugin for Gfx2dMouseInputPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (
-            mousemotion_pancamera,
+            mousemotion_pancamera
+                .run_if(rc_mousemotion_pancamera),
         )
-          .in_set(CameraControlSet)
-          .in_set(Gfx2dSet::Any)
-          .in_set(GameInputSet::Process)
-          .run_if(rc_mousemotion_pancamera)
+          .in_set(SetStage::Provide(CameraControlSS))
+          .in_set(Gfx2dModeSet::Any)
+          .in_set(GameInputSet::Process),
         );
     }
 }

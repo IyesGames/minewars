@@ -1,8 +1,9 @@
 use bevy::{input::mouse::MouseScrollUnit, render::camera::ScalingMode, window::PrimaryWindow};
 use mw_common::{game::MapDescriptor, grid::*};
 
+use crate::map::{GridCursorTileEntity, MapTileIndex, MapTopologySet};
 use crate::{prelude::*, ui::UiCamera};
-use crate::camera::{GameCamera, GridCursor, GridCursorSet};
+use crate::camera::{CameraControlSS, GameCamera, GridCursor, GridCursorSS};
 
 use super::*;
 
@@ -10,18 +11,23 @@ pub struct Gfx3dCameraPlugin;
 
 impl Plugin for Gfx3dCameraPlugin {
     fn build(&self, app: &mut App) {
-        // app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dSet::Any));
+        app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dModeSet::Any));
         app.add_systems(Update, (
             cursor_to_ground_plane
                 .in_set(InGameSet(None))
-                .in_set(Gfx3dSet::Any)
-                .in_set(WorldCursorSet),
-            grid_cursor
-                .in_set(GridCursorSet)
-                .in_set(Gfx3dSet::Any)
-                .after(WorldCursorSet),
+                .in_set(Gfx3dModeSet::Any)
+                .in_set(SetStage::Provide(WorldCursorSS)),
+            (
+                grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
+                grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
+            )
+                .in_set(Gfx3dModeSet::Any)
+                .in_set(SetStage::Provide(GridCursorSS))
+                .in_set(SetStage::WantChanged(WorldCursorSS)),
             pan_orbit_camera
-                .before(WorldCursorSet),
+                .in_set(Gfx3dModeSet::Any)
+                .in_set(SetStage::Provide(CameraControlSS))
+                .in_set(SetStage::Prepare(WorldCursorSS)),
         ));
     }
 }
@@ -165,6 +171,10 @@ fn cursor_to_ground_plane(
         return;
     };
 
+    if newpos == wc.pos && newpos == wc.pos_prev {
+        return;
+    }
+
     wc.pos_prev = wc.pos;
     wc.pos = newpos;
 }
@@ -180,16 +190,18 @@ fn compute_cursor_to_ground_plane(
     let ray = camera.viewport_to_world(camera_transform, cursor_position)?;
     let distance = ray.intersect_plane(plane_origin, plane)?;
     let global_cursor = ray.get_point(distance);
+
     Some(Vec2::new(global_cursor.x, -global_cursor.z))
 }
 
-
-fn grid_cursor(
+fn grid_cursor<C: Coord>(
     crs_in: Res<WorldCursor>,
     mut crs_out: ResMut<GridCursor>,
     mapdesc: Res<MapDescriptor>,
+    index: Option<Res<MapTileIndex<C>>>,
+    mut cursor_tile: ResMut<GridCursorTileEntity>,
 ) {
-    match mapdesc.topology {
+    match C::TOPOLOGY {
         Topology::Hex => {
             let tdim = Vec2::new((3f64.sqrt() * TILE_SCALE as f64 / 2.0) as f32, TILE_SCALE);
             let conv = bevy::math::Mat2::from_cols_array(
@@ -201,6 +213,10 @@ fn grid_cursor(
                 let new_pos = Pos::from(new);
                 if crs_out.0 != new_pos {
                     crs_out.0 = new_pos;
+                    let new_e = index.and_then(|inner| inner.0.get(new_pos.into()).cloned());
+                    if cursor_tile.0 != new_e {
+                        cursor_tile.0 = new_e;
+                    }
                 }
             }
         }

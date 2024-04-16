@@ -4,8 +4,7 @@ use mw_common::plid::PlayerId;
 
 use crate::prelude::*;
 use crate::assets::GameAssets;
-use crate::camera::GridCursor;
-use crate::camera::GridCursorChangedSet;
+use crate::camera::{GridCursor, GridCursorSS};
 use crate::player::PlayersIndex;
 use crate::view::PlidViewing;
 use crate::view::ViewMapData;
@@ -38,10 +37,10 @@ impl Plugin for Gfx2dSpritesPlugin {
                 sprites_reghighlight,
             )
                 .run_if(resource_exists::<TilemapInitted>),
-        ).in_set(Gfx2dSet::Sprites));
+        ).in_set(Gfx2dModeSet::Sprites));
         app.add_systems(OnEnter(AppState::InGame), (
             setup_cursor,
-        ).in_set(Gfx2dSet::Any));
+        ).in_set(Gfx2dModeSet::Any));
         app.add_systems(Update, (
             (
                 cursor_sprite::<Hex>
@@ -49,8 +48,8 @@ impl Plugin for Gfx2dSpritesPlugin {
                 cursor_sprite::<Sq>
                     .in_set(MapTopologySet(Topology::Sq)),
             )
-                .in_set(GridCursorChangedSet),
-        ).in_set(Gfx2dSet::Any));
+                .in_set(SetStage::WantChanged(GridCursorSS)),
+        ).in_set(Gfx2dModeSet::Any));
     }
 }
 

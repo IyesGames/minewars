@@ -1,7 +1,7 @@
 use mw_common::{game::{StructureKind, TileKind}, grid::{Coord, Hex}};
 
 use crate::prelude::*;
-use crate::{camera::{GridCursor, GridCursorSet}, map::{MapTileIndex, MwTilePos, TileGent}};
+use crate::map::{MapTileIndex, MwTilePos, TileGent};
 
 use super::*;
 
@@ -9,14 +9,11 @@ pub struct Gfx3dMapPlugin;
 
 impl Plugin for Gfx3dMapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-        //     compute_tile_ass3d
-        //         .in_set(InGameSet(None))
-        //         .in_set(Gfx3dSet::Any),
-            debug_tile
-                .in_set(Gfx3dSet::Any)
-                .after(GridCursorSet),
-        ));
+        // app.add_systems(Update, (
+        // //     compute_tile_ass3d
+        // //         .in_set(InGameSet(None))
+        // //         .in_set(Gfx3dSet::Any),
+        // ));
     }
 }
 
@@ -79,25 +76,6 @@ pub enum Ass3dTileVariant {
     V4C,
     V5,
     V6,
-}
-
-fn debug_tile(
-    crs: Res<GridCursor>,
-    q_tile: Query<&TileAss3d>,
-    index: Res<MapTileIndex<Hex>>,
-) {
-    if crs.is_changed() {
-        if let Some(e) = index.0.get(crs.0.into()) {
-            if let Ok(ass3d) = q_tile.get(*e) {
-                debug!(
-                    "Tile @{},{}: {:?}/{:?}/{}, {:06b}",
-                    crs.0.y(), crs.0.x(),
-                    ass3d.kind, ass3d.variant, ass3d.rotation,
-                    ass3d.neighmask,
-                );
-            }
-        }
-    }
 }
 
 pub fn compute_tile_ass3d(

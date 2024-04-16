@@ -19,16 +19,22 @@ impl Plugin for Gfx2dPlugin {
             tilemap::Gfx2dTilemapPlugin,
         ));
         app.configure_sets(Update, (
-            Gfx2dSet::Any.in_set(NeedsMapSet).run_if(rc_gfx2d_any),
-            Gfx2dSet::Sprites.in_set(NeedsMapSet).run_if(rc_gfx2d_sprites),
+            Gfx2dModeSet::Any.in_set(NeedsMapSet).run_if(rc_gfx2d_any),
+            Gfx2dModeSet::Sprites.in_set(NeedsMapSet).run_if(rc_gfx2d_sprites),
             #[cfg(feature = "gfx2d_tilemap")]
-            Gfx2dSet::Tilemap.in_set(NeedsMapSet).run_if(rc_gfx2d_tilemap),
+            Gfx2dModeSet::Tilemap.in_set(NeedsMapSet).run_if(rc_gfx2d_tilemap),
+        ));
+        app.configure_sets(OnEnter(AppState::InGame), (
+            Gfx2dModeSet::Any.run_if(rc_gfx2d_any),
+            Gfx2dModeSet::Sprites.run_if(rc_gfx2d_sprites),
+            #[cfg(feature = "gfx2d_tilemap")]
+            Gfx2dModeSet::Tilemap.run_if(rc_gfx2d_tilemap),
         ));
     }
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Gfx2dSet {
+pub enum Gfx2dModeSet {
     Any,
     Sprites,
     #[cfg(feature = "gfx2d_tilemap")]

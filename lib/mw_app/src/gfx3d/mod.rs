@@ -18,14 +18,18 @@ impl Plugin for Gfx3dPlugin {
             simple3d::Gfx3dSimple3dPlugin,
         ));
         app.configure_sets(Update, (
-            Gfx3dSet::Any.in_set(NeedsMapSet).run_if(rc_gfx3d_any),
-            Gfx3dSet::Simple3D.in_set(NeedsMapSet).run_if(rc_gfx3d_simple3d),
+            Gfx3dModeSet::Any.in_set(NeedsMapSet).run_if(rc_gfx3d_any),
+            Gfx3dModeSet::Simple3D.in_set(NeedsMapSet).run_if(rc_gfx3d_simple3d),
+        ));
+        app.configure_sets(OnEnter(AppState::InGame), (
+            Gfx3dModeSet::Any.run_if(rc_gfx3d_any),
+            Gfx3dModeSet::Simple3D.run_if(rc_gfx3d_simple3d),
         ));
     }
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Gfx3dSet {
+pub enum Gfx3dModeSet {
     Any,
     Simple3D,
 }

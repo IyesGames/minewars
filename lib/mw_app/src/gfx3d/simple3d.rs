@@ -4,7 +4,7 @@ use mw_common::grid::*;
 
 use crate::prelude::*;
 use crate::assets::ass3d::Ass3dConfig;
-use crate::camera::{GridCursor, GridCursorChangedSet};
+use crate::camera::{GridCursor, GridCursorSS};
 use crate::gfx3d::map::*;
 use crate::map::*;
 
@@ -19,14 +19,14 @@ impl Plugin for Gfx3dSimple3dPlugin {
             (setup_tilemap, setup_water, setup_cursor)
                 .in_set(MapTopologySet(Topology::Hex))
                 .in_set(TilemapSetupSet)
-                .in_set(Gfx3dSet::Simple3D)
+                .in_set(Gfx3dModeSet::Simple3D)
                 .run_if(not(resource_exists::<TilemapInitted>)),
             update_cursor
                 .in_set(MapTopologySet(Topology::Hex))
-                .in_set(GridCursorChangedSet),
+                .in_set(SetStage::WantChanged(GridCursorSS)),
             water_tide,
         )
-            .in_set(Gfx3dSet::Simple3D)
+            .in_set(Gfx3dModeSet::Simple3D)
         );
     }
 }
