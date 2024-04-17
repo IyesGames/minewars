@@ -1,4 +1,4 @@
-use crate::{prelude::*, ui::console::UiConsole, assets::UiAssets};
+use crate::{assets::UiAssets, prelude::*, settings::SettingsSyncSS, ui::console::UiConsole};
 
 pub struct TextFieldPlugin;
 
@@ -13,7 +13,7 @@ impl Plugin for TextFieldPlugin {
                 .run_if(rc_text_input)
                 .after(textfield_focus_on_press),
             textfield_focus_visual
-                .in_set(NeedsSettingsSet)
+                .in_set(SetStage::Want(SettingsSyncSS))
                 .after(TextInputFocusSet),
         ));
     }

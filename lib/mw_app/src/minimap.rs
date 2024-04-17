@@ -1,7 +1,7 @@
 use bevy::render::{render_asset::RenderAssetUsages, render_resource::{Extent3d, TextureDimension, TextureFormat}};
 use mw_common::{game::{MapDescriptor, TileKind}, grid::Topology};
 
-use crate::prelude::*;
+use crate::{prelude::*, settings::SettingsSyncSS};
 use crate::map::{MwTilePos, TileOwner, NeedsMapSet, MapUpdateSet, TileAlert};
 
 pub struct MinimapPlugin;
@@ -12,7 +12,7 @@ impl Plugin for MinimapPlugin {
         app.add_systems(Update, (
             update_minimap
                 .in_set(NeedsMapSet)
-                .in_set(NeedsSettingsSet)
+                .in_set(SetStage::Want(SettingsSyncSS))
                 .after(MapUpdateSet::TileOwner) // PERF ?
                 .run_if(resource_exists::<MinimapImage>),
         ));

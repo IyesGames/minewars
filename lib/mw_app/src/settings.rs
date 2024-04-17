@@ -7,7 +7,15 @@ pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.configure_sets(Update, NeedsSettingsSet.run_if(resource_exists::<AllSettings>));
+        app.configure_stage_set(
+            Update,
+            SettingsSyncSS,
+            resource_exists_and_changed::<AllSettings>
+        );
+        app.configure_sets(Update,
+            SetStage::Want(SettingsSyncSS)
+                .run_if(resource_exists::<AllSettings>)
+        );
         app.add_systems(Update,
             load_or_init_settings
                 .run_if(not(resource_exists::<SettingsLoaded>)));
@@ -21,7 +29,7 @@ impl Plugin for SettingsPlugin {
 pub struct SettingsLoaded;
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct NeedsSettingsSet;
+pub struct SettingsSyncSS;
 
 #[derive(Resource, Serialize, Deserialize, Default, Clone)]
 #[serde(default)]

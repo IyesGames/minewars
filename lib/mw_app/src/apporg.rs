@@ -20,10 +20,12 @@ impl Plugin for AppOrganizationPlugin {
             app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
         }
         for state in enum_iterator::all::<GameMode>() {
-            app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
-            app.configure_sets(Update, InGameSet(Some(state)).in_set(InStateSet(state)).in_set(InStateSet(AppState::InGame)));
+            app.configure_sets(Update,
+                InStateSet(state)
+                    .run_if(in_state(state))
+                    .in_set(InStateSet(AppState::InGame))
+            );
         }
-        app.configure_sets(Update, InGameSet(None).in_set(InStateSet(AppState::InGame)));
         app.add_event::<GameEvent>();
         app.configure_stage_set(Update, GameOutEventSS, on_event::<GameEvent>());
         app.configure_stage_set_no_rc(Update, GameInEventSS);
@@ -32,9 +34,6 @@ impl Plugin for AppOrganizationPlugin {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Default, SystemSet)]
 pub struct InStateSet<S: States>(pub S);
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Default, SystemSet)]
-pub struct InGameSet(pub Option<GameMode>);
 
 /// State type: Which "screen" is the app in?
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Default, States)]
@@ -77,7 +76,7 @@ pub enum SessionKind {
 #[derive(enum_iterator::Sequence)]
 pub enum GameMode {
     #[default]
-    NoGame,
+    Unknown,
     Minesweeper,
     Minewars,
 }

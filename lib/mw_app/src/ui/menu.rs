@@ -6,7 +6,7 @@
 //! These are the menus that players interact with. Not the menu bar inside
 //! the scenario editor.
 
-use crate::{prelude::*, locale::L10nKey, assets::UiAssets};
+use crate::{assets::UiAssets, locale::L10nKey, prelude::*, settings::SettingsSyncSS};
 
 use super::tooltip::InfoText;
 
@@ -26,7 +26,8 @@ impl Plugin for MenuPlugin {
             lan::LanMenuPlugin,
         ));
         app.add_systems(Update, (
-            menu_butt_interact_visual.in_set(NeedsSettingsSet),
+            menu_butt_interact_visual
+                .in_set(SetStage::Want(SettingsSyncSS)),
             butt_back_showhide.run_if(resource_changed::<MenuStack>)
         ));
     }

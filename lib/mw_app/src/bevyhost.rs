@@ -58,7 +58,7 @@ where
                     .after(drain_out_events::<G, EvOut>),
             ),
         ).chain()
-            .in_set(InGameSet(None))
+            .in_set(InStateSet(AppState::InGame))
             .in_set(InStateSet(SessionKind::BevyHost))
             .run_if(resource_exists::<BevyHost<G>>)
             .in_set(SetStage::Provide(BevyHostSS))

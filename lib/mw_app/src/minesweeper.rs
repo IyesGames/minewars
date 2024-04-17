@@ -32,7 +32,7 @@ impl Plugin for MinesweeperPlugin {
         ));
         app.add_systems(Update, (
             minesweeper_input
-                .in_set(InGameSet(Some(GameMode::Minesweeper)))
+                .in_set(InStateSet(GameMode::Minesweeper))
                 .in_set(ToolEventHandlerSet),
         ));
     }

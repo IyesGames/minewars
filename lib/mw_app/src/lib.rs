@@ -9,7 +9,7 @@ pub mod prelude {
     pub use iyes_ui::prelude::*;
     pub use mw_common::prelude::*;
     pub use crate::apporg::*;
-    pub use crate::settings::{AllSettings, NeedsSettingsSet};
+    pub use crate::settings::AllSettings;
     pub use crate::PROPRIETARY;
 }
 

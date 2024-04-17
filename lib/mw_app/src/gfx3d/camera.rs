@@ -14,7 +14,7 @@ impl Plugin for Gfx3dCameraPlugin {
         app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dModeSet::Any));
         app.add_systems(Update, (
             cursor_to_ground_plane
-                .in_set(InGameSet(None))
+                .in_set(InStateSet(AppState::InGame))
                 .in_set(Gfx3dModeSet::Any)
                 .in_set(SetStage::Provide(WorldCursorSS)),
             (
