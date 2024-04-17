@@ -1,12 +1,11 @@
-use crate::prelude::*;
-use crate::locale::{L10nKey, L10nResolveSet};
+use crate::{locale::{L10nApplySS, L10nKey}, prelude::*};
 
 pub(super) struct TooltipPlugin;
 
 impl Plugin for TooltipPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (
-            interact_infotext.before(L10nResolveSet),
+            interact_infotext.before(SetStage::Prepare(L10nApplySS)),
         ));
     }
 }

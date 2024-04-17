@@ -1,7 +1,6 @@
 use mw_common::game::event::GameEvent;
 
 use crate::prelude::*;
-use crate::GameEventSet;
 
 use self::worker::{NetWorkerControl, host::HostSessionConfig};
 
@@ -19,7 +18,7 @@ impl Plugin for NetClientPlugin {
             setup_networkerthread
                 .run_if(resource_added::<AllSettings>)
                 .run_if(not(resource_exists::<NetWorkerThread>)),
-            net_gameevent.in_set(GameEventSet).in_set(NeedsNetSet),
+            net_gameevent.in_set(SetStage::Provide(GameOutEventSS)).in_set(NeedsNetSet),
             net_status.in_set(NeedsNetSet),
         ));
     }

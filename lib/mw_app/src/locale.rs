@@ -10,6 +10,7 @@ pub struct LocalePlugin;
 impl Plugin for LocalePlugin {
     fn build(&self, app: &mut App) {
         app.register_clicommand_args("locale", cli_locale);
+        app.configure_stage_set_no_rc(Update, L10nApplySS);
         app.insert_resource(
             Locale::new("en-US".parse().unwrap()).with_default("en-US".parse().unwrap()),
         );
@@ -21,14 +22,14 @@ impl Plugin for LocalePlugin {
         app.add_systems(
             Update,
             resolve_l10n
-                .in_set(L10nResolveSet)
+                .in_set(SetStage::Provide(L10nApplySS))
                 .run_if(not(in_state(AppState::AssetsLoading))),
         );
     }
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct L10nResolveSet;
+pub struct L10nApplySS;
 
 #[derive(Component)]
 pub struct L10nKey(pub String);

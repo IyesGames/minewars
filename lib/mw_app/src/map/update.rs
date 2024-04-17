@@ -1,6 +1,6 @@
 use mw_common::game::event::*;
 
-use crate::{prelude::*, GameEventSet};
+use crate::prelude::*;
 use crate::view::{PlidViewing, ViewSwitchSet};
 use super::*;
 
@@ -25,7 +25,10 @@ impl Plugin for MapUpdatePlugin {
                     (event_gents::<Sq>, event_explosion::<Sq>).chain(),
                 ).in_set(MapUpdateSet::TileGent),
             ).in_set(MapTopologySet(Topology::Sq)),
-        ).in_set(NeedsMapSet).after(GameEventSet).after(ViewSwitchSet));
+        )
+            .in_set(NeedsMapSet)
+            .in_set(SetStage::Want(GameOutEventSS))
+            .after(ViewSwitchSet));
         app.add_systems(Update, (
             alert_timer,
         ).in_set(NeedsMapSet));

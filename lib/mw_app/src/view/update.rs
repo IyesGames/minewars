@@ -1,7 +1,7 @@
 use mw_common::game::event::*;
 use mw_common::grid::*;
 
-use crate::{prelude::*, GameEventSet};
+use crate::prelude::*;
 use super::*;
 
 pub struct ViewUpdatePlugin;
@@ -11,7 +11,7 @@ impl Plugin for ViewUpdatePlugin {
         app.add_systems(Update, (
             event_map::<Hex>.in_set(MapTopologySet(Topology::Hex)),
             event_map::<Sq>.in_set(MapTopologySet(Topology::Sq)),
-        ).in_set(ViewUpdateSet).in_set(NeedsMapSet).after(GameEventSet));
+        ).in_set(ViewUpdateSet).in_set(NeedsMapSet).in_set(SetStage::Want(GameOutEventSS)));
     }
 }
 

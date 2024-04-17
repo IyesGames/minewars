@@ -2,7 +2,7 @@
 //!
 //! Allows offline gameplay without a server.
 
-use crate::GameEventSet;
+use crate::GameOutEventSS;
 use crate::player::PlayersIndex;
 use crate::player::PlidPlayingAs;
 use crate::prelude::*;
@@ -12,15 +12,8 @@ use mw_common::plid::*;
 
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(SystemSet)]
-pub enum BevyHostSet {
-    All,
-    Game,
-    PostGame,
-    EvIn,
-    EvOut,
-}
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BevyHostSS;
 
 pub struct BevyMwHostPlugin<G, EvIn, EvOut> {
     pd: PhantomData<(G, EvIn, EvOut)>,
@@ -44,30 +37,31 @@ where
     EvOut: From<(PlayerId, G::OutEvent)> + Clone + Event,
 {
     fn build(&self, app: &mut App) {
+        app.configure_stage_set_no_rc(Update, BevyHostSS);
         app.add_systems(
             OnEnter(SessionKind::BevyHost),
             init::<G>
-                .in_set(BevyHostSet::All)
                 .run_if(resource_exists::<BevyHost<G>>)
         );
-        app.configure_sets(Update, (
-            BevyHostSet::PostGame.after(BevyHostSet::Game),
-            BevyHostSet::EvOut.after(BevyHostSet::Game),
-        ));
         app.add_systems(Update, (
             (
-                player_inputs::<G, EvIn>.in_set(BevyHostSet::EvIn),
-                unscheds::<G>,
-            ).in_set(BevyHostSet::Game),
+                player_inputs::<G, EvIn>
+                    .in_set(SetStage::WantChanged(GameInEventSS)),
+                unscheds::<G>
+                    .run_if(rc_unscheds::<G>),
+            ),
             (
                 cancel_scheds::<G>,
-            ).in_set(BevyHostSet::PostGame),
-            drain_out_events::<G, EvOut>.in_set(BevyHostSet::EvOut).in_set(GameEventSet),
-            game_over::<G>.after(BevyHostSet::EvOut),
-        ).in_set(BevyHostSet::All)
-         .in_set(InGameSet(None))
-         .in_set(InStateSet(SessionKind::BevyHost))
-         .run_if(resource_exists::<BevyHost<G>>)
+                drain_out_events::<G, EvOut>
+                    .in_set(SetStage::Provide(GameOutEventSS)),
+                game_over::<G>
+                    .after(drain_out_events::<G, EvOut>),
+            ),
+        ).chain()
+            .in_set(InGameSet(None))
+            .in_set(InStateSet(SessionKind::BevyHost))
+            .run_if(resource_exists::<BevyHost<G>>)
+            .in_set(SetStage::Provide(BevyHostSS))
         );
     }
 }
@@ -140,6 +134,19 @@ where
     for ev in evr.read() {
         let action = ev.clone().into();
         host.game.input(&mut host.state, my_plid.0, action);
+    }
+}
+
+fn rc_unscheds<G>(
+    host: Option<Res<BevyHost<G>>>,
+) -> bool
+where
+    G: Game + Send + Sync + 'static,
+{
+    if let Some(host) = host {
+        !host.state.scheds.is_empty()
+    } else {
+        false
     }
 }
 

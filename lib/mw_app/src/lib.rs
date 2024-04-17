@@ -45,9 +45,6 @@ pub mod dev;
 
 use crate::prelude::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct GameEventSet;
-
 pub struct MinewarsAppPlugin;
 
 impl Plugin for MinewarsAppPlugin {
@@ -61,7 +58,6 @@ impl Plugin for MinewarsAppPlugin {
             ProgressPlugin::new(AppState::AssetsLoading).continue_to(AppState::SplashIyes),
             iyes_ui::UiExtrasPlugin,
         ));
-        app.add_event::<mw_common::game::event::GameEvent>();
         app.add_plugins((
             (
                 crate::apporg::AppOrganizationPlugin,

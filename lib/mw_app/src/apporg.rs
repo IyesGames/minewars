@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+use mw_common::game::event::GameEvent;
+
 pub struct AppOrganizationPlugin;
 
 impl Plugin for AppOrganizationPlugin {
@@ -22,6 +24,9 @@ impl Plugin for AppOrganizationPlugin {
             app.configure_sets(Update, InGameSet(Some(state)).in_set(InStateSet(state)).in_set(InStateSet(AppState::InGame)));
         }
         app.configure_sets(Update, InGameSet(None).in_set(InStateSet(AppState::InGame)));
+        app.add_event::<GameEvent>();
+        app.configure_stage_set(Update, GameOutEventSS, on_event::<GameEvent>());
+        app.configure_stage_set_no_rc(Update, GameInEventSS);
     }
 }
 
@@ -80,3 +85,8 @@ pub enum GameMode {
 /// Everything that must be despawned when transitioning the main app state
 #[derive(Component)]
 pub struct StateDespawnMarker;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct GameInEventSS;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
+pub struct GameOutEventSS;
