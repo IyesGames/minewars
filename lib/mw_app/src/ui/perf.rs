@@ -1,9 +1,8 @@
-use bevy::{diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, ecs::system::{lifetimeless::SRes, SystemParam}};
+use bevy::ecs::system::{lifetimeless::{SQuery, SRes}, SystemParam};
 use iyes_perf_ui::prelude::*;
+use mw_common::{game::TileKind, grid::Pos, plid::PlayerId};
 
-use crate::{assets::UiAssets, net::NetInfo, prelude::*};
-
-use super::*;
+use crate::{camera::GridCursor, gfx3d::map::{Ass3dTileKind, Ass3dTileVariant, TileAss3d}, map::{GridCursorTileEntity, TileOwner}, net::NetInfo, prelude::*};
 
 pub struct PerfUiPlugin;
 
@@ -11,21 +10,46 @@ impl Plugin for PerfUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(iyes_perf_ui::PerfUiPlugin);
         app.add_perf_ui_entry_type::<PerfUiNetRtt>();
-        app.add_systems(Startup, setup_perfui);
+        app.add_perf_ui_entry_type::<PerfUiGridCursor>();
+        app.add_perf_ui_entry_type::<PerfUiTileKind>();
+        app.add_perf_ui_entry_type::<PerfUiTileOwner>();
+        app.add_perf_ui_entry_type::<PerfUiAss3dTileKind>();
+        app.add_perf_ui_entry_type::<PerfUiAss3dTileVariant>();
         app.add_systems(Update, (
             toggle_perfui
                 .before(iyes_perf_ui::PerfUiSet::Setup),
         ));
+        #[cfg(feature = "dev")]
+        app.add_systems(Startup, setup_perfui);
     }
 }
 
+#[derive(Bundle, Default)]
+struct MwPerfUiBundle {
+    base: PerfUiCompleteBundle,
+    grid_cursor: PerfUiGridCursor,
+    tile_kind: PerfUiTileKind,
+    tile_owner: PerfUiTileOwner,
+    ass3d_kind: PerfUiAss3dTileKind,
+    ass3d_variant: PerfUiAss3dTileVariant,
+    rtt: PerfUiNetRtt,
+}
+
+impl MwPerfUiBundle {
+    fn new() -> Self {
+        let mut r = MwPerfUiBundle::default();
+        r.base.root.background_color = Color::rgba(0.0, 0.0, 0.0, 0.75);
+        r.base.root.default_value_color = Color::WHITE;
+        r.base.root.err_color = Color::rgba(0.5, 0.5, 0.5, 0.5);
+        r
+    }
+}
+
+#[allow(dead_code)]
 fn setup_perfui(
     mut commands: Commands,
 ) {
-    commands.spawn((
-        PerfUiCompleteBundle::default(),
-        PerfUiNetRtt::default(),
-    ));
+    commands.spawn(MwPerfUiBundle::new());
 }
 
 fn toggle_perfui(
@@ -40,15 +64,12 @@ fn toggle_perfui(
         } else {
             // create a simple Perf UI with default settings
             // and all entries provided by the crate:
-            commands.spawn((
-                PerfUiCompleteBundle::default(),
-                PerfUiNetRtt::default(),
-            ));
+            commands.spawn(MwPerfUiBundle::new());
         }
     }
 }
 
-/// Custom Perf UI entry to show the time since the last mouse click
+/// Custom Perf UI entry to show Network Ping
 #[derive(Component)]
 pub struct PerfUiNetRtt {
     /// The label text to display, to allow customization
@@ -81,7 +102,96 @@ impl Default for PerfUiNetRtt {
     }
 }
 
-// Implement the trait for integration into the Perf UI
+/// Custom Perf UI entry to show Grid Cursor coordinates
+#[derive(Component)]
+pub struct PerfUiGridCursor {
+    /// The label text to display, to allow customization
+    pub label: String,
+    /// Required to ensure the entry appears in the correct place in the Perf UI
+    pub sort_key: i32,
+}
+
+impl Default for PerfUiGridCursor {
+    fn default() -> Self {
+        PerfUiGridCursor {
+            label: String::new(),
+            sort_key: iyes_perf_ui::utils::next_sort_key(),
+        }
+    }
+}
+
+/// Custom Perf UI entry to show Tile Kind under cursor
+#[derive(Component)]
+pub struct PerfUiTileKind {
+    /// The label text to display, to allow customization
+    pub label: String,
+    /// Required to ensure the entry appears in the correct place in the Perf UI
+    pub sort_key: i32,
+}
+
+impl Default for PerfUiTileKind {
+    fn default() -> Self {
+        PerfUiTileKind {
+            label: String::new(),
+            sort_key: iyes_perf_ui::utils::next_sort_key(),
+        }
+    }
+}
+
+/// Custom Perf UI entry to show Tile 3D Asset Kind
+#[derive(Component)]
+pub struct PerfUiAss3dTileKind {
+    /// The label text to display, to allow customization
+    pub label: String,
+    /// Required to ensure the entry appears in the correct place in the Perf UI
+    pub sort_key: i32,
+}
+
+impl Default for PerfUiAss3dTileKind {
+    fn default() -> Self {
+        PerfUiAss3dTileKind {
+            label: String::new(),
+            sort_key: iyes_perf_ui::utils::next_sort_key(),
+        }
+    }
+}
+
+/// Custom Perf UI entry to show Tile 3D Asset Kind
+#[derive(Component)]
+pub struct PerfUiAss3dTileVariant {
+    /// The label text to display, to allow customization
+    pub label: String,
+    /// Required to ensure the entry appears in the correct place in the Perf UI
+    pub sort_key: i32,
+}
+
+impl Default for PerfUiAss3dTileVariant {
+    fn default() -> Self {
+        PerfUiAss3dTileVariant {
+            label: String::new(),
+            sort_key: iyes_perf_ui::utils::next_sort_key(),
+        }
+    }
+}
+
+/// Custom Perf UI entry to show Tile Kind under cursor
+#[derive(Component)]
+pub struct PerfUiTileOwner {
+    /// The label text to display, to allow customization
+    pub label: String,
+    /// Required to ensure the entry appears in the correct place in the Perf UI
+    pub sort_key: i32,
+}
+
+impl Default for PerfUiTileOwner {
+    fn default() -> Self {
+        PerfUiTileOwner {
+            label: String::new(),
+            sort_key: iyes_perf_ui::utils::next_sort_key(),
+        }
+    }
+}
+
 impl PerfUiEntry for PerfUiNetRtt {
     type Value = f64;
     type SystemParam = Option<SRes<NetInfo>>;
@@ -141,5 +251,172 @@ impl PerfUiEntry for PerfUiNetRtt {
         self.threshold_highlight
             .map(|t| (*value as f32) > t)
             .unwrap_or(false)
+    }
+}
+
+impl PerfUiEntry for PerfUiTileKind {
+    type Value = TileKind;
+    type SystemParam = (
+        SRes<GridCursorTileEntity>,
+        SQuery<&'static TileKind>,
+    );
+
+    fn label(&self) -> &str {
+        if self.label.is_empty() {
+            "Tile Kind"
+        } else {
+            &self.label
+        }
+    }
+
+    fn sort_key(&self) -> i32 {
+        self.sort_key
+    }
+
+    fn update_value(
+        &self,
+        (gcte, q): &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+    ) -> Option<Self::Value> {
+        gcte.0
+            .and_then(|e| q.get(e).ok())
+            .copied()
+    }
+}
+
+impl PerfUiEntry for PerfUiTileOwner {
+    type Value = PlayerId;
+    type SystemParam = (
+        SRes<GridCursorTileEntity>,
+        SQuery<&'static TileOwner>,
+    );
+
+    fn label(&self) -> &str {
+        if self.label.is_empty() {
+            "Tile Owner"
+        } else {
+            &self.label
+        }
+    }
+
+    fn sort_key(&self) -> i32 {
+        self.sort_key
+    }
+
+    fn update_value(
+        &self,
+        (gcte, q): &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+    ) -> Option<Self::Value> {
+        gcte.0
+            .and_then(|e| q.get(e).ok())
+            .map(|o| o.0)
+    }
+}
+
+impl PerfUiEntry for PerfUiAss3dTileKind {
+    type Value = Ass3dTileKind;
+    type SystemParam = (
+        SRes<GridCursorTileEntity>,
+        SQuery<&'static TileAss3d>,
+    );
+
+    fn label(&self) -> &str {
+        if self.label.is_empty() {
+            "Tile 3D Asset Kind"
+        } else {
+            &self.label
+        }
+    }
+
+    fn sort_key(&self) -> i32 {
+        self.sort_key
+    }
+
+    fn update_value(
+        &self,
+        (gcte, q): &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+    ) -> Option<Self::Value> {
+        gcte.0
+            .and_then(|e| q.get(e).ok())
+            .map(|o| o.kind)
+    }
+
+    fn width_hint(&self) -> usize {
+        16
+    }
+}
+
+impl PerfUiEntry for PerfUiAss3dTileVariant {
+    type Value = (Ass3dTileVariant, u8, u8);
+    type SystemParam = (
+        SRes<GridCursorTileEntity>,
+        SQuery<&'static TileAss3d>,
+    );
+
+    fn label(&self) -> &str {
+        if self.label.is_empty() {
+            "Tile 3D Asset Variant"
+        } else {
+            &self.label
+        }
+    }
+
+    fn sort_key(&self) -> i32 {
+        self.sort_key
+    }
+
+    fn update_value(
+        &self,
+        (gcte, q): &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+    ) -> Option<Self::Value> {
+        gcte.0
+            .and_then(|e| q.get(e).ok())
+            .map(|o| (o.variant, o.rotation, o.subvariant[1]))
+    }
+
+    fn format_value(
+        &self,
+        (variant, rotation, subvariant): &Self::Value,
+    ) -> String {
+        let variant_str = format!("{:?}", variant);
+        format!("{:<3}/{}/{:>3}", variant_str, rotation, subvariant)
+    }
+
+    fn width_hint(&self) -> usize {
+        9
+    }
+}
+
+impl PerfUiEntry for PerfUiGridCursor {
+    type Value = Pos;
+    type SystemParam = SRes<GridCursor>;
+
+    fn label(&self) -> &str {
+        if self.label.is_empty() {
+            "Grid Cursor"
+        } else {
+            &self.label
+        }
+    }
+
+    fn sort_key(&self) -> i32 {
+        self.sort_key
+    }
+
+    fn update_value(
+        &self,
+        crs: &mut <Self::SystemParam as SystemParam>::Item<'_, '_>,
+    ) -> Option<Self::Value> {
+        Some(crs.0)
+    }
+
+    fn format_value(
+        &self,
+        value: &Self::Value,
+    ) -> String {
+        format!("Y:{:>3} X:{:>3}", value.y(), value.x())
+    }
+
+    fn width_hint(&self) -> usize {
+        11
     }
 }

@@ -9,11 +9,6 @@ pub struct Gfx3dMapPlugin;
 
 impl Plugin for Gfx3dMapPlugin {
     fn build(&self, app: &mut App) {
-        // app.add_systems(Update, (
-        // //     compute_tile_ass3d
-        // //         .in_set(InGameSet(None))
-        // //         .in_set(Gfx3dSet::Any),
-        // ));
     }
 }
 
