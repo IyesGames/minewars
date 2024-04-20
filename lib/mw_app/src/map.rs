@@ -139,7 +139,6 @@ pub enum TileVisLevel {
     Full,
 }
 
-#[derive(Component)]
 pub enum TileExplosionKind {
     Normal,
     Decoy,

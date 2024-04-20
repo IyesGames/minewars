@@ -7,10 +7,15 @@ use crate::camera::{CameraControlSS, GameCamera, GridCursor, GridCursorSS};
 
 use super::*;
 
+mod shake;
+
 pub struct Gfx3dCameraPlugin;
 
 impl Plugin for Gfx3dCameraPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins((
+            shake::Gfx3dCameraShakePlugin,
+        ));
         app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dModeSet::Any));
         app.add_systems(Update, (
             cursor_to_ground_plane

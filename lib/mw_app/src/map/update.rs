@@ -27,7 +27,7 @@ impl Plugin for MapUpdatePlugin {
             ).in_set(MapTopologySet(Topology::Sq)),
         )
             .in_set(NeedsMapSet)
-            .in_set(SetStage::Want(GameOutEventSS))
+            .in_set(SetStage::WantChanged(GameOutEventSS))
             .after(ViewSwitchSet));
         app.add_systems(Update, (
             alert_timer,

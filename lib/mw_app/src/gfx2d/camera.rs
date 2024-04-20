@@ -7,11 +7,16 @@ use crate::{camera::*, input::InputAction};
 
 use super::Gfx2dModeSet;
 
+mod shake;
+
 pub struct Gfx2dCameraPlugin;
 
 impl Plugin for Gfx2dCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(iyes_bevy_extras::d2::WorldCursorPlugin);
+        app.add_plugins((
+            shake::Gfx2dCameraShakePlugin,
+        ));
         app.add_systems(OnEnter(AppState::InGame), setup_game_camera_2d.in_set(Gfx2dModeSet::Any));
         app.add_systems(Update, (
             camera_control_zoom_mousewheel,

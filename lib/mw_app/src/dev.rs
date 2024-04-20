@@ -2,6 +2,7 @@ use bevy::reflect::{DynamicEnum, DynamicVariant};
 use mw_common::game::event::GameEvent;
 
 use crate::prelude::*;
+use crate::haptic::{HapticEvent, HapticEventSS};
 
 pub struct DevPlugin;
 
@@ -15,10 +16,12 @@ impl Plugin for DevPlugin {
                 .run_if(resource_exists::<ProgressCounter>)
                 .after(iyes_progress::TrackedProgressSet),
         );
-        app.add_systems(
-            Update,
-            debug_gameevents.in_set(SetStage::Want(GameOutEventSS))
-        );
+        app.add_systems(Update, (
+            debug_gameevents
+                .in_set(SetStage::WantChanged(GameOutEventSS)),
+            debug_hapticevents
+                .in_set(SetStage::WantChanged(HapticEventSS)),
+        ));
     }
 }
 
@@ -36,6 +39,14 @@ fn debug_progress(counter: Res<ProgressCounter>) {
 
 fn debug_gameevents(
     mut evr: EventReader<GameEvent>,
+) {
+    for ev in evr.read() {
+        trace!("{:?}", ev);
+    }
+}
+
+fn debug_hapticevents(
+    mut evr: EventReader<HapticEvent>,
 ) {
     for ev in evr.read() {
         trace!("{:?}", ev);

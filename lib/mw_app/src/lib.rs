@@ -25,6 +25,7 @@ pub mod gfx2d;
 #[cfg(feature = "gfx3d")]
 pub mod gfx3d;
 pub mod camera;
+pub mod haptic;
 pub mod input;
 pub mod map;
 pub mod player;
@@ -72,6 +73,7 @@ impl Plugin for MinewarsAppPlugin {
             (
                 crate::tool::ToolPlugin,
                 crate::input::InputPlugin,
+                crate::haptic::HapticPlugin,
             ),
             (
                 crate::map::MapPlugin,
