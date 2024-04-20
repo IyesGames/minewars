@@ -18,12 +18,13 @@ pub struct PlayersIndex(pub Vec<Entity>);
 #[derive(Component)]
 pub struct PlayerPlid(pub PlayerId);
 
+#[derive(Component)]
+pub struct PlayerDisplayName(pub String);
+
 // #[derive(Component)]
 // pub struct PlayerStats {
 //     pub kills: u32,
 //     pub deaths: u32,
-//     pub blinded_self: u32,
-//     pub blinded_other: u32,
 // }
 
 #[derive(Component)]
@@ -44,8 +45,9 @@ pub enum PlayerState {
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub plid: PlayerPlid,
-    // pub stats: PlayerStats,
+    pub name: PlayerDisplayName,
     pub state: PlayerState,
+    // pub stats: PlayerStats,
     // pub cits: PlayerOwnsCits,
 }
 

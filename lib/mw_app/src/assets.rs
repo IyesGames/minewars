@@ -42,6 +42,10 @@ pub struct UiAssets {
     pub font2_bold: Handle<Font>,
     #[asset(key = "ui.font2.light")]
     pub font2_light: Handle<Font>,
+    #[asset(key = "ui.9p.notify_simple")]
+    pub img_9p_notify_simple: Handle<Image>,
+    #[asset(key = "ui.9p.notify_killfeed")]
+    pub img_9p_notify_killfeed: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]

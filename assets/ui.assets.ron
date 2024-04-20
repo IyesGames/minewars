@@ -20,4 +20,10 @@
     "ui.font2.light": File (
         path: "font/Ubuntu-L.ttf"
     ),
+    "ui.9p.notify_simple": File (
+        path: "ui/notify_simple.png"
+    ),
+    "ui.9p.notify_killfeed": File (
+        path: "ui/notify_killfeed.png"
+    ),
 })

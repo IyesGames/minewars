@@ -7,7 +7,7 @@ use bevy::window::PrimaryWindow;
 
 use crate::{prelude::*, assets::UiAssets, ui, minimap::MinimapImage};
 
-use super::{tooltip::InfoAreaText, UiRoot};
+use super::{notify::UiNotifyArea, tooltip::InfoAreaText, UiRoot};
 
 mod minewars;
 mod minesweeper;
@@ -126,6 +126,23 @@ fn setup_hud_framework_desktop(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    )).id();
+    let notify = commands.spawn((
+        UiNotifyArea,
+        NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.0),
+                right: Val::Px(0.0),
+                bottom: Val::Auto,
+                left: Val::Auto,
+                flex_direction: FlexDirection::ColumnReverse,
+                align_items: AlignItems::FlexEnd,
+                justify_content: JustifyContent::FlexEnd,
                 ..Default::default()
             },
             ..Default::default()

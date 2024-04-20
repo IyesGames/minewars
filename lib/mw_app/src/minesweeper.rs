@@ -90,6 +90,7 @@ fn setup_minesweeper_playground_flatmap<C: Coord>(
         let e_plid = world.spawn((
             PlayerBundle {
                 plid: PlayerPlid(plid),
+                name: PlayerDisplayName(format!("Player {}", plid.i())),
                 state: PlayerState::Alive,
             },
             ViewBundle {

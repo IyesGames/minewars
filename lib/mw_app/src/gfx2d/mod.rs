@@ -151,6 +151,7 @@ pub mod sprite {
     pub const SMOKE: usize = OVERLAYS + 2;
     pub const STRIKE: usize = OVERLAYS + 3;
     pub const REVEAL: usize = OVERLAYS + 4;
+    pub const SKULL: usize = OVERLAYS + 5;
 }
 
 mod zpos {
