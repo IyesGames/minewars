@@ -17,47 +17,23 @@ impl Plugin for HapticGamepadPlugin {
 
 fn haptic_gamepad_rumble(
     gamepads: Res<Gamepads>,
+    settings: Res<AllSettings>,
     mut evr_haptic: EventReader<HapticEvent>,
     mut evw_rumble: EventWriter<GamepadRumbleRequest>,
 ) {
-    let mut rumble = |gamepad, secs, strong, weak| {
-        evw_rumble.send(GamepadRumbleRequest::Add {
-            duration: Duration::from_secs_f64(secs),
-            intensity: GamepadRumbleIntensity {
-                strong_motor: strong,
-                weak_motor: weak,
-            },
-            gamepad,
-        });
-    };
     for ev in evr_haptic.read() {
         for gamepad in gamepads.iter() {
-            match ev.kind {
-                HapticEventKind::ExplosionMineDeath => {
-                    rumble(gamepad, 1.5, 1.0, 0.0);
-                    rumble(gamepad, 1.0, 1.0, 1.0);
+            if let Some(waves) = settings.input.gamepad.haptics.get(&ev.kind) {
+                for wave in waves.iter() {
+                    evw_rumble.send(GamepadRumbleRequest::Add {
+                        duration: Duration::from_secs_f32(wave.0),
+                        intensity: GamepadRumbleIntensity {
+                            strong_motor: wave.1,
+                            weak_motor: wave.2,
+                        },
+                        gamepad,
+                    });
                 }
-                HapticEventKind::ExplosionOurTerritory => {
-                    rumble(gamepad, 0.25, 0.5, 0.0);
-                    rumble(gamepad, 0.125, 0.25, 0.5);
-                }
-                HapticEventKind::ExplosionForeignTerritory => {
-                    rumble(gamepad, 0.25, 0.25, 0.0);
-                    rumble(gamepad, 0.125, 0.125, 0.25);
-                }
-                HapticEventKind::BackgroundTremor => {
-                    rumble(gamepad, 0.125, 0.125, 0.0);
-                    rumble(gamepad, 0.0625, 0.125, 0.125);
-                }
-                HapticEventKind::ExplosionMineKill => {
-                    rumble(gamepad, 1.25, 0.5, 0.0);
-                    rumble(gamepad, 1.0, 0.5, 0.5);
-                }
-                HapticEventKind::ExplosionSomeoneDied => {
-                    rumble(gamepad, 1.25, 0.25, 0.0);
-                    rumble(gamepad, 1.0, 0.25, 0.25);
-                }
-                _ => todo!()
             }
         }
     }

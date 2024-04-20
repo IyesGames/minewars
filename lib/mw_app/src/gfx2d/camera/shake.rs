@@ -60,6 +60,7 @@ fn setup_haptic_shake_camera_2d(
 
 fn haptic_camera_2d_manage_waves(
     time: Res<Time>,
+    settings: Res<AllSettings>,
     mut evr_haptic: EventReader<HapticEvent>,
     mut q_shaker: Query<&mut Camera2dShaker>,
 ) {
@@ -74,58 +75,24 @@ fn haptic_camera_2d_manage_waves(
         });
     }
 
-    let mut add_wave = |shaker: &mut Camera2dShaker, a, f, t_a, t_h, t_d| {
-        shaker.waves.push(ShakerWave {
-            amplitude: a,
-            frequency: f,
-            attack_secs: t_a,
-            hold_secs: t_h,
-            decay_secs: t_d,
-            start: now,
-            direction: DVec2::new(
-                rng.gen_range(-1.0 ..= 1.0),
-                rng.gen_range(-1.0 ..= 1.0),
-            ).normalize(),
-            noise: noise::Perlin::new(rng.gen()),
-        });
-    };
-
     for ev in evr_haptic.read() {
         for mut shaker in q_shaker.iter_mut() {
-            match ev.kind {
-                HapticEventKind::ExplosionMineDeath => {
-                    add_wave(&mut shaker, 40.0, 11.0, 0.25, 0.5, 1.0);
-                    add_wave(&mut shaker, 32.0, 13.0, 0.125, 0.25, 1.0);
-                    add_wave(&mut shaker, 24.0, 17.0, 0.125, 0.5, 1.5);
-                    add_wave(&mut shaker, 16.0, 19.0, 0.0625, 0.25, 1.5);
+            if let Some(waves) = settings.camera.shake_2d.get(&ev.kind) {
+                for wave in waves.iter() {
+                    shaker.waves.push(ShakerWave {
+                        amplitude: wave.0,
+                        frequency: wave.1,
+                        attack_secs: wave.2,
+                        hold_secs: wave.3,
+                        decay_secs: wave.4,
+                        start: now,
+                        direction: DVec2::new(
+                            rng.gen_range(-1.0 ..= 1.0),
+                            rng.gen_range(-1.0 ..= 1.0),
+                        ).normalize(),
+                        noise: noise::Perlin::new(rng.gen()),
+                    });
                 }
-                HapticEventKind::ExplosionOurTerritory => {
-                    add_wave(&mut shaker, 5.0, 17.0, 0.0625, 0.125, 0.25);
-                    add_wave(&mut shaker, 4.0, 19.0, 0.125, 0.0625, 0.25);
-                    add_wave(&mut shaker, 3.0, 23.0, 0.125, 0.125, 0.25);
-                }
-                HapticEventKind::ExplosionForeignTerritory => {
-                    add_wave(&mut shaker, 3.0, 17.0, 0.0625, 0.125, 0.25);
-                    add_wave(&mut shaker, 2.0, 19.0, 0.125, 0.0625, 0.25);
-                    add_wave(&mut shaker, 2.0, 23.0, 0.125, 0.125, 0.25);
-                }
-                HapticEventKind::BackgroundTremor => {
-                    add_wave(&mut shaker, 3.0, 17.0, 0.0625, 0.125, 0.25);
-                    add_wave(&mut shaker, 2.0, 23.0, 0.125, 0.0625, 0.25);
-                }
-                HapticEventKind::ExplosionMineKill => {
-                    add_wave(&mut shaker, 24.0, 11.0, 0.125, 0.25, 0.5);
-                    add_wave(&mut shaker, 20.0, 13.0, 0.0625, 0.25, 0.5);
-                    add_wave(&mut shaker, 16.0, 17.0, 0.125, 0.25, 0.5);
-                    add_wave(&mut shaker, 12.0, 19.0, 0.0625, 0.25, 0.5);
-                }
-                HapticEventKind::ExplosionSomeoneDied => {
-                    add_wave(&mut shaker, 14.0, 11.0, 0.125, 0.125, 0.5);
-                    add_wave(&mut shaker, 12.0, 13.0, 0.0625, 0.25, 0.5);
-                    add_wave(&mut shaker, 8.0, 17.0, 0.125, 0.25, 0.5);
-                    add_wave(&mut shaker, 6.0, 19.0, 0.0625, 0.25, 0.5);
-                }
-                _ => todo!()
             }
         }
     }

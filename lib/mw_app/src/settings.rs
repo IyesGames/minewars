@@ -1,7 +1,7 @@
 use mw_game_minesweeper::MinesweeperSettings;
 use ron::ser::PrettyConfig;
 
-use crate::{prelude::*, input::{InputAction, AnalogInput}, tool::Tool};
+use crate::{haptic::HapticEventKind, input::{AnalogInput, InputAction}, prelude::*, tool::Tool};
 
 pub struct SettingsPlugin;
 
@@ -99,6 +99,7 @@ pub struct GamepadSettings {
     pub pan_sens: f32,
     pub buttonmap: HashMap<GamepadButtonType, InputAction>,
     pub axismap: HashMap<GamepadAxisType, InputAction>,
+    pub haptics: HashMap<HapticEventKind, Vec<(f32, f32, f32)>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -107,6 +108,7 @@ pub struct CameraSettings {
     pub zoom_tween_duration_ms: u32,
     pub jump_tween_duration_ms: u32,
     pub screenshake: bool,
+    pub shake_2d: HashMap<HapticEventKind, Vec<(f32, f32, f32, f32, f32)>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -298,6 +300,31 @@ impl Default for GamepadSettings {
         axismap.insert(GamepadAxisType::LeftStickY, InputAction::Analog(AnalogInput::GridCursorMove));
         axismap.insert(GamepadAxisType::RightStickX, InputAction::Analog(AnalogInput::PanCamera));
         axismap.insert(GamepadAxisType::RightStickY, InputAction::Analog(AnalogInput::PanCamera));
+        let mut haptics = HashMap::default();
+        haptics.insert(HapticEventKind::ExplosionMineDeath, vec![
+            (1.5, 1.0, 0.0),
+            (1.0, 1.0, 1.0),
+        ]);
+        haptics.insert(HapticEventKind::ExplosionOurTerritory, vec![
+            (0.25, 0.5, 0.0),
+            (0.125, 0.25, 0.5),
+        ]);
+        haptics.insert(HapticEventKind::ExplosionForeignTerritory, vec![
+            (0.25, 0.25, 0.0),
+            (0.125, 0.125, 0.25),
+        ]);
+        haptics.insert(HapticEventKind::BackgroundTremor, vec![
+            (0.125, 0.125, 0.0),
+            (0.0625, 0.125, 0.125),
+        ]);
+        haptics.insert(HapticEventKind::ExplosionMineKill, vec![
+            (1.25, 0.5, 0.0),
+            (1.0, 0.5, 0.5),
+        ]);
+        haptics.insert(HapticEventKind::ExplosionSomeoneDied, vec![
+            (1.25, 0.25, 0.0),
+            (1.0, 0.25, 0.25),
+        ]);
         GamepadSettings {
             gridcursor_nonlinear: true,
             gridcursor_sens: 420.0,
@@ -305,16 +332,51 @@ impl Default for GamepadSettings {
             pan_sens: 920.0,
             buttonmap,
             axismap,
+            haptics,
         }
     }
 }
 
 impl Default for CameraSettings {
     fn default() -> Self {
+        let mut shake_2d = HashMap::default();
+        shake_2d.insert(HapticEventKind::ExplosionMineDeath, vec![
+            (40.0, 11.0, 0.25, 0.5, 1.0),
+            (32.0, 13.0, 0.125, 0.25, 1.0),
+            (24.0, 17.0, 0.125, 0.5, 1.5),
+            (16.0, 19.0, 0.0625, 0.25, 1.5),
+        ]);
+        shake_2d.insert(HapticEventKind::ExplosionOurTerritory, vec![
+            (5.0, 17.0, 0.0625, 0.125, 0.25),
+            (4.0, 19.0, 0.125, 0.0625, 0.25),
+            (3.0, 23.0, 0.125, 0.125, 0.25),
+        ]);
+        shake_2d.insert(HapticEventKind::ExplosionForeignTerritory, vec![
+            (3.0, 17.0, 0.0625, 0.125, 0.25),
+            (2.0, 19.0, 0.125, 0.0625, 0.25),
+            (2.0, 23.0, 0.125, 0.125, 0.25),
+        ]);
+        shake_2d.insert(HapticEventKind::BackgroundTremor, vec![
+            (3.0, 17.0, 0.0625, 0.125, 0.25),
+            (2.0, 23.0, 0.125, 0.0625, 0.25),
+        ]);
+        shake_2d.insert(HapticEventKind::ExplosionMineKill, vec![
+            (24.0, 11.0, 0.125, 0.25, 0.5),
+            (20.0, 13.0, 0.0625, 0.25, 0.5),
+            (16.0, 17.0, 0.125, 0.25, 0.5),
+            (12.0, 19.0, 0.0625, 0.25, 0.5),
+        ]);
+        shake_2d.insert(HapticEventKind::ExplosionSomeoneDied, vec![
+            (14.0, 11.0, 0.125, 0.125, 0.5),
+            (12.0, 13.0, 0.0625, 0.25, 0.5),
+            (8.0, 17.0, 0.125, 0.25, 0.5),
+            (6.0, 19.0, 0.0625, 0.25, 0.5),
+        ]);
         CameraSettings {
             zoom_tween_duration_ms: 125,
             jump_tween_duration_ms: 125,
             screenshake: true,
+            shake_2d,
         }
     }
 }
