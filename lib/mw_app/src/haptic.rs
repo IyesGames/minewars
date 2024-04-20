@@ -59,7 +59,7 @@ pub struct HapticEvent {
 }
 
 /// The different things that can cause haptic feedback.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HapticEventKind {
     /// Ambience / background explosions
     BackgroundTremor,

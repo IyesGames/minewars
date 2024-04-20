@@ -33,6 +33,8 @@ pub mod prelude {
     pub use std::marker::PhantomData;
     pub use thiserror::Error;
     pub use tracing::{debug, error, info, trace, warn};
+    pub use noise;
+    pub use interpolation;
     #[cfg(feature = "net")]
     pub use tokio;
     #[cfg(feature = "net")]

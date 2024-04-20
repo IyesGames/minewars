@@ -17,7 +17,10 @@ impl Plugin for Gfx2dCameraPlugin {
         app.add_plugins((
             shake::Gfx2dCameraShakePlugin,
         ));
-        app.add_systems(OnEnter(AppState::InGame), setup_game_camera_2d.in_set(Gfx2dModeSet::Any));
+        app.add_systems(
+            OnEnter(AppState::InGame),
+            setup_game_camera_2d.in_set(Gfx2dModeSet::Any)
+        );
         app.add_systems(Update, (
             camera_control_zoom_mousewheel,
             inputaction_zoom
