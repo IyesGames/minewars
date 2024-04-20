@@ -5,6 +5,10 @@
 /doc/book
 Cargo.lock
 *.blend1
-/proprietary
 *.exe
+/mw_hostrpc
 /cfg/cert
+/bin/*/proprietary
+/bin/*/lib
+/lib/*/proprietary
+/lib/mw_game_minewars
