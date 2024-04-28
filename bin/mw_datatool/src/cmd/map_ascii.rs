@@ -22,7 +22,7 @@ pub fn main(common: &CommonArgs, _args: &MapAsciiArgs) -> AnyResult<()> {
 
     let (_, mut isr) = mfr.read_is()?;
     let map: MapDataTopo<MapGenTileData> = isr.read_map_dyntopo(Some(&mut scratch), false)?;
-    let cits = isr.read_cits()?;
+    let cits = isr.read_cits_pos()?;
 
     fn f_tile_ascii(cits: &[Pos], pos: Pos, kind: TileKind) -> u8 {
         if cits.iter().position(|p| *p == pos).is_some() {

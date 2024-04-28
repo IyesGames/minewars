@@ -3,7 +3,7 @@
 use seahash::SeaHasher;
 use thiserror::Error;
 use std::{hash::Hasher, io::{Cursor, Seek, SeekFrom, Write}};
-use mw_common::grid::*;
+use mw_common::{grid::*, phoneme::Ph};
 
 use crate::{header::{ISHeader, MwFileHeader}, map::MapTileDataOut};
 
@@ -410,19 +410,39 @@ impl<'b, W: Write + Seek> MwISBuilderWithMap<'b, W> {
             hash: self.hasher.map(|h| h.finish()),
         })
     }
-    pub fn with_cits(mut self, cit_locations: impl IntoIterator<Item = Pos>) -> Result<MwISBuilderWithCits<'b, W>, MwWriterError> {
+    pub fn with_cits<'a>(mut self, cit_locations: impl IntoIterator<Item = (Pos, &'a [Ph])>) -> Result<MwISBuilderWithCits<'b, W>, MwWriterError> {
         self.buf.clear();
+        self.buf.resize(2 * 256, 0);
         let mut count = 0;
-        for cit in cit_locations {
-            self.buf.extend_from_slice(&cit.y().to_be_bytes());
-            self.buf.extend_from_slice(&cit.x().to_be_bytes());
+        for (pos, name) in cit_locations {
+            if count == 255 {
+                break;
+            }
+            self.buf[count * 2 + 0] = pos.y() as u8;
+            self.buf[count * 2 + 1] = pos.x() as u8;
+            if name.len() >= 256 {
+                self.buf.push(0);
+            } else {
+                let name_bytes: &[u8] = unsafe {
+                    std::mem::transmute(name)
+                };
+                self.buf.push(name_bytes.len() as u8);
+                self.buf.extend_from_slice(name_bytes);
+            }
             count += 1;
         }
-        self.header.n_regions = count;
-        if let Some(ref mut h) = &mut self.hasher {
-            h.write(self.buf);
+        self.header.n_regions = count as u8;
+        {
+            let b_pos = &self.buf[..(count * 2)];
+            let b_names = &self.buf[(2 * 256)..];
+            self.header.len_citdata_names = b_names.len() as u16;
+            if let Some(ref mut h) = &mut self.hasher {
+                h.write(b_pos);
+                h.write(b_names);
+            }
+            self.writer.write_all(b_pos)?;
+            self.writer.write_all(b_names)?;
         }
-        self.writer.write_all(self.buf)?;
         Ok(MwISBuilderWithCits {
             buf: self.buf,
             off_header: self.off_header,
@@ -462,8 +482,12 @@ impl<'b, W: Write + Seek> MwISBuilderWithCits<'b, W> {
         self.buf.clear();
         let mut count = 0;
         for name in names {
-            self.buf.push(name.len() as u8); // TODO: handle overflow
-            self.buf.extend_from_slice(name.as_bytes());
+            if name.len() >= 255 {
+                self.buf.push(0);
+            } else {
+                self.buf.push(name.len() as u8);
+                self.buf.extend_from_slice(name.as_bytes());
+            }
             count += 1;
         }
         self.header.n_players = count;

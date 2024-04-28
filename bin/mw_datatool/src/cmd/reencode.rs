@@ -89,8 +89,9 @@ fn reencode<R: Read + Seek, W: Write + Seek>(reader: R, writer: W, args: &Reenco
         }
     };
 
-    let cits = isr.read_cits()?;
-    let b_is = b_is.with_cits(cits.iter().cloned())?;
+    let cit_pos = isr.read_cits_pos()?.to_owned();
+    let iter_cit_names = isr.read_cits_names()?;
+    let b_is = b_is.with_cits(cit_pos.iter().cloned().zip(iter_cit_names))?;
 
     let b_is = if args.anonymize || isr.is_anonymized() {
         b_is.with_anonymous_players(isr.n_players())?

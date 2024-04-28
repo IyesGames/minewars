@@ -1,6 +1,6 @@
 //! Reading/Decoding MineWars Data Streams or Files
 
-use mw_common::grid::*;
+use mw_common::{grid::*, phoneme::Ph};
 use thiserror::Error;
 
 use std::{io::{Cursor, Read, Seek, SeekFrom}, iter::FusedIterator};
@@ -299,11 +299,21 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
             }
         }
     }
-    pub fn read_cits(&mut self) -> Result<&[Pos], MwReaderError> {
-        self.buf.resize(self.is_header.len_citdata(), 0);
-        self.reader.seek(SeekFrom::Start(self.off_data as u64 + self.is_header.offset_citdata() as u64))?;
+    pub fn read_cits_pos(&mut self) -> Result<&[Pos], MwReaderError> {
+        self.buf.resize(self.is_header.len_citdata_pos(), 0);
+        self.reader.seek(SeekFrom::Start(self.off_data as u64 + self.is_header.offset_citdata_pos() as u64))?;
         self.reader.read_exact(self.buf)?;
         Ok(bytemuck::cast_slice(&self.buf))
+    }
+    pub fn read_cits_names(&mut self) -> Result<CitNamesIter<'_>, MwReaderError> {
+        self.buf.resize(self.is_header.len_citdata_names(), 0);
+        self.reader.seek(SeekFrom::Start(self.off_data as u64 + self.is_header.offset_citdata_names() as u64))?;
+        self.reader.read_exact(self.buf)?;
+        Ok(CitNamesIter {
+            current_cit: 0,
+            total_cits: self.n_regions(),
+            buf: self.buf
+        })
     }
     pub fn read_players(&mut self) -> Result<PlayerNamesIter<'_>, MwReaderError> {
         self.buf.resize(self.is_header.len_playerdata(), 0);
@@ -351,3 +361,40 @@ impl<'b> ExactSizeIterator for PlayerNamesIter<'b> {
 }
 
 impl<'b> FusedIterator for PlayerNamesIter<'b> {}
+
+pub struct CitNamesIter<'b> {
+    current_cit: u8,
+    total_cits: u8,
+    buf: &'b [u8],
+}
+
+impl<'b> Iterator for CitNamesIter<'b> {
+    type Item = &'b [Ph];
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_cit >= self.total_cits {
+            return None;
+        }
+        self.current_cit += 1;
+        if self.buf.is_empty() {
+            return Some(&[]);
+        }
+        let strlen = (self.buf[0] as usize).min(self.buf.len() - 1);
+        self.buf = &self.buf[1..];
+        let (out, rem) = self.buf.split_at(strlen);
+        self.buf = rem;
+        unsafe {
+            Some(std::mem::transmute(out))
+        }
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+}
+
+impl<'b> ExactSizeIterator for CitNamesIter<'b> {
+    fn len(&self) -> usize {
+        (self.total_cits - self.current_cit) as usize
+    }
+}
+
+impl<'b> FusedIterator for CitNamesIter<'b> {}

@@ -52,4 +52,5 @@ pub mod algo;
 pub mod driver;
 pub mod grid;
 pub mod plid;
+pub mod phoneme;
 pub mod game;

@@ -1,3 +1,4 @@
+use mw_common::phoneme::{lang, render_str};
 use mw_dataformat::read::MwFileReader;
 
 use crate::prelude::*;
@@ -53,6 +54,14 @@ pub fn main(common: &CommonArgs, args: &InfoArgs) -> AnyResult<()> {
     eprintln!("Player Names:");
     for (i, name) in isr.read_players()?.enumerate() {
         eprintln!("{}: {:?}", i, name);
+    }
+
+    eprintln!();
+    eprintln!("Cits:");
+    let cit_pos = isr.read_cits_pos()?.to_owned();
+    let iter_cit_names = isr.read_cits_names()?;
+    for (i, (pos, name)) in cit_pos.iter().cloned().zip(iter_cit_names).enumerate() {
+        eprintln!("{}: Y:{},X:{} {:?}", i, pos.y(), pos.x(), render_str::<lang::EN>(name));
     }
 
     Ok(())

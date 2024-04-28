@@ -24,9 +24,11 @@ pub struct ISHeader {
     pub map_size: u8,
     pub n_players: u8,
     pub n_regions: u8,
-    pub len_rules: u16,
-    pub len_playerdata: u16,
     pub len_mapdata_compressed: u32,
+    pub len_rules: u16,
+    pub len_citdata_names: u16,
+    pub len_playerdata: u16,
+    pub reserved0: u16,
 }
 
 /// The MineWars File Header Extras
@@ -117,12 +119,6 @@ impl ISHeader {
     pub fn len_total_is(&self) -> usize {
         Self::serialized_len() + self.len_total_data()
     }
-    pub fn len_total_data(&self) -> usize {
-        self.len_mapdata_compressed()
-        + self.len_citdata()
-        + self.len_playerdata()
-        + self.len_rules()
-    }
     pub fn len_rules(&self) -> usize {
         self.len_rules as usize
     }
@@ -138,24 +134,39 @@ impl ISHeader {
     pub fn len_playerdata(&self) -> usize {
         self.len_playerdata as usize
     }
-    pub fn len_citdata(&self) -> usize {
-        // 2 bytes per cit position
+    pub fn len_citdata_names(&self) -> usize {
+        self.len_citdata_names as usize
+    }
+    pub fn len_citdata_pos(&self) -> usize {
         2 * self.n_regions as usize
     }
     pub fn offset_mapdata(&self) -> usize {
         0
     }
-    pub fn offset_citdata(&self) -> usize {
+    pub fn offset_citdata_pos(&self) -> usize {
         self.len_mapdata_compressed()
+    }
+    pub fn offset_citdata_names(&self) -> usize {
+        self.len_mapdata_compressed()
+        + self.len_citdata_pos()
     }
     pub fn offset_playerdata(&self) -> usize {
         self.len_mapdata_compressed()
-        + self.len_citdata()
+        + self.len_citdata_pos()
+        + self.len_citdata_names()
     }
     pub fn offset_rules(&self) -> usize {
         self.len_mapdata_compressed()
-        + self.len_citdata()
+        + self.len_citdata_pos()
+        + self.len_citdata_names()
         + self.len_playerdata()
+    }
+    pub fn len_total_data(&self) -> usize {
+        self.len_mapdata_compressed()
+        + self.len_citdata_pos()
+        + self.len_citdata_names()
+        + self.len_playerdata()
+        + self.len_rules()
     }
 }
 

@@ -46,9 +46,11 @@ It begins with a header:
  - `u8`: map size (radius)
  - `u8`: number of players
  - `u8`: number of cities/regions
- - `u16`: length of the whole Initialization Sequence / offset at which Messages will start
- - `u16`: length of player names data (0 for an anonymized stream)
  - `u32`: length of compressed map data in bytes
+ - `u16`: length of the Rules data
+ - `u16`: length of the Cits names data
+ - `u16`: length of the player names data (0 for an anonymized stream)
+ - `u16`: (reserved)
 
 The `flags` field is encoded as follows:
 
@@ -108,9 +110,17 @@ Hex example:
 After the map data, regions are encoded the same way: one byte per tile, in
 concentric ring order. The byte is the city/region ID for that tile.
 
-### City Locations
+### City Info
 
-Then follows the list of city coordinates.
+First, locations for each city on the map:
+ - `(u8, u8)`: (y, x) location
+
+Then, names for each city on the map:
+ - `u8`: length in bytes
+ - …: phonemes
+
+The name uses a special Phoneme encoding (undocumented, see source code),
+which can be rendered/localized based on client language.
 
 ### Player Names
 
