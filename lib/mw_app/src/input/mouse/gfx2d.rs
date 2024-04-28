@@ -8,11 +8,10 @@ use super::*;
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
         mousemotion_pancamera
+            .in_set(SetStage::Provide(CameraControlSS))
+            .in_set(SetStage::Want(GameInputSS::Analogs))
             .run_if(rc_mousemotion_pancamera),
-    )
-      .in_set(SetStage::Provide(CameraControlSS))
-      .in_set(Gfx2dModeSet::Any)
-      .in_set(GameInputSet::Process),
+    ).in_set(Gfx2dModeSet::Any),
     );
 }
 

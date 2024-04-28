@@ -30,7 +30,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
         minesweeper_input
             .in_set(InStateSet(GameMode::Minesweeper))
-            .in_set(ToolEventHandlerSet),
+            .in_set(SetStage::WantChanged(ToolEventSS)),
     ));
 }
 

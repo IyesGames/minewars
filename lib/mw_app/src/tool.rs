@@ -5,11 +5,13 @@ use crate::prelude::*;
 pub fn plugin(app: &mut App) {
     app.init_state::<Tool>();
     app.add_event::<ToolEvent>();
-    app.configure_sets(Update, ToolEventHandlerSet.run_if(on_event::<ToolEvent>()));
+    app.configure_stage_set(
+        Update, ToolEventSS, on_event::<ToolEvent>()
+    );
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ToolEventHandlerSet;
+pub struct ToolEventSS;
 
 #[derive(States, Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Reflect)]
 #[derive(Serialize, Deserialize)]

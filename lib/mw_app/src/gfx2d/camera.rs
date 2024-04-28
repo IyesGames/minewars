@@ -2,7 +2,7 @@ use bevy::{input::mouse::{MouseWheel, MouseScrollUnit}, window::PrimaryWindow};
 use bevy_tweening::*;
 use mw_common::{game::MapDescriptor, grid::*};
 
-use crate::{input::GameInputSet, map::{GridCursorTileEntity, MapTileIndex, MapTopologySet}, prelude::*, ui::UiCamera};
+use crate::{input::GameInputSS, map::{GridCursorTileEntity, MapTileIndex, MapTopologySet}, prelude::*, ui::UiCamera};
 use crate::{camera::*, input::InputAction};
 
 use super::Gfx2dModeSet;
@@ -21,7 +21,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
         camera_control_zoom_mousewheel,
         inputaction_zoom
-            .in_set(GameInputSet::ProcessEvents),
+            .in_set(SetStage::WantChanged(GameInputSS::Events)),
     )
      .in_set(Gfx2dModeSet::Any)
      .in_set(SetStage::Provide(CameraControlSS))

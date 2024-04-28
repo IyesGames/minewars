@@ -9,19 +9,14 @@ use super::*;
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
         joystick_pancamera
+            .in_set(SetStage::Provide(CameraControlSS))
             .run_if(rc_joystick_pancamera),
-    )
-      .in_set(SetStage::Provide(CameraControlSS))
-      .in_set(Gfx2dModeSet::Any)
-      .in_set(GameInputSet::Process)
-    );
-    app.add_systems(Update, (
         joystick_gridcursormove
+            .in_set(SetStage::Provide(GridCursorSS))
             .run_if(rc_joystick_gridcursormove),
     )
-      .in_set(SetStage::Want(GridCursorSS))
       .in_set(Gfx2dModeSet::Any)
-      .in_set(GameInputSet::Process)
+      .in_set(SetStage::Want(GameInputSS::Analogs))
     );
 }
 

@@ -17,30 +17,27 @@ pub fn plugin(app: &mut App) {
     app.init_resource::<DetectedInputDevices>();
     app.init_resource::<CurrentTool>();
     app.init_resource::<ActiveAnalogs>();
+    app.configure_stage_set(
+        Update, GameInputSS::Detect, resource_changed::<DetectedInputDevices>
+    );
+    app.configure_stage_set(
+        Update, GameInputSS::Analogs, resource_changed::<ActiveAnalogs>
+    );
+    app.configure_stage_set(
+        Update, GameInputSS::Events, on_event::<InputAction>()
+    );
     app.configure_sets(Update, (
-        GameInputSet::Detect,
-        GameInputSet::Collect
-            .in_set(InStateSet(AppState::InGame))
-            .run_if(rc_accepting_game_input)
-            .after(GameInputSet::Detect),
-        GameInputSet::Process
-            .in_set(InStateSet(AppState::InGame))
-            .after(GameInputSet::Collect),
-        GameInputSet::ProcessEvents
-            .in_set(InStateSet(AppState::InGame))
-            .in_set(GameInputSet::Process)
-            .run_if(on_event::<InputAction>()),
         InputDeviceEnabledSet::Kbd
-            .after(GameInputSet::Detect)
+            .in_set(SetStage::Want(GameInputSS::Detect))
             .run_if(rc_input_device(InputDeviceEnabledSet::Kbd)),
         InputDeviceEnabledSet::Mouse
-            .after(GameInputSet::Detect)
+            .in_set(SetStage::Want(GameInputSS::Detect))
             .run_if(rc_input_device(InputDeviceEnabledSet::Mouse)),
         InputDeviceEnabledSet::Touch
-            .after(GameInputSet::Detect)
+            .in_set(SetStage::Want(GameInputSS::Detect))
             .run_if(rc_input_device(InputDeviceEnabledSet::Touch)),
         InputDeviceEnabledSet::Gamepad
-            .after(GameInputSet::Detect)
+            .in_set(SetStage::Want(GameInputSS::Detect))
             .run_if(rc_input_device(InputDeviceEnabledSet::Gamepad)),
     ));
     app.add_plugins((
@@ -53,19 +50,18 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
         detect_input_devices
             .run_if(rc_detect_input_devices)
-            .in_set(GameInputSet::Detect),
+            .in_set(SetStage::Provide(GameInputSS::Detect)),
         input_tool_event
-            .in_set(GameInputSet::ProcessEvents)
-            .before(ToolEventHandlerSet),
+            .in_set(SetStage::WantChanged(GameInputSS::Events))
+            .in_set(SetStage::Provide(ToolEventSS)),
     ));
 }
 
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum GameInputSet {
+pub enum GameInputSS {
     Detect,
-    Collect,
-    Process,
-    ProcessEvents,
+    Analogs,
+    Events,
 }
 
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]

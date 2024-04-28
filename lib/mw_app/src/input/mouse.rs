@@ -11,7 +11,8 @@ pub fn plugin(app: &mut App) {
     app.add_plugins(gfx2d::plugin);
     app.add_systems(Update, (
         collect_actions_mousebtn
-            .in_set(GameInputSet::Collect)
+            .in_set(SetStage::Provide(GameInputSS::Events))
+            .in_set(SetStage::Provide(GameInputSS::Analogs))
             .run_if(on_event::<MouseButtonInput>()),
     ));
 }
