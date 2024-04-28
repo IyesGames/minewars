@@ -9,11 +9,7 @@ use crate::prelude::*;
 
 use super::HapticEvent;
 
-pub struct HapticButtplugPlugin;
-
-impl Plugin for HapticButtplugPlugin {
-    fn build(&self, app: &mut App) {
-    }
+pub fn plugin(app: &mut App) {
 }
 
 #[derive(Component)]

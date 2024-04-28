@@ -4,19 +4,15 @@ use mw_common::grid::*;
 use crate::prelude::*;
 use super::*;
 
-pub struct ViewUpdatePlugin;
-
-impl Plugin for ViewUpdatePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            event_map::<Hex>.in_set(MapTopologySet(Topology::Hex)),
-            event_map::<Sq>.in_set(MapTopologySet(Topology::Sq)),
-        )
-            .in_set(ViewUpdateSet)
-            .in_set(NeedsMapSet)
-            .in_set(SetStage::WantChanged(GameOutEventSS))
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        event_map::<Hex>.in_set(MapTopologySet(Topology::Hex)),
+        event_map::<Sq>.in_set(MapTopologySet(Topology::Sq)),
+    )
+        .in_set(ViewUpdateSet)
+        .in_set(NeedsMapSet)
+        .in_set(SetStage::WantChanged(GameOutEventSS))
+    );
 }
 
 /// Apply *all* incoming game events to their respective views

@@ -1,13 +1,9 @@
 use crate::{locale::{L10nApplySS, L10nKey}, prelude::*};
 
-pub(super) struct TooltipPlugin;
-
-impl Plugin for TooltipPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            interact_infotext.before(SetStage::Prepare(L10nApplySS)),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        interact_infotext.before(SetStage::Prepare(L10nApplySS)),
+    ));
 }
 
 /// Marker for the text entity that dispays on-hover info / tooltips

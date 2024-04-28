@@ -11,32 +11,29 @@ use crate::view::*;
 use crate::bevyhost::*;
 use crate::player::*;
 
-pub struct MinesweeperPlugin;
-
-impl Plugin for MinesweeperPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_clicommand_noargs("minesweeper_singleplayer", cli_minesweeper_singleplayer);
-        app.register_clicommand_noargs("minesweeper_playground", cli_minesweeper_playground);
-        app.add_event::<MinesweeperInputAction>();
-        app.add_plugins((
-            BevyMwHostPlugin::<
-                GameMinesweeper<Hex>,
-                MinesweeperInputAction,
-                GameEvent,
-            >::new(),
-            BevyMwHostPlugin::<
-                GameMinesweeper<Sq>,
-                MinesweeperInputAction,
-                GameEvent,
-            >::new(),
-        ));
-        app.add_systems(Update, (
-            minesweeper_input
-                .in_set(InStateSet(GameMode::Minesweeper))
-                .in_set(ToolEventHandlerSet),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.register_clicommand_noargs("minesweeper_singleplayer", cli_minesweeper_singleplayer);
+    app.register_clicommand_noargs("minesweeper_playground", cli_minesweeper_playground);
+    app.add_event::<MinesweeperInputAction>();
+    app.add_plugins((
+        crate::bevyhost::plugin::<
+            GameMinesweeper<Hex>,
+            MinesweeperInputAction,
+            GameEvent,
+        >,
+        crate::bevyhost::plugin::<
+            GameMinesweeper<Sq>,
+            MinesweeperInputAction,
+            GameEvent,
+        >,
+    ));
+    app.add_systems(Update, (
+        minesweeper_input
+            .in_set(InStateSet(GameMode::Minesweeper))
+            .in_set(ToolEventHandlerSet),
+    ));
 }
+
 fn cli_minesweeper_singleplayer(world: &mut World) {
     world.resource_mut::<AllSettings>().game_minesweeper.n_plids = 1;
     cli_minesweeper_playground(world);

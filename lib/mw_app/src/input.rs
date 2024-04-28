@@ -9,35 +9,31 @@ mod kbd;
 mod mouse;
 mod touch;
 
-pub struct InputPlugin;
-
-impl Plugin for InputPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<InputAction>();
-        app.init_resource::<CurrentTool>();
-        app.init_resource::<ActiveAnalogs>();
-        app.configure_sets(Update, (
-            GameInputSet::Collect
-                .in_set(InStateSet(AppState::InGame))
-                .run_if(rc_accepting_game_input),
-            GameInputSet::Process
-                .in_set(InStateSet(AppState::InGame))
-                .after(GameInputSet::Collect),
-            GameInputSet::ProcessEvents
-                .in_set(GameInputSet::Process)
-                .run_if(on_event::<InputAction>()),
-        ));
-        app.add_plugins((
-            gamepad::GamepadInputPlugin,
-            kbd::KeyboardInputPlugin,
-            mouse::MouseInputPlugin,
-            touch::TouchInputPlugin,
-        ));
-        app.add_systems(OnEnter(AppState::InGame), clear_game_input);
-        app.add_systems(Update, (
-            input_tool_event.in_set(GameInputSet::ProcessEvents).before(ToolEventHandlerSet),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_event::<InputAction>();
+    app.init_resource::<CurrentTool>();
+    app.init_resource::<ActiveAnalogs>();
+    app.configure_sets(Update, (
+        GameInputSet::Collect
+            .in_set(InStateSet(AppState::InGame))
+            .run_if(rc_accepting_game_input),
+        GameInputSet::Process
+            .in_set(InStateSet(AppState::InGame))
+            .after(GameInputSet::Collect),
+        GameInputSet::ProcessEvents
+            .in_set(GameInputSet::Process)
+            .run_if(on_event::<InputAction>()),
+    ));
+    app.add_plugins((
+        gamepad::plugin,
+        kbd::plugin,
+        mouse::plugin,
+        touch::plugin,
+    ));
+    app.add_systems(OnEnter(AppState::InGame), clear_game_input);
+    app.add_systems(Update, (
+        input_tool_event.in_set(GameInputSet::ProcessEvents).before(ToolEventHandlerSet),
+    ));
 }
 
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]

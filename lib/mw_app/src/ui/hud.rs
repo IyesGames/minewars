@@ -13,16 +13,12 @@ mod minewars;
 mod minesweeper;
 mod editor;
 
-pub(super) struct HudPlugin;
-
-impl Plugin for HudPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::InGame), setup_hud_framework_desktop);
-        app.add_systems(Update, (
-            setup_minimap,
-            minimap_image_scale_fixme.run_if(resource_exists::<MinimapImage>),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(OnEnter(AppState::InGame), setup_hud_framework_desktop);
+    app.add_systems(Update, (
+        setup_minimap,
+        minimap_image_scale_fixme.run_if(resource_exists::<MinimapImage>),
+    ));
 }
 
 /// Top-level root container

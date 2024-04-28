@@ -3,12 +3,8 @@ use crate::assets::UiAssets;
 
 use super::*;
 
-pub struct OfflineMenuPlugin;
-
-impl Plugin for OfflineMenuPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_clicommand_noargs("menu_offline", spawn_menu_offline);
-    }
+pub fn plugin(app: &mut App) {
+    app.register_clicommand_noargs("menu_offline", spawn_menu_offline);
 }
 
 fn spawn_menu_offline(

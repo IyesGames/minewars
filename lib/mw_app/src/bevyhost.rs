@@ -15,55 +15,38 @@ use std::collections::BTreeMap;
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BevyHostSS;
 
-pub struct BevyMwHostPlugin<G, EvIn, EvOut> {
-    pd: PhantomData<(G, EvIn, EvOut)>,
-}
-
-impl<G, EvIn, EvOut> BevyMwHostPlugin<G, EvIn, EvOut>
+pub fn plugin<G, EvIn, EvOut>(app: &mut App)
 where
     G: Game + Send + Sync + 'static,
     EvIn: Into<G::InputAction> + Clone + Event,
     EvOut: From<(PlayerId, G::OutEvent)> + Clone + Event,
 {
-    pub fn new() -> Self {
-        Self { pd: PhantomData }
-    }
-}
-
-impl<G, EvIn, EvOut> Plugin for BevyMwHostPlugin<G, EvIn, EvOut>
-where
-    G: Game + Send + Sync + 'static,
-    EvIn: Into<G::InputAction> + Clone + Event,
-    EvOut: From<(PlayerId, G::OutEvent)> + Clone + Event,
-{
-    fn build(&self, app: &mut App) {
-        app.configure_stage_set_no_rc(Update, BevyHostSS);
-        app.add_systems(
-            OnEnter(SessionKind::BevyHost),
-            init::<G>
-                .run_if(resource_exists::<BevyHost<G>>)
-        );
-        app.add_systems(Update, (
-            (
-                player_inputs::<G, EvIn>
-                    .in_set(SetStage::WantChanged(GameInEventSS)),
-                unscheds::<G>
-                    .run_if(rc_unscheds::<G>),
-            ),
-            (
-                cancel_scheds::<G>,
-                drain_out_events::<G, EvOut>
-                    .in_set(SetStage::Provide(GameOutEventSS)),
-                game_over::<G>
-                    .after(drain_out_events::<G, EvOut>),
-            ),
-        ).chain()
-            .in_set(InStateSet(AppState::InGame))
-            .in_set(InStateSet(SessionKind::BevyHost))
+    app.configure_stage_set_no_rc(Update, BevyHostSS);
+    app.add_systems(
+        OnEnter(SessionKind::BevyHost),
+        init::<G>
             .run_if(resource_exists::<BevyHost<G>>)
-            .in_set(SetStage::Provide(BevyHostSS))
-        );
-    }
+    );
+    app.add_systems(Update, (
+        (
+            player_inputs::<G, EvIn>
+                .in_set(SetStage::WantChanged(GameInEventSS)),
+            unscheds::<G>
+                .run_if(rc_unscheds::<G>),
+        ),
+        (
+            cancel_scheds::<G>,
+            drain_out_events::<G, EvOut>
+                .in_set(SetStage::Provide(GameOutEventSS)),
+            game_over::<G>
+                .after(drain_out_events::<G, EvOut>),
+        ),
+    ).chain()
+        .in_set(InStateSet(AppState::InGame))
+        .in_set(InStateSet(SessionKind::BevyHost))
+        .run_if(resource_exists::<BevyHost<G>>)
+        .in_set(SetStage::Provide(BevyHostSS))
+    );
 }
 
 #[derive(Resource)]

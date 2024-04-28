@@ -2,14 +2,10 @@ use mw_common::grid::Pos;
 
 use crate::prelude::*;
 
-pub struct ToolPlugin;
-
-impl Plugin for ToolPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_state::<Tool>();
-        app.add_event::<ToolEvent>();
-        app.configure_sets(Update, ToolEventHandlerSet.run_if(on_event::<ToolEvent>()));
-    }
+pub fn plugin(app: &mut App) {
+    app.init_state::<Tool>();
+    app.add_event::<ToolEvent>();
+    app.configure_sets(Update, ToolEventHandlerSet.run_if(on_event::<ToolEvent>()));
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]

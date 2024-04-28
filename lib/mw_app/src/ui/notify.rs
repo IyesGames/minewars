@@ -2,18 +2,14 @@ use mw_common::plid::PlayerId;
 
 use crate::{assets::{GameAssets, UiAssets}, locale::L10nKey, player::{PlayerDisplayName, PlayersIndex}, prelude::*};
 
-pub(super) struct NotifyPlugin;
-
-impl Plugin for NotifyPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<NotifyEvent>();
-        app.configure_stage_set(Update, NotifyEventSS, on_event::<NotifyEvent>());
-        app.add_systems(Update, (
-            notification_timeout,
-            spawn_notifications
-                .in_set(SetStage::WantChanged(NotifyEventSS)),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_event::<NotifyEvent>();
+    app.configure_stage_set(Update, NotifyEventSS, on_event::<NotifyEvent>());
+    app.add_systems(Update, (
+        notification_timeout,
+        spawn_notifications
+            .in_set(SetStage::WantChanged(NotifyEventSS)),
+    ));
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]

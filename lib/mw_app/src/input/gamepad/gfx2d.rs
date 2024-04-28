@@ -6,27 +6,23 @@ use crate::camera::{CameraControlSS, GameCamera, GridCursorSS};
 
 use super::*;
 
-pub struct Gfx2dGamepadInputPlugin;
-
-impl Plugin for Gfx2dGamepadInputPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            joystick_pancamera
-                .run_if(rc_joystick_pancamera),
-        )
-          .in_set(SetStage::Provide(CameraControlSS))
-          .in_set(Gfx2dModeSet::Any)
-          .in_set(GameInputSet::Process)
-        );
-        app.add_systems(Update, (
-            joystick_gridcursormove
-                .run_if(rc_joystick_gridcursormove),
-        )
-          .in_set(SetStage::Want(GridCursorSS))
-          .in_set(Gfx2dModeSet::Any)
-          .in_set(GameInputSet::Process)
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        joystick_pancamera
+            .run_if(rc_joystick_pancamera),
+    )
+      .in_set(SetStage::Provide(CameraControlSS))
+      .in_set(Gfx2dModeSet::Any)
+      .in_set(GameInputSet::Process)
+    );
+    app.add_systems(Update, (
+        joystick_gridcursormove
+            .run_if(rc_joystick_gridcursormove),
+    )
+      .in_set(SetStage::Want(GridCursorSS))
+      .in_set(Gfx2dModeSet::Any)
+      .in_set(GameInputSet::Process)
+    );
 }
 
 fn rc_joystick_pancamera(

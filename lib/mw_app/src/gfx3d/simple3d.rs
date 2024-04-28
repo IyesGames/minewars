@@ -11,24 +11,20 @@ use crate::map::*;
 use super::*;
 use super::asset_resolver::Ass3dResolver;
 
-pub struct Gfx3dSimple3dPlugin;
-
-impl Plugin for Gfx3dSimple3dPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            (setup_tilemap, setup_water, setup_cursor)
-                .in_set(MapTopologySet(Topology::Hex))
-                .in_set(TilemapSetupSet)
-                .in_set(Gfx3dModeSet::Simple3D)
-                .run_if(not(resource_exists::<TilemapInitted>)),
-            update_cursor
-                .in_set(MapTopologySet(Topology::Hex))
-                .in_set(SetStage::WantChanged(GridCursorSS)),
-            water_tide,
-        )
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        (setup_tilemap, setup_water, setup_cursor)
+            .in_set(MapTopologySet(Topology::Hex))
+            .in_set(TilemapSetupSet)
             .in_set(Gfx3dModeSet::Simple3D)
-        );
-    }
+            .run_if(not(resource_exists::<TilemapInitted>)),
+        update_cursor
+            .in_set(MapTopologySet(Topology::Hex))
+            .in_set(SetStage::WantChanged(GridCursorSS)),
+        water_tide,
+    )
+        .in_set(Gfx3dModeSet::Simple3D)
+    );
 }
 
 #[derive(Component)]

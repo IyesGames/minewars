@@ -9,32 +9,28 @@ use super::*;
 
 mod shake;
 
-pub struct Gfx3dCameraPlugin;
-
-impl Plugin for Gfx3dCameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins((
-            shake::Gfx3dCameraShakePlugin,
-        ));
-        app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dModeSet::Any));
-        app.add_systems(Update, (
-            cursor_to_ground_plane
-                .in_set(InStateSet(AppState::InGame))
-                .in_set(Gfx3dModeSet::Any)
-                .in_set(SetStage::Provide(WorldCursorSS)),
-            (
-                grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
-                grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
-            )
-                .in_set(Gfx3dModeSet::Any)
-                .in_set(SetStage::Provide(GridCursorSS))
-                .in_set(SetStage::WantChanged(WorldCursorSS)),
-            pan_orbit_camera
-                .in_set(Gfx3dModeSet::Any)
-                .in_set(SetStage::Provide(CameraControlSS))
-                .in_set(SetStage::Prepare(WorldCursorSS)),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins((
+        shake::plugin,
+    ));
+    app.add_systems(OnEnter(AppState::InGame), setup_game_camera_3d.in_set(Gfx3dModeSet::Any));
+    app.add_systems(Update, (
+        cursor_to_ground_plane
+            .in_set(InStateSet(AppState::InGame))
+            .in_set(Gfx3dModeSet::Any)
+            .in_set(SetStage::Provide(WorldCursorSS)),
+        (
+            grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
+            grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
+        )
+            .in_set(Gfx3dModeSet::Any)
+            .in_set(SetStage::Provide(GridCursorSS))
+            .in_set(SetStage::WantChanged(WorldCursorSS)),
+        pan_orbit_camera
+            .in_set(Gfx3dModeSet::Any)
+            .in_set(SetStage::Provide(CameraControlSS))
+            .in_set(SetStage::Prepare(WorldCursorSS)),
+    ));
 }
 
 #[derive(Component)]

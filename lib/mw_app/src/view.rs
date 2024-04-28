@@ -42,37 +42,33 @@ use crate::player::PlayersIndex;
 
 mod update;
 
-pub struct GameViewPlugin;
-
-impl Plugin for GameViewPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(update::ViewUpdatePlugin);
-        app.configure_sets(
-            Update,
-            ViewSwitchSet.run_if(resource_exists_and_changed::<PlidViewing>)
-        );
-        app.add_systems(Update, (
-            kbd_viewswitch,
-        ).before(ViewSwitchSet).in_set(NeedsMapSet));
-        app.add_systems(Update, (
-            switch_view_despawn,
-            switch_view_showhide,
-            (
-                switch_view_update_map_tilekind::<Hex>.in_set(MapUpdateSet::TileKind),
-                switch_view_update_map_owners::<Hex>.in_set(MapUpdateSet::TileOwner),
-                switch_view_update_map_digits::<Hex>.in_set(MapUpdateSet::TileDigit),
-                switch_view_update_map_gents::<Hex>.in_set(MapUpdateSet::TileGent),
-                switch_view_update_map_roads::<Hex>.in_set(MapUpdateSet::TileRoads),
-            ).in_set(MapTopologySet(Topology::Hex)),
-            (
-                switch_view_update_map_tilekind::<Sq>.in_set(MapUpdateSet::TileKind),
-                switch_view_update_map_owners::<Sq>.in_set(MapUpdateSet::TileOwner),
-                switch_view_update_map_digits::<Sq>.in_set(MapUpdateSet::TileDigit),
-                switch_view_update_map_gents::<Sq>.in_set(MapUpdateSet::TileGent),
-                switch_view_update_map_roads::<Sq>.in_set(MapUpdateSet::TileRoads),
-            ).in_set(MapTopologySet(Topology::Sq)),
-        ).in_set(ViewSwitchSet));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins(update::plugin);
+    app.configure_sets(
+        Update,
+        ViewSwitchSet.run_if(resource_exists_and_changed::<PlidViewing>)
+    );
+    app.add_systems(Update, (
+        kbd_viewswitch,
+    ).before(ViewSwitchSet).in_set(NeedsMapSet));
+    app.add_systems(Update, (
+        switch_view_despawn,
+        switch_view_showhide,
+        (
+            switch_view_update_map_tilekind::<Hex>.in_set(MapUpdateSet::TileKind),
+            switch_view_update_map_owners::<Hex>.in_set(MapUpdateSet::TileOwner),
+            switch_view_update_map_digits::<Hex>.in_set(MapUpdateSet::TileDigit),
+            switch_view_update_map_gents::<Hex>.in_set(MapUpdateSet::TileGent),
+            switch_view_update_map_roads::<Hex>.in_set(MapUpdateSet::TileRoads),
+        ).in_set(MapTopologySet(Topology::Hex)),
+        (
+            switch_view_update_map_tilekind::<Sq>.in_set(MapUpdateSet::TileKind),
+            switch_view_update_map_owners::<Sq>.in_set(MapUpdateSet::TileOwner),
+            switch_view_update_map_digits::<Sq>.in_set(MapUpdateSet::TileDigit),
+            switch_view_update_map_gents::<Sq>.in_set(MapUpdateSet::TileGent),
+            switch_view_update_map_roads::<Sq>.in_set(MapUpdateSet::TileRoads),
+        ).in_set(MapTopologySet(Topology::Sq)),
+    ).in_set(ViewSwitchSet));
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]

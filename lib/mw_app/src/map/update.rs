@@ -4,35 +4,31 @@ use crate::prelude::*;
 use crate::view::{PlidViewing, ViewSwitchSet};
 use super::*;
 
-pub struct MapUpdatePlugin;
-
-impl Plugin for MapUpdatePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        (
+            event_kind::<Hex>.in_set(MapUpdateSet::TileKind),
+            event_owner::<Hex>.in_set(MapUpdateSet::TileOwner),
+            event_digit::<Hex>.in_set(MapUpdateSet::TileDigit),
             (
-                event_kind::<Hex>.in_set(MapUpdateSet::TileKind),
-                event_owner::<Hex>.in_set(MapUpdateSet::TileOwner),
-                event_digit::<Hex>.in_set(MapUpdateSet::TileDigit),
-                (
-                    (event_gents::<Hex>, event_explosion::<Hex>).chain(),
-                ).in_set(MapUpdateSet::TileGent),
-            ).in_set(MapTopologySet(Topology::Hex)),
+                (event_gents::<Hex>, event_explosion::<Hex>).chain(),
+            ).in_set(MapUpdateSet::TileGent),
+        ).in_set(MapTopologySet(Topology::Hex)),
+        (
+            event_kind::<Sq>.in_set(MapUpdateSet::TileKind),
+            event_owner::<Sq>.in_set(MapUpdateSet::TileOwner),
+            event_digit::<Sq>.in_set(MapUpdateSet::TileDigit),
             (
-                event_kind::<Sq>.in_set(MapUpdateSet::TileKind),
-                event_owner::<Sq>.in_set(MapUpdateSet::TileOwner),
-                event_digit::<Sq>.in_set(MapUpdateSet::TileDigit),
-                (
-                    (event_gents::<Sq>, event_explosion::<Sq>).chain(),
-                ).in_set(MapUpdateSet::TileGent),
-            ).in_set(MapTopologySet(Topology::Sq)),
-        )
-            .in_set(NeedsMapSet)
-            .in_set(SetStage::WantChanged(GameOutEventSS))
-            .after(ViewSwitchSet));
-        app.add_systems(Update, (
-            alert_timer,
-        ).in_set(NeedsMapSet));
-    }
+                (event_gents::<Sq>, event_explosion::<Sq>).chain(),
+            ).in_set(MapUpdateSet::TileGent),
+        ).in_set(MapTopologySet(Topology::Sq)),
+    )
+        .in_set(NeedsMapSet)
+        .in_set(SetStage::WantChanged(GameOutEventSS))
+        .after(ViewSwitchSet));
+    app.add_systems(Update, (
+        alert_timer,
+    ).in_set(NeedsMapSet));
 }
 
 fn event_kind<C: Coord>(

@@ -3,26 +3,22 @@ use ron::ser::PrettyConfig;
 
 use crate::{haptic::HapticEventKind, input::{AnalogInput, InputAction}, prelude::*, tool::Tool};
 
-pub struct SettingsPlugin;
-
-impl Plugin for SettingsPlugin {
-    fn build(&self, app: &mut App) {
-        app.configure_stage_set(
-            Update,
-            SettingsSyncSS,
-            resource_exists_and_changed::<AllSettings>
-        );
-        app.configure_sets(Update,
-            SetStage::Want(SettingsSyncSS)
-                .run_if(resource_exists::<AllSettings>)
-        );
-        app.add_systems(Update,
-            load_or_init_settings
-                .run_if(not(resource_exists::<SettingsLoaded>)));
-        app.add_systems(Update, (
-            loadscreen_wait_settings.track_progress().run_if(in_state(AppState::AssetsLoading)),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.configure_stage_set(
+        Update,
+        SettingsSyncSS,
+        resource_exists_and_changed::<AllSettings>
+    );
+    app.configure_sets(Update,
+        SetStage::Want(SettingsSyncSS)
+            .run_if(resource_exists::<AllSettings>)
+    );
+    app.add_systems(Update,
+        load_or_init_settings
+            .run_if(not(resource_exists::<SettingsLoaded>)));
+    app.add_systems(Update, (
+        loadscreen_wait_settings.track_progress().run_if(in_state(AppState::AssetsLoading)),
+    ));
 }
 
 #[derive(Resource)]

@@ -1,16 +1,12 @@
 use crate::assets::UiAssets;
 use crate::prelude::*;
 
-pub struct UiConsolePlugin;
-
-impl Plugin for UiConsolePlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<ConsoleCommandHistory>();
-        app.add_systems(
-            Update,
-            (toggle_console, console_text_input),
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.init_resource::<ConsoleCommandHistory>();
+    app.add_systems(
+        Update,
+        (toggle_console, console_text_input),
+    );
 }
 
 #[derive(Component)]

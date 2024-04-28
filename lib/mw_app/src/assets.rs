@@ -6,26 +6,22 @@ use self::ass3d::Ass3dConfig;
 
 pub mod ass3d;
 
-pub struct AssetsPlugin;
-
-impl Plugin for AssetsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_loading_state(
-            LoadingState::new(AppState::AssetsLoading)
-                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("ui.assets.ron")
-                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("splash.assets.ron")
-                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("game.assets.ron")
-                .with_dynamic_assets_file::<StandardDynamicAssetCollection>("locale.assets.ron")
-                .load_collection::<UiAssets>()
-                .load_collection::<SplashAssets>()
-                .load_collection::<TitleLogo>()
-                .load_collection::<GameAssets>()
-                .load_collection::<LocaleAssets>()
-        );
-        app.add_plugins(
-            bevy_common_assets::toml::TomlAssetPlugin::<ass3d::Ass3dConfig>::new(&["ass3d.toml"])
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_loading_state(
+        LoadingState::new(AppState::AssetsLoading)
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("ui.assets.ron")
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("splash.assets.ron")
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("game.assets.ron")
+            .with_dynamic_assets_file::<StandardDynamicAssetCollection>("locale.assets.ron")
+            .load_collection::<UiAssets>()
+            .load_collection::<SplashAssets>()
+            .load_collection::<TitleLogo>()
+            .load_collection::<GameAssets>()
+            .load_collection::<LocaleAssets>()
+    );
+    app.add_plugins(
+        bevy_common_assets::toml::TomlAssetPlugin::<ass3d::Ass3dConfig>::new(&["ass3d.toml"])
+    );
 }
 
 #[derive(AssetCollection, Resource)]

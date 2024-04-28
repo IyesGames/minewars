@@ -19,28 +19,24 @@ mod gamepad_rumble;
 #[cfg(feature = "buttplug")]
 mod buttplug;
 
-pub struct HapticPlugin;
-
-impl Plugin for HapticPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<HapticEvent>();
-        app.configure_stage_set(Update, HapticEventSS, on_event::<HapticEvent>());
-        app.add_plugins((
-            gamepad_rumble::HapticGamepadPlugin,
-            #[cfg(feature = "buttplug")]
-            buttplug::HapticButtplugPlugin,
-        ));
-        app.add_systems(Update, (
-            emit_haptic_events::<Hex>
-                .in_set(MapTopologySet(Topology::Hex)),
-            emit_haptic_events::<Sq>
-                .in_set(MapTopologySet(Topology::Sq)),
-        )
-            .in_set(SetStage::WantChanged(GameOutEventSS))
-            .in_set(SetStage::Provide(HapticEventSS))
-            .after(MapUpdateSet::TileOwner)
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_event::<HapticEvent>();
+    app.configure_stage_set(Update, HapticEventSS, on_event::<HapticEvent>());
+    app.add_plugins((
+        gamepad_rumble::plugin,
+        #[cfg(feature = "buttplug")]
+        buttplug::plugin,
+    ));
+    app.add_systems(Update, (
+        emit_haptic_events::<Hex>
+            .in_set(MapTopologySet(Topology::Hex)),
+        emit_haptic_events::<Sq>
+            .in_set(MapTopologySet(Topology::Sq)),
+    )
+        .in_set(SetStage::WantChanged(GameOutEventSS))
+        .in_set(SetStage::Provide(HapticEventSS))
+        .after(MapUpdateSet::TileOwner)
+    );
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]

@@ -7,13 +7,9 @@ use crate::assets::ass3d::*;
 
 use super::map::{Ass3dTileKind, TileAss3d};
 
-pub struct Gfx3dAssetResolverPlugin;
-
-impl Plugin for Gfx3dAssetResolverPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<Ass3dResolver>();
-        app.add_systems(OnExit(AppState::AssetsLoading), init_ass3d_resolver);
-    }
+pub fn plugin(app: &mut App) {
+    app.init_resource::<Ass3dResolver>();
+    app.add_systems(OnExit(AppState::AssetsLoading), init_ass3d_resolver);
 }
 
 #[derive(Debug)]

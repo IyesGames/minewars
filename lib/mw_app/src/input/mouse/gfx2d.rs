@@ -5,19 +5,15 @@ use crate::camera::{GameCamera, CameraControlSS};
 
 use super::*;
 
-pub struct Gfx2dMouseInputPlugin;
-
-impl Plugin for Gfx2dMouseInputPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            mousemotion_pancamera
-                .run_if(rc_mousemotion_pancamera),
-        )
-          .in_set(SetStage::Provide(CameraControlSS))
-          .in_set(Gfx2dModeSet::Any)
-          .in_set(GameInputSet::Process),
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        mousemotion_pancamera
+            .run_if(rc_mousemotion_pancamera),
+    )
+      .in_set(SetStage::Provide(CameraControlSS))
+      .in_set(Gfx2dModeSet::Any)
+      .in_set(GameInputSet::Process),
+    );
 }
 
 fn rc_mousemotion_pancamera(

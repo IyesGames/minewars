@@ -14,23 +14,19 @@ mod lan;
 mod mainmenu;
 mod offline;
 
-pub(super) struct MenuPlugin;
-
-impl Plugin for MenuPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_clicommand_noargs("menu_back", cli_menu_back);
-        app.init_resource::<MenuStack>();
-        app.add_plugins((
-            mainmenu::MainMenuPlugin,
-            offline::OfflineMenuPlugin,
-            lan::LanMenuPlugin,
-        ));
-        app.add_systems(Update, (
-            menu_butt_interact_visual
-                .in_set(SetStage::Want(SettingsSyncSS)),
-            butt_back_showhide.run_if(resource_changed::<MenuStack>)
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.register_clicommand_noargs("menu_back", cli_menu_back);
+    app.init_resource::<MenuStack>();
+    app.add_plugins((
+        mainmenu::plugin,
+        offline::plugin,
+        lan::plugin,
+    ));
+    app.add_systems(Update, (
+        menu_butt_interact_visual
+            .in_set(SetStage::Want(SettingsSyncSS)),
+        butt_back_showhide.run_if(resource_changed::<MenuStack>)
+    ));
 }
 
 /// Marker for the area where top bar items / buttons can be placed when in a menu

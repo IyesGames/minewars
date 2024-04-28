@@ -46,55 +46,51 @@ pub mod dev;
 
 use crate::prelude::*;
 
-pub struct MinewarsAppPlugin;
-
-impl Plugin for MinewarsAppPlugin {
-    fn build(&self, app: &mut App) {
-        // external plugins
-        app.add_plugins((
-            #[cfg(feature = "gfx2d_tilemap")]
-            bevy_ecs_tilemap::TilemapPlugin,
-            bevy_tweening::TweeningPlugin,
-            bevy_fluent::FluentPlugin,
-            ProgressPlugin::new(AppState::AssetsLoading).continue_to(AppState::SplashIyes),
-            iyes_ui::UiExtrasPlugin,
-        ));
-        app.add_plugins((
-            (
-                crate::apporg::AppOrganizationPlugin,
-            ),
-            (
-                crate::assets::AssetsPlugin,
-                crate::settings::SettingsPlugin,
-                crate::locale::LocalePlugin,
-                crate::net::NetClientPlugin,
-                crate::camera::MwCameraPlugin,
-            ),
-            (
-                crate::tool::ToolPlugin,
-                crate::input::InputPlugin,
-                crate::haptic::HapticPlugin,
-            ),
-            (
-                crate::map::MapPlugin,
-                crate::view::GameViewPlugin,
-                crate::minimap::MinimapPlugin,
-                #[cfg(feature = "gfx2d")]
-                crate::gfx2d::Gfx2dPlugin,
-                #[cfg(feature = "gfx3d")]
-                crate::gfx3d::Gfx3dPlugin,
-                crate::ui::UiPlugin,
-            ),
-            crate::minesweeper::MinesweeperPlugin,
-            crate::screens::loading::LoadscreenPlugin {
-                state: AppState::AssetsLoading,
-            },
-            crate::screens::splash::SplashesPlugin,
-            crate::cli::CliPlugin,
-        ));
-        #[cfg(feature = "dev")]
-        app.add_plugins(crate::dev::DevPlugin);
-    }
+pub fn plugin(app: &mut App) {
+    // external plugins
+    app.add_plugins((
+        #[cfg(feature = "gfx2d_tilemap")]
+        bevy_ecs_tilemap::TilemapPlugin,
+        bevy_tweening::TweeningPlugin,
+        bevy_fluent::FluentPlugin,
+        ProgressPlugin::new(AppState::AssetsLoading).continue_to(AppState::SplashIyes),
+        iyes_ui::UiExtrasPlugin,
+    ));
+    app.add_plugins((
+        (
+            crate::apporg::plugin,
+        ),
+        (
+            crate::assets::plugin,
+            crate::settings::plugin,
+            crate::locale::plugin,
+            crate::net::plugin,
+            crate::camera::plugin,
+        ),
+        (
+            crate::tool::plugin,
+            crate::input::plugin,
+            crate::haptic::plugin,
+        ),
+        (
+            crate::map::plugin,
+            crate::view::plugin,
+            crate::minimap::plugin,
+            #[cfg(feature = "gfx2d")]
+            crate::gfx2d::plugin,
+            #[cfg(feature = "gfx3d")]
+            crate::gfx3d::plugin,
+            crate::ui::plugin,
+        ),
+        crate::minesweeper::plugin,
+        crate::screens::loading::LoadscreenPlugin {
+            state: AppState::AssetsLoading,
+        },
+        crate::screens::splash::plugin,
+        crate::cli::plugin,
+    ));
+    #[cfg(feature = "dev")]
+    app.add_plugins(crate::dev::plugin);
 }
 
 pub fn setup_bevy_app() -> App {

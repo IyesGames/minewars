@@ -12,18 +12,14 @@ use crate::view::VisibleInView;
 
 mod update;
 
-pub struct MapPlugin;
-
-impl Plugin for MapPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(update::MapUpdatePlugin);
-        app.add_event::<RecomputeVisEvent>();
-        app.init_resource::<GridCursorTileEntity>();
-        app.init_resource::<TileUpdateQueue>();
-        for topo in enum_iterator::all::<Topology>() {
-            app.configure_sets(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
-            app.configure_sets(Update, NeedsMapSet.run_if(resource_exists::<MapDescriptor>));
-        }
+pub fn plugin(app: &mut App) {
+    app.add_plugins(update::plugin);
+    app.add_event::<RecomputeVisEvent>();
+    app.init_resource::<GridCursorTileEntity>();
+    app.init_resource::<TileUpdateQueue>();
+    for topo in enum_iterator::all::<Topology>() {
+        app.configure_sets(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
+        app.configure_sets(Update, NeedsMapSet.run_if(resource_exists::<MapDescriptor>));
     }
 }
 

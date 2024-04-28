@@ -12,45 +12,41 @@ use crate::map::*;
 
 use super::*;
 
-pub struct Gfx2dSpritesPlugin;
-
-impl Plugin for Gfx2dSpritesPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            (
-                setup_tilemap::<Hex>
-                    .in_set(MapTopologySet(Topology::Hex)),
-                setup_tilemap::<Sq>
-                    .in_set(MapTopologySet(Topology::Sq)),
-            )
-                .in_set(TilemapSetupSet)
-                .run_if(not(resource_exists::<TilemapInitted>)),
-            (
-                tile_kind::<Hex>
-                    .in_set(MapTopologySet(Topology::Hex)),
-                tile_kind::<Sq>
-                    .in_set(MapTopologySet(Topology::Sq)),
-                tile_owner.after(MapUpdateSet::TileOwner),
-                tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
-                tile_gent_sprite_mgr.after(MapUpdateSet::TileGent),
-                explosion_sprite_mgr,
-                sprites_reghighlight,
-            )
-                .run_if(resource_exists::<TilemapInitted>),
-        ).in_set(Gfx2dModeSet::Sprites));
-        app.add_systems(OnEnter(AppState::InGame), (
-            setup_cursor,
-        ).in_set(Gfx2dModeSet::Any));
-        app.add_systems(Update, (
-            (
-                cursor_sprite::<Hex>
-                    .in_set(MapTopologySet(Topology::Hex)),
-                cursor_sprite::<Sq>
-                    .in_set(MapTopologySet(Topology::Sq)),
-            )
-                .in_set(SetStage::WantChanged(GridCursorSS)),
-        ).in_set(Gfx2dModeSet::Any));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        (
+            setup_tilemap::<Hex>
+                .in_set(MapTopologySet(Topology::Hex)),
+            setup_tilemap::<Sq>
+                .in_set(MapTopologySet(Topology::Sq)),
+        )
+            .in_set(TilemapSetupSet)
+            .run_if(not(resource_exists::<TilemapInitted>)),
+        (
+            tile_kind::<Hex>
+                .in_set(MapTopologySet(Topology::Hex)),
+            tile_kind::<Sq>
+                .in_set(MapTopologySet(Topology::Sq)),
+            tile_owner.after(MapUpdateSet::TileOwner),
+            tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
+            tile_gent_sprite_mgr.after(MapUpdateSet::TileGent),
+            explosion_sprite_mgr,
+            sprites_reghighlight,
+        )
+            .run_if(resource_exists::<TilemapInitted>),
+    ).in_set(Gfx2dModeSet::Sprites));
+    app.add_systems(OnEnter(AppState::InGame), (
+        setup_cursor,
+    ).in_set(Gfx2dModeSet::Any));
+    app.add_systems(Update, (
+        (
+            cursor_sprite::<Hex>
+                .in_set(MapTopologySet(Topology::Hex)),
+            cursor_sprite::<Sq>
+                .in_set(MapTopologySet(Topology::Sq)),
+        )
+            .in_set(SetStage::WantChanged(GridCursorSS)),
+    ).in_set(Gfx2dModeSet::Any));
 }
 
 #[derive(Bundle)]

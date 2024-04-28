@@ -9,36 +9,32 @@ use super::Gfx2dModeSet;
 
 mod shake;
 
-pub struct Gfx2dCameraPlugin;
-
-impl Plugin for Gfx2dCameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(iyes_bevy_extras::d2::WorldCursorPlugin);
-        app.add_plugins((
-            shake::Gfx2dCameraShakePlugin,
-        ));
-        app.add_systems(
-            OnEnter(AppState::InGame),
-            setup_game_camera_2d.in_set(Gfx2dModeSet::Any)
-        );
-        app.add_systems(Update, (
-            camera_control_zoom_mousewheel,
-            inputaction_zoom
-                .in_set(GameInputSet::ProcessEvents),
-        )
-         .in_set(Gfx2dModeSet::Any)
-         .in_set(SetStage::Provide(CameraControlSS))
-        );
-        app.add_systems(Update, (
-            grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
-            grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
-        )
-         .in_set(Gfx2dModeSet::Any)
-         .in_set(SetStage::Provide(GridCursorSS))
-         .in_set(SetStage::WantChanged(WorldCursorSS))
-        );
-        app.add_systems(Update, component_animator_system::<OrthographicProjection>);
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins(iyes_bevy_extras::d2::WorldCursorPlugin);
+    app.add_plugins((
+        shake::plugin,
+    ));
+    app.add_systems(
+        OnEnter(AppState::InGame),
+        setup_game_camera_2d.in_set(Gfx2dModeSet::Any)
+    );
+    app.add_systems(Update, (
+        camera_control_zoom_mousewheel,
+        inputaction_zoom
+            .in_set(GameInputSet::ProcessEvents),
+    )
+     .in_set(Gfx2dModeSet::Any)
+     .in_set(SetStage::Provide(CameraControlSS))
+    );
+    app.add_systems(Update, (
+        grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
+        grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
+    )
+     .in_set(Gfx2dModeSet::Any)
+     .in_set(SetStage::Provide(GridCursorSS))
+     .in_set(SetStage::WantChanged(WorldCursorSS))
+    );
+    app.add_systems(Update, component_animator_system::<OrthographicProjection>);
 }
 
 fn setup_game_camera_2d(

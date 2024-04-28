@@ -6,18 +6,14 @@ use super::*;
 #[cfg(feature = "gfx2d")]
 mod gfx2d;
 
-pub struct KeyboardInputPlugin;
-
-impl Plugin for KeyboardInputPlugin {
-    fn build(&self, app: &mut App) {
-        #[cfg(feature = "gfx2d")]
-        app.add_plugins(gfx2d::Gfx2dKeyboardInputPlugin);
-        app.add_systems(Update, (
-            collect_actions_key
-                .in_set(GameInputSet::Collect)
-                .run_if(on_event::<KeyboardInput>()),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    #[cfg(feature = "gfx2d")]
+    app.add_plugins(gfx2d::plugin);
+    app.add_systems(Update, (
+        collect_actions_key
+            .in_set(GameInputSet::Collect)
+            .run_if(on_event::<KeyboardInput>()),
+    ));
 }
 
 fn collect_actions_key(

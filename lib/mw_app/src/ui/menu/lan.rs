@@ -5,13 +5,9 @@ use crate::ui::widget::textfield::{spawn_textfield, TextInputHandler};
 
 use super::*;
 
-pub struct LanMenuPlugin;
-
-impl Plugin for LanMenuPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_clicommand_noargs("menu_lan_join", spawn_menu_lan_join);
-        app.register_clicommand_noargs("menu_lan_setup", spawn_menu_lan_setup);
-    }
+pub fn plugin(app: &mut App) {
+    app.register_clicommand_noargs("menu_lan_join", spawn_menu_lan_join);
+    app.register_clicommand_noargs("menu_lan_setup", spawn_menu_lan_setup);
 }
 
 fn spawn_menu_lan_join(

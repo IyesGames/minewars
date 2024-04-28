@@ -4,19 +4,15 @@ use mw_common::{game::{MapDescriptor, TileKind}, grid::Topology};
 use crate::{prelude::*, settings::SettingsSyncSS};
 use crate::map::{MwTilePos, TileOwner, NeedsMapSet, MapUpdateSet, TileAlert};
 
-pub struct MinimapPlugin;
-
-impl Plugin for MinimapPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_minimap);
-        app.add_systems(Update, (
-            update_minimap
-                .in_set(NeedsMapSet)
-                .in_set(SetStage::Want(SettingsSyncSS))
-                .after(MapUpdateSet::TileOwner) // PERF ?
-                .run_if(resource_exists::<MinimapImage>),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Startup, setup_minimap);
+    app.add_systems(Update, (
+        update_minimap
+            .in_set(NeedsMapSet)
+            .in_set(SetStage::Want(SettingsSyncSS))
+            .after(MapUpdateSet::TileOwner) // PERF ?
+            .run_if(resource_exists::<MinimapImage>),
+    ));
 }
 
 #[derive(Resource)]

@@ -6,18 +6,14 @@ use crate::assets::UiAssets;
 
 use super::*;
 
-pub struct MainMenuPlugin;
-
-impl Plugin for MainMenuPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_clicommand_noargs("menu_mainmenu", spawn_mainmenu);
-        app.add_systems(OnEnter(AppState::MainMenu), setup_mainmenu_layout);
-        app.add_systems(Update, (
-            spawn_mainmenu
-                .run_if(in_state(AppState::MainMenu))
-                .run_if(rc_spawn_mainmenu),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.register_clicommand_noargs("menu_mainmenu", spawn_mainmenu);
+    app.add_systems(OnEnter(AppState::MainMenu), setup_mainmenu_layout);
+    app.add_systems(Update, (
+        spawn_mainmenu
+            .run_if(in_state(AppState::MainMenu))
+            .run_if(rc_spawn_mainmenu),
+    ));
 }
 
 /// Create the toplevel screen layout for the MainMenu app state

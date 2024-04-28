@@ -2,34 +2,30 @@ use crate::prelude::*;
 
 use mw_common::game::event::GameEvent;
 
-pub struct AppOrganizationPlugin;
-
-impl Plugin for AppOrganizationPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_state::<GameMode>();
-        app.init_state::<AppState>();
-        app.init_state::<SessionKind>();
-        for state in enum_iterator::all::<AppState>() {
-            app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
-            app.add_systems(
-                OnExit(state),
-                despawn_all_recursive::<With<StateDespawnMarker>>,
-            );
-        }
-        for state in enum_iterator::all::<SessionKind>() {
-            app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
-        }
-        for state in enum_iterator::all::<GameMode>() {
-            app.configure_sets(Update,
-                InStateSet(state)
-                    .run_if(in_state(state))
-                    .in_set(InStateSet(AppState::InGame))
-            );
-        }
-        app.add_event::<GameEvent>();
-        app.configure_stage_set(Update, GameOutEventSS, on_event::<GameEvent>());
-        app.configure_stage_set_no_rc(Update, GameInEventSS);
+pub fn plugin(app: &mut App) {
+    app.init_state::<GameMode>();
+    app.init_state::<AppState>();
+    app.init_state::<SessionKind>();
+    for state in enum_iterator::all::<AppState>() {
+        app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
+        app.add_systems(
+            OnExit(state),
+            despawn_all_recursive::<With<StateDespawnMarker>>,
+        );
     }
+    for state in enum_iterator::all::<SessionKind>() {
+        app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
+    }
+    for state in enum_iterator::all::<GameMode>() {
+        app.configure_sets(Update,
+            InStateSet(state)
+                .run_if(in_state(state))
+                .in_set(InStateSet(AppState::InGame))
+        );
+    }
+    app.add_event::<GameEvent>();
+    app.configure_stage_set(Update, GameOutEventSS, on_event::<GameEvent>());
+    app.configure_stage_set_no_rc(Update, GameInEventSS);
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Default, SystemSet)]

@@ -8,26 +8,22 @@ use bevy::{
 
 use crate::assets::SplashAssets;
 
-pub struct SplashesPlugin;
+pub fn plugin(app: &mut App) {
+    app.add_plugins(SplashscreenPlugin {
+        state: AppState::SplashIyes,
+        next: AppState::SplashBevy,
+        skip_to: AppState::MainMenu,
+    });
+    app.add_systems(OnEnter(AppState::SplashIyes), splash_init_iyes);
 
-impl Plugin for SplashesPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(SplashscreenPlugin {
-            state: AppState::SplashIyes,
-            next: AppState::SplashBevy,
-            skip_to: AppState::MainMenu,
-        });
-        app.add_systems(OnEnter(AppState::SplashIyes), splash_init_iyes);
+    app.add_plugins(SplashscreenPlugin {
+        state: AppState::SplashBevy,
+        next: AppState::MainMenu,
+        skip_to: AppState::MainMenu,
+    });
+    app.add_systems(OnEnter(AppState::SplashBevy), splash_init_bevy);
 
-        app.add_plugins(SplashscreenPlugin {
-            state: AppState::SplashBevy,
-            next: AppState::MainMenu,
-            skip_to: AppState::MainMenu,
-        });
-        app.add_systems(OnEnter(AppState::SplashBevy), splash_init_bevy);
-
-        app.add_systems(OnEnter(AppState::MainMenu), remove_resource::<SplashAssets>);
-    }
+    app.add_systems(OnEnter(AppState::MainMenu), remove_resource::<SplashAssets>);
 }
 
 struct SplashscreenPlugin<S: States> {

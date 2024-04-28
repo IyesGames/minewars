@@ -8,23 +8,19 @@ mod perf;
 mod tooltip;
 mod widget;
 
-pub struct UiPlugin;
-
-impl Plugin for UiPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins((
-            self::console::UiConsolePlugin,
-            self::hud::HudPlugin,
-            self::menu::MenuPlugin,
-            self::notify::NotifyPlugin,
-            self::perf::PerfUiPlugin,
-            self::tooltip::TooltipPlugin,
-            self::widget::WidgetsPlugin,
-        ));
-        app.add_systems(Update, (
-            ui_root_resize.run_if(rc_ui_root_needs_resize),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins((
+        self::console::plugin,
+        self::hud::plugin,
+        self::menu::plugin,
+        self::notify::plugin,
+        self::perf::plugin,
+        self::tooltip::plugin,
+        self::widget::plugin,
+    ));
+    app.add_systems(Update, (
+        ui_root_resize.run_if(rc_ui_root_needs_resize),
+    ));
 }
 
 /// Marker for the camera that displays our UI

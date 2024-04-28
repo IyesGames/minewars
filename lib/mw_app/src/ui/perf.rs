@@ -4,24 +4,20 @@ use mw_common::{game::TileKind, grid::Pos, plid::PlayerId};
 
 use crate::{camera::GridCursor, gfx3d::map::{Ass3dTileKind, Ass3dTileVariant, TileAss3d}, map::{GridCursorTileEntity, TileOwner}, net::NetInfo, prelude::*};
 
-pub struct PerfUiPlugin;
-
-impl Plugin for PerfUiPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(iyes_perf_ui::PerfUiPlugin);
-        app.add_perf_ui_entry_type::<PerfUiNetRtt>();
-        app.add_perf_ui_entry_type::<PerfUiGridCursor>();
-        app.add_perf_ui_entry_type::<PerfUiTileKind>();
-        app.add_perf_ui_entry_type::<PerfUiTileOwner>();
-        app.add_perf_ui_entry_type::<PerfUiAss3dTileKind>();
-        app.add_perf_ui_entry_type::<PerfUiAss3dTileVariant>();
-        app.add_systems(Update, (
-            toggle_perfui
-                .before(iyes_perf_ui::PerfUiSet::Setup),
-        ));
-        #[cfg(feature = "dev")]
-        app.add_systems(Startup, setup_perfui);
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins(iyes_perf_ui::PerfUiPlugin);
+    app.add_perf_ui_entry_type::<PerfUiNetRtt>();
+    app.add_perf_ui_entry_type::<PerfUiGridCursor>();
+    app.add_perf_ui_entry_type::<PerfUiTileKind>();
+    app.add_perf_ui_entry_type::<PerfUiTileOwner>();
+    app.add_perf_ui_entry_type::<PerfUiAss3dTileKind>();
+    app.add_perf_ui_entry_type::<PerfUiAss3dTileVariant>();
+    app.add_systems(Update, (
+        toggle_perfui
+            .before(iyes_perf_ui::PerfUiSet::Setup),
+    ));
+    #[cfg(feature = "dev")]
+    app.add_systems(Startup, setup_perfui);
 }
 
 #[derive(Bundle, Default)]

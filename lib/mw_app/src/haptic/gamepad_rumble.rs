@@ -4,15 +4,11 @@ use crate::prelude::*;
 
 use super::*;
 
-pub struct HapticGamepadPlugin;
-
-impl Plugin for HapticGamepadPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            haptic_gamepad_rumble
-                .in_set(SetStage::WantChanged(HapticEventSS)),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Update, (
+        haptic_gamepad_rumble
+            .in_set(SetStage::WantChanged(HapticEventSS)),
+    ));
 }
 
 fn haptic_gamepad_rumble(

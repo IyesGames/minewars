@@ -7,25 +7,21 @@ pub mod camera;
 pub mod map;
 pub mod simple3d;
 
-pub struct Gfx3dPlugin;
-
-impl Plugin for Gfx3dPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins((
-            asset_resolver::Gfx3dAssetResolverPlugin,
-            camera::Gfx3dCameraPlugin,
-            map::Gfx3dMapPlugin,
-            simple3d::Gfx3dSimple3dPlugin,
-        ));
-        app.configure_sets(Update, (
-            Gfx3dModeSet::Any.in_set(NeedsMapSet).run_if(rc_gfx3d_any),
-            Gfx3dModeSet::Simple3D.in_set(NeedsMapSet).run_if(rc_gfx3d_simple3d),
-        ));
-        app.configure_sets(OnEnter(AppState::InGame), (
-            Gfx3dModeSet::Any.run_if(rc_gfx3d_any),
-            Gfx3dModeSet::Simple3D.run_if(rc_gfx3d_simple3d),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins((
+        asset_resolver::plugin,
+        camera::plugin,
+        map::plugin,
+        simple3d::plugin,
+    ));
+    app.configure_sets(Update, (
+        Gfx3dModeSet::Any.in_set(NeedsMapSet).run_if(rc_gfx3d_any),
+        Gfx3dModeSet::Simple3D.in_set(NeedsMapSet).run_if(rc_gfx3d_simple3d),
+    ));
+    app.configure_sets(OnEnter(AppState::InGame), (
+        Gfx3dModeSet::Any.run_if(rc_gfx3d_any),
+        Gfx3dModeSet::Simple3D.run_if(rc_gfx3d_simple3d),
+    ));
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]

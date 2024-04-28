@@ -13,35 +13,31 @@ use crate::view::ViewMapData;
 
 use super::*;
 
-pub struct Gfx2dTilemapPlugin;
-
-impl Plugin for Gfx2dTilemapPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, prealloc_tilemap);
-        app.add_systems(OnExit(AppState::AssetsLoading), preprocess_tilemap_assets);
-        app.add_systems(Update, (
-            (
-                setup_tilemap::<Hex>
-                    .in_set(MapTopologySet(Topology::Hex)),
-                setup_tilemap::<Sq>
-                    .in_set(MapTopologySet(Topology::Sq)),
-            )
-                .in_set(TilemapSetupSet)
-                .run_if(not(resource_exists::<TilemapInitted>)),
-            (
-                tile_kind::<Hex>
-                    .in_set(MapTopologySet(Topology::Hex)),
-                tile_kind::<Sq>
-                    .in_set(MapTopologySet(Topology::Sq)),
-                tile_owner.after(MapUpdateSet::TileOwner),
-                digit_tilemap_mgr.after(MapUpdateSet::TileDigit),
-                gent_tilemap_mgr.after(MapUpdateSet::TileGent),
-                overlay_tilemap_mgr,
-                tilemap_reghighlight.run_if(resource_changed::<GridCursorTileEntity>),
-            )
-                .run_if(resource_exists::<TilemapInitted>),
-        ).in_set(Gfx2dModeSet::Tilemap));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_systems(Startup, prealloc_tilemap);
+    app.add_systems(OnExit(AppState::AssetsLoading), preprocess_tilemap_assets);
+    app.add_systems(Update, (
+        (
+            setup_tilemap::<Hex>
+                .in_set(MapTopologySet(Topology::Hex)),
+            setup_tilemap::<Sq>
+                .in_set(MapTopologySet(Topology::Sq)),
+        )
+            .in_set(TilemapSetupSet)
+            .run_if(not(resource_exists::<TilemapInitted>)),
+        (
+            tile_kind::<Hex>
+                .in_set(MapTopologySet(Topology::Hex)),
+            tile_kind::<Sq>
+                .in_set(MapTopologySet(Topology::Sq)),
+            tile_owner.after(MapUpdateSet::TileOwner),
+            digit_tilemap_mgr.after(MapUpdateSet::TileDigit),
+            gent_tilemap_mgr.after(MapUpdateSet::TileGent),
+            overlay_tilemap_mgr,
+            tilemap_reghighlight.run_if(resource_changed::<GridCursorTileEntity>),
+        )
+            .run_if(resource_exists::<TilemapInitted>),
+    ).in_set(Gfx2dModeSet::Tilemap));
 }
 
 #[derive(Resource, Clone)]

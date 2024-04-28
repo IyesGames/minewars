@@ -1,22 +1,18 @@
 use crate::{assets::UiAssets, prelude::*, settings::SettingsSyncSS, ui::console::UiConsole};
 
-pub struct TextFieldPlugin;
-
-impl Plugin for TextFieldPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<TextInputFocus>();
-        app.add_systems(Update, (
-            textfield_focus_on_press
-                .in_set(TextInputFocusSet),
-            textfield_input
-                .in_set(TextInputFocusSet)
-                .run_if(rc_text_input)
-                .after(textfield_focus_on_press),
-            textfield_focus_visual
-                .in_set(SetStage::Want(SettingsSyncSS))
-                .after(TextInputFocusSet),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.init_resource::<TextInputFocus>();
+    app.add_systems(Update, (
+        textfield_focus_on_press
+            .in_set(TextInputFocusSet),
+        textfield_input
+            .in_set(TextInputFocusSet)
+            .run_if(rc_text_input)
+            .after(textfield_focus_on_press),
+        textfield_focus_visual
+            .in_set(SetStage::Want(SettingsSyncSS))
+            .after(TextInputFocusSet),
+    ));
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]

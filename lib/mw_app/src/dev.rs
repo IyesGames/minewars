@@ -4,25 +4,21 @@ use mw_common::game::event::GameEvent;
 use crate::prelude::*;
 use crate::haptic::{HapticEvent, HapticEventSS};
 
-pub struct DevPlugin;
-
-impl Plugin for DevPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_clicommand_noargs("devmode", cli_devmode);
-        app.register_clicommand_args("AppState", cli_appstate);
-        app.add_systems(
-            Last,
-            debug_progress
-                .run_if(resource_exists::<ProgressCounter>)
-                .after(iyes_progress::TrackedProgressSet),
-        );
-        app.add_systems(Update, (
-            debug_gameevents
-                .in_set(SetStage::WantChanged(GameOutEventSS)),
-            debug_hapticevents
-                .in_set(SetStage::WantChanged(HapticEventSS)),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.register_clicommand_noargs("devmode", cli_devmode);
+    app.register_clicommand_args("AppState", cli_appstate);
+    app.add_systems(
+        Last,
+        debug_progress
+            .run_if(resource_exists::<ProgressCounter>)
+            .after(iyes_progress::TrackedProgressSet),
+    );
+    app.add_systems(Update, (
+        debug_gameevents
+            .in_set(SetStage::WantChanged(GameOutEventSS)),
+        debug_hapticevents
+            .in_set(SetStage::WantChanged(HapticEventSS)),
+    ));
 }
 
 fn debug_progress(counter: Res<ProgressCounter>) {

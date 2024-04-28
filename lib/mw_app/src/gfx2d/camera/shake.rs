@@ -7,24 +7,20 @@ use crate::haptic::*;
 
 use super::GameCamera;
 
-pub struct Gfx2dCameraShakePlugin;
-
-impl Plugin for Gfx2dCameraShakePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(AppState::InGame),
-            setup_haptic_shake_camera_2d
-                .in_set(Gfx2dModeSet::Any)
-                .after(super::setup_game_camera_2d)
-        );
-        app.add_systems(Update, (
-            haptic_camera_2d_manage_waves
-                .in_set(SetStage::Want(HapticEventSS)),
-            haptic_camera_2d_apply,
-        )
+pub fn plugin(app: &mut App) {
+    app.add_systems(
+        OnEnter(AppState::InGame),
+        setup_haptic_shake_camera_2d
             .in_set(Gfx2dModeSet::Any)
-        );
-    }
+            .after(super::setup_game_camera_2d)
+    );
+    app.add_systems(Update, (
+        haptic_camera_2d_manage_waves
+            .in_set(SetStage::Want(HapticEventSS)),
+        haptic_camera_2d_apply,
+    )
+        .in_set(Gfx2dModeSet::Any)
+    );
 }
 
 struct ShakerWave {

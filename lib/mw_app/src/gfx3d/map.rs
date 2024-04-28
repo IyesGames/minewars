@@ -5,11 +5,7 @@ use crate::map::{MapTileIndex, MwTilePos, TileGent};
 
 use super::*;
 
-pub struct Gfx3dMapPlugin;
-
-impl Plugin for Gfx3dMapPlugin {
-    fn build(&self, app: &mut App) {
-    }
+pub fn plugin(app: &mut App) {
 }
 
 #[derive(Component, Debug)]

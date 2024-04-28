@@ -9,23 +9,19 @@ use mw_common::grid::Pos;
 
 use crate::prelude::*;
 
-pub struct MwCameraPlugin;
-
-impl Plugin for MwCameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<CameraJumpTo>();
-        app.init_resource::<GridCursor>();
-        app.configure_stage_set(
-            Update,
-            CameraControlSS,
-            rc_camera_changed,
-        );
-        app.configure_stage_set(
-            Update,
-            GridCursorSS,
-            resource_changed::<GridCursor>,
-        );
-    }
+pub fn plugin(app: &mut App) {
+    app.add_event::<CameraJumpTo>();
+    app.init_resource::<GridCursor>();
+    app.configure_stage_set(
+        Update,
+        CameraControlSS,
+        rc_camera_changed,
+    );
+    app.configure_stage_set(
+        Update,
+        GridCursorSS,
+        resource_changed::<GridCursor>,
+    );
 }
 
 /// Marker for the main game camera (that renders the gameplay map view)

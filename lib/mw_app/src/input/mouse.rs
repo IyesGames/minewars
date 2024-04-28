@@ -6,18 +6,14 @@ use super::*;
 #[cfg(feature = "gfx2d")]
 mod gfx2d;
 
-pub struct MouseInputPlugin;
-
-impl Plugin for MouseInputPlugin {
-    fn build(&self, app: &mut App) {
-        #[cfg(feature = "gfx2d")]
-        app.add_plugins(gfx2d::Gfx2dMouseInputPlugin);
-        app.add_systems(Update, (
-            collect_actions_mousebtn
-                .in_set(GameInputSet::Collect)
-                .run_if(on_event::<MouseButtonInput>()),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    #[cfg(feature = "gfx2d")]
+    app.add_plugins(gfx2d::plugin);
+    app.add_systems(Update, (
+        collect_actions_mousebtn
+            .in_set(GameInputSet::Collect)
+            .run_if(on_event::<MouseButtonInput>()),
+    ));
 }
 
 fn collect_actions_mousebtn(

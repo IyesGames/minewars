@@ -9,28 +9,24 @@ pub mod camera;
 pub mod tilemap;
 pub mod sprites;
 
-pub struct Gfx2dPlugin;
-
-impl Plugin for Gfx2dPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins((
-            camera::Gfx2dCameraPlugin,
-            sprites::Gfx2dSpritesPlugin,
-            tilemap::Gfx2dTilemapPlugin,
-        ));
-        app.configure_sets(Update, (
-            Gfx2dModeSet::Any.in_set(NeedsMapSet).run_if(rc_gfx2d_any),
-            Gfx2dModeSet::Sprites.in_set(NeedsMapSet).run_if(rc_gfx2d_sprites),
-            #[cfg(feature = "gfx2d_tilemap")]
-            Gfx2dModeSet::Tilemap.in_set(NeedsMapSet).run_if(rc_gfx2d_tilemap),
-        ));
-        app.configure_sets(OnEnter(AppState::InGame), (
-            Gfx2dModeSet::Any.run_if(rc_gfx2d_any),
-            Gfx2dModeSet::Sprites.run_if(rc_gfx2d_sprites),
-            #[cfg(feature = "gfx2d_tilemap")]
-            Gfx2dModeSet::Tilemap.run_if(rc_gfx2d_tilemap),
-        ));
-    }
+pub fn plugin(app: &mut App) {
+    app.add_plugins((
+        camera::plugin,
+        sprites::plugin,
+        tilemap::plugin,
+    ));
+    app.configure_sets(Update, (
+        Gfx2dModeSet::Any.in_set(NeedsMapSet).run_if(rc_gfx2d_any),
+        Gfx2dModeSet::Sprites.in_set(NeedsMapSet).run_if(rc_gfx2d_sprites),
+        #[cfg(feature = "gfx2d_tilemap")]
+        Gfx2dModeSet::Tilemap.in_set(NeedsMapSet).run_if(rc_gfx2d_tilemap),
+    ));
+    app.configure_sets(OnEnter(AppState::InGame), (
+        Gfx2dModeSet::Any.run_if(rc_gfx2d_any),
+        Gfx2dModeSet::Sprites.run_if(rc_gfx2d_sprites),
+        #[cfg(feature = "gfx2d_tilemap")]
+        Gfx2dModeSet::Tilemap.run_if(rc_gfx2d_tilemap),
+    ));
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
