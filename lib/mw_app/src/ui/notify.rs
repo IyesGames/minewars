@@ -9,7 +9,6 @@ impl Plugin for NotifyPlugin {
         app.add_event::<NotifyEvent>();
         app.configure_stage_set(Update, NotifyEventSS, on_event::<NotifyEvent>());
         app.add_systems(Update, (
-            test_notify,
             notification_timeout,
             spawn_notifications
                 .in_set(SetStage::WantChanged(NotifyEventSS)),
@@ -39,21 +38,6 @@ pub struct UiNotifyArea;
 #[derive(Component)]
 struct NotificationTimeout {
     timer: Timer,
-}
-
-fn test_notify(
-    mut evw_notify: EventWriter<NotifyEvent>,
-    btn: Res<ButtonInput<MouseButton>>,
-) {
-    if btn.just_pressed(MouseButton::Middle) {
-        evw_notify.send(
-            // NotifyEvent::Simple {
-            //     l10n_heading: Some("Notification".into()),
-            //     l10n_content: "Please read this notification!".into(),
-            // }
-            NotifyEvent::KillFeed { killed: 1.into(), killer: Some(2.into()) }
-        );
-    }
 }
 
 fn spawn_notifications(

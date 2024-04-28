@@ -51,6 +51,7 @@ pub enum PlayerEv {
     Unprotected,
     Exploded {
         pos: Pos,
+        killer: PlayerId,
     },
     Timeout {
         millis: u16,

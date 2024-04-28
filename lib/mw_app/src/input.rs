@@ -64,7 +64,6 @@ pub enum InputAction {
     PanCamera(Vec2),
     RotateCamera(f32),
     ZoomCamera(f32),
-    #[cfg(feature = "dev")]
     DevDebug,
 }
 
