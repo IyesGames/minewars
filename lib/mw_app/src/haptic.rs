@@ -117,7 +117,7 @@ fn emit_haptic_events<C: Coord>(
                     kind: HapticEventKind::BackgroundTremor,
                 });
             }
-            MwEv::Player { plid, ev: PlayerEv::Exploded { pos, killer: _ } } => {
+            MwEv::Player { plid, subplid: _, ev: PlayerEv::Exploded { pos, killer: _ } } => {
                 if plid == viewing.0 {
                     evw_haptic.send(HapticEvent {
                         pos: Some(pos),

@@ -52,6 +52,12 @@ impl Coord for Hex {
     fn y(self) -> i8 {
         self.0
     }
+    fn set_x(&mut self, x: i8) {
+        self.1 = x;
+    }
+    fn set_y(&mut self, y: i8) {
+        self.0 = y;
+    }
 
     fn distance(self, other: Self) -> u16 {
         let a0 = self.0;

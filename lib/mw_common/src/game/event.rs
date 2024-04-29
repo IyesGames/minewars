@@ -24,12 +24,8 @@ impl From<(PlayerId, MwEv)> for GameEvent {
 pub enum MwEv {
     Player {
         plid: PlayerId,
+        subplid: Option<u8>,
         ev: PlayerEv,
-    },
-    PlayerSub {
-        plid: PlayerId,
-        subplid: u8,
-        ev: PlayerSubEv,
     },
     Map {
         pos: Pos,
@@ -64,16 +60,9 @@ pub enum PlayerEv {
     MatchTimeRemain {
         secs: u16,
     },
-    Debug(u8),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PlayerSubEv {
-    Joined {
-        name: String,
-    },
+    Joined,
     NetRttInfo {
-        millis: u8,
+        millis: u16,
     },
     Disconnected,
     Kicked,
@@ -194,10 +183,8 @@ impl MwEv {
             MwEv::Nop => MessageClass::Unreliable,
             MwEv::Debug(_) => MessageClass::Unreliable,
             MwEv::Player { ev: PlayerEv::Debug(_), .. } => MessageClass::Unreliable,
-            MwEv::PlayerSub { ev: PlayerSubEv::Debug(_), .. } => MessageClass::Unreliable,
-            MwEv::PlayerSub { ev: PlayerSubEv::NetRttInfo { .. }, .. } => MessageClass::Unreliable,
+            MwEv::Player { ev: PlayerEv::NetRttInfo { .. }, .. } => MessageClass::Unreliable,
             MwEv::Player { .. } => MessageClass::Notification,
-            MwEv::PlayerSub { .. } => MessageClass::Notification,
             MwEv::Background(_)  => MessageClass::Background,
             MwEv::Cit { ev, .. } => match ev {
                 CitEv::ResUpdate { .. } => MessageClass::Personal,

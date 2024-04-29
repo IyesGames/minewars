@@ -1,21 +1,68 @@
 //! Working with individual Game Update Messages
 
 use mw_common::{game::event::*, grid::Pos, plid::PlayerId};
+use num_derive::*;
+
+use crate::time::MwDur;
+
+pub mod asm;
+pub mod bin;
+
+pub trait MsgWriter {
+    type Error: std::error::Error;
+    fn write<W: std::io::Write>(&mut self, w: &mut W, msgs: &[Msg], max_bytes: usize) -> Result<(usize, usize), Self::Error>;
+    fn write_many<W: std::io::Write>(&mut self, w: &mut W, mut msgs: &[Msg], max_bytes: usize) -> Result<(usize, usize), Self::Error> {
+        let mut msgs_total = 0;
+        let mut bytes_total = 0;
+        while !msgs.is_empty() {
+            let (msgs_written, bytes_written) = self.write(w, msgs, max_bytes - bytes_total)?;
+            if msgs_written == 0 {
+                break;
+            }
+            msgs_total += msgs_written;
+            bytes_total += bytes_written;
+            msgs = &msgs[msgs_written..];
+        }
+        Ok((msgs_total, bytes_total))
+    }
+    fn write_all<W: std::io::Write>(&mut self, w: &mut W, mut msgs: &[Msg]) -> Result<(), Self::Error> {
+        while !msgs.is_empty() {
+            let (msgs_written, _) = self.write(w, msgs, usize::MAX)?;
+            if msgs_written == 0 {
+                break;
+            }
+            msgs = &msgs[msgs_written..];
+        }
+        Ok(())
+    }
+}
+
+pub trait MsgReader {
+    type Error: std::error::Error;
+    fn read<R: std::io::BufRead>(&mut self, r: &mut R, out: &mut Vec<Msg>) -> Result<usize, Self::Error>;
+    fn read_all<R: std::io::BufRead>(&mut self, r: &mut R, out: &mut Vec<Msg>) -> Result<usize, Self::Error> {
+        let mut total = 0;
+        loop {
+            let len_prev = out.len();
+            total += self.read(r, out)?;
+            if len_prev == out.len() {
+                break;
+            }
+        }
+        Ok(total)
+    }
+}
 
 /// Low-Level representation of MineWars messages.
 ///
 /// This should directly map to the binary encodings.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Msg {
     Nop,
     Player {
         plid: PlayerId,
+        subplid: Option<u8>,
         status: MsgPlayer,
-    },
-    PlayerSub {
-        plid: PlayerId,
-        subplid: u8,
-        status: MsgPlayerSub,
     },
     Tremor,
     Smoke {
@@ -93,17 +140,36 @@ pub enum Msg {
     },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum MsgPlayer {
-    // TODO
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum MsgPlayerSub {
-    // TODO
+    Joined,
+    NetRttInfo {
+        duration: MwDur,
+    },
+    Timeout {
+        duration: MwDur,
+    },
+    TimeoutFinished,
+    Exploded {
+        pos: Pos,
+        killer: PlayerId,
+    },
+    LivesRemain {
+        lives: u8,
+    },
+    Protected,
+    Unprotected,
+    Eliminated,
+    Surrendered,
+    Disconnected,
+    Kicked,
+    MatchTimeRemain {
+        secs: u16,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(FromPrimitive, ToPrimitive)]
 pub enum MsgTileKind {
     Water = 0,
     Mountain = 2,
@@ -115,6 +181,7 @@ pub enum MsgTileKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(FromPrimitive, ToPrimitive)]
 pub enum MsgItem {
     None = 0,
     Decoy = 1,
@@ -123,6 +190,7 @@ pub enum MsgItem {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(FromPrimitive, ToPrimitive)]
 pub enum MsgStructureKind {
     Road = 0,
     Bridge = 1,
@@ -170,30 +238,27 @@ impl From<mw_common::game::StructureKind> for MsgStructureKind {
 impl From<MwEv> for Msg {
     fn from(event: MwEv) -> Self {
         match event {
-            MwEv::Player { plid, ev } => match ev {
-                PlayerEv::Eliminated => todo!(),
-                PlayerEv::Surrendered => todo!(),
-                PlayerEv::Protected => todo!(),
-                PlayerEv::Unprotected => todo!(),
-                PlayerEv::Exploded { pos, killer } => todo!(),
-                PlayerEv::Timeout { millis } => todo!(),
-                PlayerEv::TimeoutFinished => todo!(),
-                PlayerEv::LivesRemain { lives } => todo!(),
-                PlayerEv::MatchTimeRemain { secs } => todo!(),
+            MwEv::Player { plid, subplid, ev } => match ev {
+                PlayerEv::Eliminated => Msg::Player { plid, subplid, status: MsgPlayer::Eliminated },
+                PlayerEv::Surrendered => Msg::Player { plid, subplid, status: MsgPlayer::Surrendered },
+                PlayerEv::Protected => Msg::Player { plid, subplid, status: MsgPlayer::Protected },
+                PlayerEv::Unprotected => Msg::Player { plid, subplid, status: MsgPlayer::Unprotected },
+                PlayerEv::Exploded { pos, killer } => Msg::Player { plid, subplid, status: MsgPlayer::Exploded { pos, killer } },
+                PlayerEv::Timeout { millis } => Msg::Player { plid, subplid, status: MsgPlayer::Timeout { duration: MwDur::from_millis_lossy(millis) } },
+                PlayerEv::TimeoutFinished => Msg::Player { plid, subplid, status: MsgPlayer::TimeoutFinished },
+                PlayerEv::LivesRemain { lives } => Msg::Player { plid, subplid, status: MsgPlayer::LivesRemain { lives } },
+                PlayerEv::MatchTimeRemain { secs } => Msg::Player { plid, subplid, status: MsgPlayer::MatchTimeRemain { secs } },
+                PlayerEv::Joined => Msg::Player { plid, subplid, status: MsgPlayer::Joined },
+                PlayerEv::NetRttInfo { millis } => Msg::Player { plid, subplid, status: MsgPlayer::NetRttInfo { duration: MwDur::from_millis_lossy(millis) } },
+                PlayerEv::Disconnected => Msg::Player { plid, subplid, status: MsgPlayer::Disconnected },
+                PlayerEv::Kicked => Msg::Player { plid, subplid, status: MsgPlayer::Kicked },
+                PlayerEv::FriendlyChat(_) => todo!(),
+                PlayerEv::AllChat(_) => todo!(),
+                PlayerEv::VoteStart(_) => todo!(),
+                PlayerEv::VoteCast(_) => todo!(),
+                PlayerEv::VoteFail(_) => todo!(),
+                PlayerEv::VoteSuccess(_) => todo!(),
                 PlayerEv::Debug(_) => Msg::Nop,
-            }
-            MwEv::PlayerSub { plid, subplid, ev } => match ev {
-                PlayerSubEv::Joined { name } => todo!(),
-                PlayerSubEv::NetRttInfo { millis } => todo!(),
-                PlayerSubEv::Disconnected => todo!(),
-                PlayerSubEv::Kicked => todo!(),
-                PlayerSubEv::FriendlyChat(_) => todo!(),
-                PlayerSubEv::AllChat(_) => todo!(),
-                PlayerSubEv::VoteStart(_) => todo!(),
-                PlayerSubEv::VoteCast(_) => todo!(),
-                PlayerSubEv::VoteFail(_) => todo!(),
-                PlayerSubEv::VoteSuccess(_) => todo!(),
-                PlayerSubEv::Debug(_) => Msg::Nop,
             }
             MwEv::Map { pos, ev } => match ev {
                 MapEv::TileKind { kind } => Msg::TileKind { pos, kind: kind.into() } ,

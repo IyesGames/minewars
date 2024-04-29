@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 bytemuck = { version = "1.14.3", features = ["derive"] }
 mw_common = { path = "../mw_common" }
+num-derive = "0.4.2"
+num-traits = "0.2.18"
 seahash = "4.1.0"
 thiserror = "1.0.57"
 

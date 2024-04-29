@@ -25,6 +25,12 @@ impl Pos {
     pub fn y(self) -> i8 {
         self.0
     }
+    pub fn set_x(&mut self, x: i8) {
+        self.1 = x;
+    }
+    pub fn set_y(&mut self, y: i8) {
+        self.0 = y;
+    }
 }
 
 impl Mul<i8> for Pos {

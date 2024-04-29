@@ -24,8 +24,8 @@ All **time durations** are encoded as:
 |Bits      |Meaning                  |
 |----------|-------------------------|
 |`0xxxxxxx`| `x` milliseconds        |
-|`10xxxxxx`| (`x` + 12) centiseconds |
-|`11xxxxxx`| (`x` + 7) deciseconds   |
+|`10xxxxxx`| (`x` + 13) centiseconds |
+|`11xxxxxx`| (`x` + 8) deciseconds   |
 
 **PlayerId**: a value between 1-15 inclusive.
 
@@ -221,7 +221,10 @@ Something notable happened with a specific player.
 
 Assembly:
 ```
-PLAYER p status
+PLAYER plid status ...
+```
+```
+PLAYER plid/sub status ...
 ```
 
 Encoding:
@@ -242,31 +245,34 @@ PlayerId is the gameplay plid (view) that is affected.
 PlayerSubId is the individual user/client, in game modes where multiple people
 can control a single in-game plid.
 
-Some message kinds ignore PlayerSubId. See the "Granularity" column in the table below.
+For messages that apply to all PlayerSubIds of a given PlayerId,
+the PlayerSubId field must be all-ones.
 
 The next byte specifies the message kind (what happened):
 
-|Bits      |Meaning         |Granularity|
-|----------|----------------|-----------|
-|`00000000`| Joined         |PlayerSubId|
-|`00000001`| Ping/RTT Info  |PlayerSubId|
-|`00000010`| Stunned/Killed |PlayerId   |
-|`00000011`| Un-Stunned     |PlayerId   |
-|`00000100`| (reserved)     |           |
-|`00000101`| (reserved)     |           |
-|`00000110`| Protected      |PlayerId   |
-|`00000111`| Un-Protected   |PlayerId   |
-|`00001000`| Eliminated     |PlayerId   |
-|`00001001`| Surrendered    |PlayerId   |
-|`00001010`| Disconnected   |PlayerSubId|
-|`00001011`| Kicked         |PlayerSubId|
-|`00001100`| Initiate Vote  |PlayerSubId|
-|`00001101`| Vote           |PlayerSubId|
-|`00001110`| Vote Failed    |PlayerSubId|
-|`00001111`| Vote Success   |PlayerSubId|
-|`00010000`| Chat (All)     |PlayerSubId|
-|`00010001`| Chat (Friendly)|PlayerSubId|
-| ...      | (reserved)     |           |
+|Bits      |Meaning         |Granularity|Assembly             |
+|----------|----------------|-----------|---------------------|
+|`00000000`| Joined         |PlayerSubId|`JOIN`               |
+|`00000001`| Ping/RTT Info  |PlayerSubId|`RTT millis`         |
+|`00000010`| Timeout        |Either     |`TIMEOUT millis`     |
+|`00000011`| TimeoutDone    |Either     |`RESUME`             |
+|`00000100`| Exploded       |Either     |`EXPLODE y,x killer` |
+|`00000101`| LivesRemain    |Either     |`LIVES n`            |
+|`00000110`| Protected      |PlayerId   |`PROTECT`            |
+|`00000111`| Un-Protected   |PlayerId   |`UNPROTECT`          |
+|`00001000`| Eliminated     |PlayerId   |`ELIMINATE`          |
+|`00001001`| Surrendered    |PlayerId   |`SURRENDER`          |
+|`00001010`| Disconnected   |PlayerSubId|`LEAVE`              |
+|`00001011`| Kicked         |PlayerSubId|`KICK`               |
+|`00001100`| Vote No        |PlayerSubId|`VOTE N`             |
+|`00001101`| Vote Yes       |PlayerSubId|`VOTE Y`             |
+|`00001110`| Vote Failed    |PlayerSubId|`VOTEFAIL`           |
+|`00001111`| Vote Success   |PlayerSubId|`VOTEPASS`           |
+|`00010000`| Chat (All)     |PlayerSubId|`CHATALL`            |
+|`00010001`| Chat (Friendly)|PlayerSubId|`CHAT string`        |
+|`00010010`| MatchTimeRemain|Either     |`TIMELIMIT secs`     |
+|`00010011`| Initiate Vote  |PlayerSubId|`VOTENEW string`     |
+| ...      | (reserved)     |           |                     |
 
 Then follows the data payload for the given message kind.
 
@@ -400,8 +406,7 @@ Multi-tile Encoding:
 
 Followed by the coordinates of the tiles.
 
-Followed by the digit for each tile, two digits packed into one byte (note
-big endian):
+Followed by the digit for each tile, two digits packed into one byte:
 
 |Bits      |Meaning         |
 |----------|----------------|

@@ -88,6 +88,8 @@ pub trait Coord:
     fn origin() -> Self;
     fn x(self) -> i8;
     fn y(self) -> i8;
+    fn set_x(&mut self, x: i8);
+    fn set_y(&mut self, y: i8);
     fn distance(self, other: Self) -> u16;
     fn ring(self) -> u8;
     fn ring_len(r: u8) -> usize;

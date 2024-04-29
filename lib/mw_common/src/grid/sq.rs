@@ -52,6 +52,12 @@ impl Coord for Sq {
     fn y(self) -> i8 {
         self.0
     }
+    fn set_x(&mut self, x: i8) {
+        self.1 = x;
+    }
+    fn set_y(&mut self, y: i8) {
+        self.0 = y;
+    }
 
     fn distance(self, other: Self) -> u16 {
         let dy = (self.0 as i16 - other.0 as i16).abs() as u16;

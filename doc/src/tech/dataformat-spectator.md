@@ -77,7 +77,7 @@ only encoded once and assumed to apply to all participating streams.
 
 Homogenous frames have the following structure:
  - `u16`: Header
- - `u8`/`u16`: participation mask
+ - `[u8]`: participation mask
  - `u8`: length of data payload in bytes - 1
  - [ ... data payload ... ]
 
@@ -88,8 +88,9 @@ milliseconds, and must not be all-ones (the max value is reserved for Keepalive 
 The participation mask is a bitmask indicating which PlayerIds the frame applies to.
 Bit 0 represents the global spectator view.
 
-The size of the participation mask is determined by the "max player id" bit in the
-Initialization Sequence.
+The size of the participation mask depends on the `n_players` field in the
+Initialization Sequence. Use the minimum number of bytes to represent the
+players. It is Big Endian!
 
 The data payload is the [player protocol update messages](./dataformat-player.md#gameplay-messages).
 All of the players listed in the participation mask must receive the entire identical data payload.
@@ -101,8 +102,8 @@ for each participating stream is included in the frame.
 
 Heterogenous frames have the following structure:
  - `u16`: Header
- - `u8`/`u16`: participation mask
- - `[u8]`: lengths of each player view's portion of the data payload (as many as specified in the participation mask)
+ - `[u8]`: participation mask
+ - `[u8]`: lengths of each player view's portion of the data payload - 1
  - [ ... data payload ... ]
 
 The top bit (bit 15) in the Header must be `0`, indicating that this is a Heterogenous
@@ -112,8 +113,13 @@ milliseconds, and must not be all-ones (the max value is reserved for Keepalive 
 The participation mask is a bitmask indicating which PlayerIds the frame applies to.
 Bit 0 represents the global spectator view.
 
-The size of the participation mask is determined by the "max player id" bit in the
-Initialization Sequence.
+The size of the participation mask depends on the `n_players` field in the
+Initialization Sequence. Use the minimum number of bytes to represent the
+players. It is Big Endian!
+
+The size of the lengths array is equal to the number of `1` bits in the
+participation mask. Each value represents the length of the data for that
+player's view, - 1.
 
 The data payload is the global spectator view + each player's view (in the order
 of the bits in the participation mask), concatenated together.

@@ -130,6 +130,7 @@ impl<C: Coord> Game for GameMinesweeper<C> {
         if self.settings.time_limit_secs != 0 {
             host.msg(Plids::all(true), MwEv::Player {
                 plid: PlayerId::Neutral,
+                subplid: None,
                 ev: PlayerEv::MatchTimeRemain {
                     secs: self.settings.time_limit_secs,
                 },
@@ -167,6 +168,7 @@ impl<C: Coord> Game for GameMinesweeper<C> {
                     if playerdata.n_lives > 0 {
                         host.msg(Plids::all(true), MwEv::Player {
                             plid: PlayerId::from(i as u8 + 1),
+                            subplid: None,
                             ev: PlayerEv::Eliminated,
                         });
                     }
@@ -393,12 +395,14 @@ impl<C: Coord> GameMinesweeper<C> {
                     if playerdata.n_lives == 0 {
                         host.msg(Plids::all(true), MwEv::Player {
                             plid,
+                            subplid: None,
                             ev: PlayerEv::Eliminated,
                         });
                         capture = false;
                     }
                     host.msg(Plids::all(true), MwEv::Player {
                         plid,
+                        subplid: None,
                         ev: PlayerEv::LivesRemain {
                             lives: playerdata.n_lives,
                         },
