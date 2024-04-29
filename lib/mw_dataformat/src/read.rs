@@ -1,6 +1,6 @@
 //! Reading/Decoding MineWars Data Streams or Files
 
-use mw_common::{grid::*, phoneme::Ph};
+use mw_common::{grid::*, phoneme::Ph, plid::PlayerId};
 use thiserror::Error;
 
 use std::{io::{Cursor, Read, Seek, SeekFrom}, iter::FusedIterator};
@@ -70,8 +70,21 @@ pub enum MwFrameReader<'b, 's, R: Read + Seek> {
 }
 
 pub struct MwFrameDataReader<'b, R: Read + Seek> {
+    off_data: u64,
+    current_time_ms: u64,
+    n_players: u8,
+    n_views: u8,
+    frame_kind: FrameKind,
     buf: &'b mut Vec<u8>,
     reader: R,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FrameKind {
+    Unknown,
+    Keepalive,
+    Heterogenous,
+    Homogenous,
 }
 
 impl<'b, R: Read + Seek> MwFileReader<'b, R> {
@@ -139,6 +152,11 @@ impl<'b, R: Read + Seek> MwFileReader<'b, R> {
             };
             Ok(MwFrameReader::Compressed(
                 MwFrameDataReader {
+                    off_data: 0,
+                    current_time_ms: 0,
+                    n_players: self.is_header.n_players,
+                    n_views: 0,
+                    frame_kind: FrameKind::Unknown,
                     buf: self.buf,
                     reader: cursor,
                 }
@@ -146,6 +164,11 @@ impl<'b, R: Read + Seek> MwFileReader<'b, R> {
         } else {
             Ok(MwFrameReader::Uncompressed(
                 MwFrameDataReader {
+                    off_data: offset_framedata,
+                    current_time_ms: 0,
+                    n_players: self.is_header.n_players,
+                    n_views: 0,
+                    frame_kind: FrameKind::Unknown,
                     buf: self.buf,
                     reader: self.reader,
                 }
@@ -324,6 +347,224 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
             total_plids: self.n_players(),
             buf: self.buf
         })
+    }
+}
+
+impl<'b, R: Read + Seek> MwFrameDataReader<'b, R> {
+    pub fn current_time_ms(&self) -> u64 {
+        self.current_time_ms
+    }
+    pub fn advance_next_frame(&mut self) -> Result<(), MwReaderError> {
+        self.off_data += self.offset_next_frame();
+        self.buf.resize(2, 0);
+        self.reader.seek(SeekFrom::Start(self.off_data))?;
+        self.reader.read_exact(self.buf)?;
+        let h_delta = u16::from_be_bytes([self.buf[0], self.buf[1]]);
+        if h_delta & !(1 << 15) == !(1 << 15) {
+            // Keepalive frame
+            self.current_time_ms += 1 << 15;
+            self.frame_kind = FrameKind::Keepalive;
+        } else if h_delta & (1 << 15) != 0 {
+            // Homogenous frame
+            self.current_time_ms += (h_delta & !(1 << 15)) as u64;
+            self.frame_kind = FrameKind::Homogenous;
+            let len_plidsmask = self.len_plidsmask();
+            // Read the plidsmask + data length
+            self.buf.resize(len_plidsmask + 1, 0);
+            self.reader.read_exact(self.buf)?;
+            self.n_views = 0; // not used for homo frames
+            // Read the data, so we can cache it
+            let len_data = self.buf[len_plidsmask] as usize + 1;
+            self.buf.resize(len_plidsmask + 1 + len_data, 0);
+            self.reader.read_exact(&mut self.buf[(len_plidsmask + 1)..])?;
+        } else {
+            // Heterogenous frame
+            self.current_time_ms += (h_delta & !(1 << 15)) as u64;
+            self.frame_kind = FrameKind::Heterogenous;
+            let len_plidsmask = self.len_plidsmask();
+            self.buf.resize(len_plidsmask, 0);
+            self.reader.read_exact(self.buf)?;
+            self.n_views = 0;
+            for b in self.buf.iter() {
+                // PERF: can we do this more than one byte at a time?
+                self.n_views += b.count_ones() as u8;
+            }
+            self.buf.resize(len_plidsmask + self.n_views as usize, 0);
+            self.reader.read_exact(&mut self.buf[len_plidsmask..])?;
+        }
+        Ok(())
+    }
+    pub fn iter_streams(&mut self) -> MwFrameStreamIter<'_, 'b, R> {
+        MwFrameStreamIter {
+            i: 0,
+            b_mask: 0,
+            i_mask: self.len_plidsmask(),
+            i_stream: 0,
+            off_stream: self.len_plidsmask() as u64 + self.n_views as u64,
+            reader: self,
+        }
+    }
+    pub fn get_player_stream(&mut self, plid: PlayerId) -> Result<&'_ [u8], MwReaderError> {
+        match self.frame_kind {
+            FrameKind::Unknown | FrameKind::Keepalive => Ok(&[]),
+            FrameKind::Homogenous => {
+                if !self.contains_view(plid) {
+                    return Ok(&[]);
+                }
+                let offset = self.len_plidsmask() + 1;
+                let data = &self.buf[offset..];
+                Ok(data)
+            }
+            FrameKind::Heterogenous => {
+                if !self.contains_view(plid) {
+                    return Ok(&[]);
+                }
+                let plid = u8::from(plid);
+                let offset_lens = self.len_plidsmask();
+                let base_len = self.len_plidsmask() + self.n_views as usize;
+                let mut offset_stream = base_len as u64;
+                let len_stream;
+                let mut buf_lens = &self.buf[offset_lens..];
+                let mut i = 0;
+                loop {
+                    if i == plid {
+                        len_stream = buf_lens[0] as usize + 1;
+                        break;
+                    }
+                    let mask_byte = self.len_plidsmask() - i as usize / 8; // Big Endian
+                    let mask_bit = i % 8;
+                    if self.buf[mask_byte] & (1 << mask_bit) != 0 {
+                        offset_stream += buf_lens[0] as u64 + 1;
+                        buf_lens = &buf_lens[1..];
+                    }
+                    i += 1;
+                }
+                self.buf.resize(base_len + len_stream, 0);
+                self.reader.seek(SeekFrom::Start(self.off_data + offset_stream))?;
+                self.reader.read_exact(&mut self.buf[base_len..])?;
+                Ok(&self.buf[base_len..])
+            }
+        }
+    }
+    fn len_plidsmask(&self) -> usize {
+        (self.n_players as usize + 1) / 8 + 1
+    }
+    fn offset_next_frame(&self) -> u64 {
+        let len_plidsmask = self.len_plidsmask();
+        match self.frame_kind {
+            FrameKind::Unknown => 0,
+            FrameKind::Keepalive => 2,
+            FrameKind::Heterogenous => {
+                let mut len_data = 0;
+                for b in &self.buf[len_plidsmask..(len_plidsmask + self.n_views as usize)] {
+                    len_data += *b as u64 + 1;
+                }
+                2 + len_plidsmask as u64 + self.n_views as u64 + len_data
+            },
+            FrameKind::Homogenous => {
+                let len_data = self.buf[len_plidsmask] as u64 + 1;
+                3 + len_plidsmask as u64 + len_data
+            },
+        }
+    }
+    pub fn contains_view(&self, plid: PlayerId) -> bool {
+        match self.frame_kind {
+            FrameKind::Unknown | FrameKind::Keepalive => return false,
+            _ => {}
+        }
+        let plid = u8::from(plid);
+        if plid > self.n_players {
+            return false;
+        }
+        let mask_byte = self.len_plidsmask() - plid as usize / 8; // Big Endian
+        let mask_bit = plid % 8;
+        self.buf[mask_byte] & (1 << mask_bit) != 0
+    }
+    pub fn frame_kind(&self) -> FrameKind {
+        self.frame_kind
+    }
+}
+
+pub struct MwFrameStreamIter<'a, 'b, R: Read + Seek> {
+    i: usize,
+    b_mask: u8,
+    i_mask: usize,
+    i_stream: usize,
+    off_stream: u64,
+    reader: &'a mut MwFrameDataReader<'b, R>,
+}
+
+impl<'a, 'b, R: Read + Seek> Iterator for MwFrameStreamIter<'a, 'b, R> {
+    type Item = Result<&'a [u8], MwReaderError>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i > self.reader.n_players as usize {
+            return None;
+        }
+        let i_sub = self.i % 8;
+        self.i += 1;
+        match self.reader.frame_kind {
+            FrameKind::Unknown => Some(Ok(&[])),
+            FrameKind::Keepalive => Some(Ok(&[])),
+            FrameKind::Heterogenous => {
+                let len_plidsmask = self.reader.len_plidsmask();
+                if i_sub == 0 {
+                    if self.i_mask == 0 {
+                        return None;
+                    }
+                    self.i_mask -= 1;
+                    self.b_mask = self.reader.buf[self.i_mask];
+                }
+                if self.b_mask & (1 << i_sub) != 0 {
+                    let base_len = self.reader.len_plidsmask() + self.reader.n_views as usize;
+                    let len_stream = self.reader.buf[len_plidsmask + self.i_stream] as usize + 1;
+                    self.i_stream += 1;
+                    self.reader.buf.resize(base_len + len_stream, 0);
+                    let r = self.reader.reader.seek(SeekFrom::Start(self.reader.off_data + self.off_stream))
+                        .and_then(|_| self.reader.reader.read_exact(&mut self.reader.buf[base_len..]));
+                    self.off_stream += len_stream as u64;
+                    match r {
+                        Ok(_) => unsafe {
+                            // transmute lifetimes
+                            // SAFETY: `&mut self` is based on the `reader`
+                            // which carries the correct lifetime. The data in `buf`
+                            // cannot outlive `self`
+                            Some(Ok(
+                                std::mem::transmute::<&'_ [u8], &'a [u8]>(&self.reader.buf[base_len..])
+                            ))
+                        }
+                        Err(e) => {
+                            Some(Err(e.into()))
+                        }
+                    }
+                } else {
+                    Some(Ok(&[]))
+                }
+            },
+            FrameKind::Homogenous => {
+                let len_plidsmask = self.reader.len_plidsmask();
+                if i_sub == 0 {
+                    if self.i_mask == 0 {
+                        return None;
+                    }
+                    self.i_mask -= 1;
+                    self.b_mask = self.reader.buf[self.i_mask];
+                }
+                if self.b_mask & (1 << i_sub) != 0 {
+                    let offset = len_plidsmask + 1;
+                    unsafe {
+                        // transmute lifetimes
+                        // SAFETY: `&mut self` is based on the `reader`
+                        // which carries the correct lifetime. The data in `buf`
+                        // cannot outlive `self`
+                        Some(Ok(
+                            std::mem::transmute::<&'_ [u8], &'a [u8]>(&self.reader.buf[offset..])
+                        ))
+                    }
+                } else {
+                    Some(Ok(&[]))
+                }
+            },
+        }
     }
 }
 
