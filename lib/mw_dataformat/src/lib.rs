@@ -2,7 +2,6 @@ pub mod asm;
 pub mod header;
 pub mod map;
 pub mod msg;
-pub mod opt;
 
 pub mod read;
 pub mod write;

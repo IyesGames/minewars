@@ -1,37 +1,28 @@
 //! Working with individual Game Update Messages
 
-use mw_common::{grid::Pos, plid::PlayerId};
+use mw_common::{game::event::*, grid::Pos, plid::PlayerId};
 
-/// Logical representation of a protocol message.
+/// Low-Level representation of MineWars messages.
 ///
-/// This is the IR used as a final step before encoding raw bytes.
-///
-/// The sorting order is important! Optimization passes rely on it! Do not reorder things in this enum!
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// This should directly map to the binary encodings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Msg {
+    Nop,
     Player {
         plid: PlayerId,
-        status: u8,
+        status: MsgPlayer,
     },
-    Capture {
-        pos: Pos,
-        digit: u8,
-    },
-    TileOwner {
-        pos: Pos,
+    PlayerSub {
         plid: PlayerId,
+        subplid: u8,
+        status: MsgPlayerSub,
     },
-    Digit {
+    Tremor,
+    Smoke {
         pos: Pos,
-        digit: u8,
     },
-    CitRes {
-        cit: u8,
-        res: u16,
-    },
-    CitSpend {
-        cit: u8,
-        spent: u16,
+    Unsmoke {
+        pos: Pos,
     },
     CitMoney {
         cit: u8,
@@ -42,23 +33,31 @@ pub enum Msg {
         money: u32,
         income: u16,
     },
+    CitMoneyTransact {
+        cit: u8,
+        amount: i16,
+    },
+    CitRes {
+        cit: u8,
+        res: u16,
+    },
     CitTradeInfo {
         cit: u8,
         export: u8,
         import: u8,
     },
-    RevealStructure {
+    Flag {
+        plid: PlayerId,
         pos: Pos,
-        kind: MsgStructureKind,
+    },
+    StructureGone {
+        pos: Pos,
     },
     StructureHp {
         pos: Pos,
         hp: u8,
     },
-    StructureCancel {
-        pos: Pos,
-    },
-    StructureGone {
+    Explode {
         pos: Pos,
     },
     BuildNew {
@@ -71,25 +70,37 @@ pub enum Msg {
         current: u16,
         rate: u16,
     },
-    PlaceItem {
+    RevealStructure {
         pos: Pos,
-        item: MsgItem,
+        kind: MsgStructureKind,
+    },
+    DigitCapture {
+        pos: Pos,
+        digit: u8,
+        asterisk: bool,
     },
     RevealItem {
         pos: Pos,
         item: MsgItem,
     },
-    Explode {
+    TileKind {
         pos: Pos,
+        kind: MsgTileKind,
     },
-    Smoke {
+    TileOwner {
         pos: Pos,
+        plid: PlayerId,
     },
-    Unsmoke {
-        pos: Pos,
-    },
-    Tremor,
-    Nop,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MsgPlayer {
+    // TODO
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MsgPlayerSub {
+    // TODO
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -156,61 +167,65 @@ impl From<mw_common::game::StructureKind> for MsgStructureKind {
     }
 }
 
-/// The priority class to use when sending a message or stream.
-///
-/// When using a flexible multi-stream transport such as QUIC, a separate stream
-/// can be used for each class, to improve the reliability and performance of
-/// the gameplay experience.
-///
-/// It is also acceptable to ignore this and just send all data over a single
-/// (reliable, such as TCP) stream. This will work, but will result in a degraded
-/// experience.
-///
-/// If a stream contains messages of mixed class, the top-most class should be used.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum MessageClass {
-    /// Messages that affect the game world as observed by multiple players.
-    /// Reliable, ordered, highest priority.
-    PvP,
-    /// Messages that are seen by multiple players, but do not affect the game world.
-    /// Reliable, ordered, medium priority.
-    Notification,
-    /// Messages that only affect the player receiving them.
-    /// Reliable, ordered, lower priority.
-    Personal,
-    /// Messages that are not directly involved in gameplay.
-    /// Reliable, unordered, lowest priority.
-    Background,
-    /// Messages for real-time updates that can be dropped.
-    /// Can be sent as datagrams.
-    Unreliable,
-}
-
-impl Msg {
-    pub fn message_class(self) -> MessageClass {
-        match self {
-            Msg::Player { .. } => MessageClass::Notification,
-            Msg::Capture { .. } => MessageClass::PvP,
-            Msg::TileOwner { .. } => MessageClass::PvP,
-            Msg::Digit { .. } => MessageClass::PvP,
-            Msg::CitRes { .. } => MessageClass::Personal,
-            Msg::CitSpend { .. } => MessageClass::Personal,
-            Msg::CitMoney { .. } => MessageClass::Unreliable,
-            Msg::CitIncome { .. } => MessageClass::Personal,
-            Msg::CitTradeInfo { .. } => MessageClass::Personal,
-            Msg::RevealStructure { .. } => MessageClass::PvP,
-            Msg::StructureGone { .. } => MessageClass::PvP,
-            Msg::StructureCancel { .. } => MessageClass::Personal,
-            Msg::StructureHp { .. } => MessageClass::PvP,
-            Msg::BuildNew { .. } => MessageClass::Personal,
-            Msg::Construction { .. } => MessageClass::Unreliable,
-            Msg::RevealItem { .. } => MessageClass::PvP,
-            Msg::PlaceItem { .. } => MessageClass::Personal,
-            Msg::Explode { .. } => MessageClass::PvP,
-            Msg::Smoke { .. } => MessageClass::PvP,
-            Msg::Unsmoke { .. } => MessageClass::PvP,
-            Msg::Tremor => MessageClass::Background,
-            Msg::Nop => MessageClass::Unreliable,
+impl From<MwEv> for Msg {
+    fn from(event: MwEv) -> Self {
+        match event {
+            MwEv::Player { plid, ev } => match ev {
+                PlayerEv::Eliminated => todo!(),
+                PlayerEv::Surrendered => todo!(),
+                PlayerEv::Protected => todo!(),
+                PlayerEv::Unprotected => todo!(),
+                PlayerEv::Exploded { pos, killer } => todo!(),
+                PlayerEv::Timeout { millis } => todo!(),
+                PlayerEv::TimeoutFinished => todo!(),
+                PlayerEv::LivesRemain { lives } => todo!(),
+                PlayerEv::MatchTimeRemain { secs } => todo!(),
+                PlayerEv::Debug(_) => Msg::Nop,
+            }
+            MwEv::PlayerSub { plid, subplid, ev } => match ev {
+                PlayerSubEv::Joined { name } => todo!(),
+                PlayerSubEv::NetRttInfo { millis } => todo!(),
+                PlayerSubEv::Disconnected => todo!(),
+                PlayerSubEv::Kicked => todo!(),
+                PlayerSubEv::FriendlyChat(_) => todo!(),
+                PlayerSubEv::AllChat(_) => todo!(),
+                PlayerSubEv::VoteStart(_) => todo!(),
+                PlayerSubEv::VoteCast(_) => todo!(),
+                PlayerSubEv::VoteFail(_) => todo!(),
+                PlayerSubEv::VoteSuccess(_) => todo!(),
+                PlayerSubEv::Debug(_) => Msg::Nop,
+            }
+            MwEv::Map { pos, ev } => match ev {
+                MapEv::TileKind { kind } => Msg::TileKind { pos, kind: kind.into() } ,
+                MapEv::Owner { plid } => Msg::TileOwner { pos, plid },
+                MapEv::Digit { digit, asterisk } => Msg::DigitCapture { pos, digit, asterisk },
+                MapEv::PlaceItem { kind } => Msg::RevealItem { pos, item: kind.into() } ,
+                MapEv::RevealItem { kind } => Msg::RevealItem { pos, item: kind.into() } ,
+                MapEv::Flag { plid } => Msg::Flag { pos, plid },
+                MapEv::Unflag => Msg::Flag { pos, plid: PlayerId::Neutral },
+                MapEv::Explode => Msg::Explode { pos } ,
+                MapEv::Smoke { state } => if state { Msg::Smoke { pos } } else { Msg::Unsmoke { pos } },
+                MapEv::StructureReveal { kind } => Msg::RevealStructure { pos, kind: kind.into() },
+                MapEv::StructureHp { hp } => Msg::StructureHp { pos, hp },
+                MapEv::StructureCancel => Msg::StructureGone { pos },
+                MapEv::StructureGone => Msg::StructureGone { pos },
+                MapEv::StructureBuildNew { kind, pts } => Msg::BuildNew { pos, kind: kind.into(), pts },
+                MapEv::StructureProgress { current, rate } => Msg::Construction { pos, current, rate },
+                MapEv::Debug(_) => Msg::Nop,
+            }
+            MwEv::Cit { cit, ev } => match ev {
+                CitEv::ResUpdate { res } => Msg::CitRes { cit, res },
+                CitEv::MoneyTransaction { amount } => Msg::CitMoneyTransact { cit, amount },
+                CitEv::MoneyUpdate { money } => Msg::CitMoney { cit, money },
+                CitEv::IncomeUpdate { money, income } => Msg::CitIncome { cit, money, income } ,
+                CitEv::TradePolicy { export, import } => Msg::CitTradeInfo { cit, export, import } ,
+                CitEv::Debug(_) => Msg::Nop,
+            }
+            MwEv::Background(ev) => match ev {
+                BackgroundEv::Tremor => Msg::Tremor,
+            }
+            MwEv::Nop => Msg::Nop,
+            MwEv::Debug(_) => Msg::Nop,
         }
     }
 }

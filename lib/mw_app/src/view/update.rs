@@ -68,6 +68,7 @@ fn event_map<C: Coord>(
                 MapEv::StructureProgress { current, rate } => todo!(),
                 MapEv::StructureCancel => todo!(),
                 MapEv::StructureGone => todo!(),
+                MapEv::Debug(_) => {}
             }
         }
     }

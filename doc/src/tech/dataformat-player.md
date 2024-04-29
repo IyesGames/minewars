@@ -186,7 +186,7 @@ unused, reserved for future use.
 |`00000010`| Smoke Start         | PvP                            |
 |`00000011`| Smoke End           | PvP                            |
 |`00000100`| City MoneyInfo      | Unreliable                     |
-|`00000101`| City Spending       | Personal                       |
+|`00000101`| City Transaction    | Personal                       |
 |`00000110`| City ResInfo        | Personal                       |
 |`00000111`| City TradeInfo      | Personal                       |
 |`000010--`| --                  |                                |
@@ -423,13 +423,8 @@ Used when a pending (unbuilt) structure is canceled.
 
 Assembly:
 ```
-DECONSTRUCT y,x
+NOSTRUCT y,x
 ```
-(destroy existing)
-```
-NOCONSTRUCT y,x
-```
-(cancel pending)
 
 Encoding:
 
@@ -461,7 +456,7 @@ Followed by the tile coordinates.
 
 #### Explosions
 
-Explosions have occurred. Tile converts to destroyed land. Any item gone.
+Explosions have occurred.
 
 If the client should know what item was destroyed, send a "Reveal Item" first.
 
@@ -495,7 +490,7 @@ Encoding:
 |`0100----`| (opcode)       |
 |`----xxxx`| Structure Kind |
 
-The Item Kind is:
+The Structure Kind is:
  - `0000`: Road
  - `0001`: Bridge
  - `0010`: Wall
@@ -526,7 +521,7 @@ Encoding:
 |`0101----`| (opcode)       |
 |`----xxxx`| Structure Kind |
 
-The Item Kind is:
+The Structure Kind is:
  - `0000`: Road
  - `0001`: Bridge
  - `0010`: Wall
@@ -564,13 +559,13 @@ present if this bit is `1`.
 
 The remaining 31 bits are used for the money value.
 
-#### City Spending
+#### City Transaction
 
-Reports that a city has spent a given sum of money.
+Reports that a city has gained or spent a given sum of money.
 
 Assembly:
 ```
-CITSPEND i spent
+CITTRANS i spent
 ```
 
 |Bits      |Meaning         |
@@ -579,7 +574,7 @@ CITSPEND i spent
 
 Followed by:
  - `u8`: City ID
- - `u16`: the amount of money spent
+ - `i16`: the amount of money
 
 #### City ResInfo
 
@@ -622,7 +617,7 @@ Changes the base tile type.
 
 Assembly:
 ```
-TILE y,x {water|regular|fertile|destroyed|mountain|forest}
+TILE y,x {water|regular|fertile|destroyed|foundation|mountain|forest}
 ```
 
 Encoding:

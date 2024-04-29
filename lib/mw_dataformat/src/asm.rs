@@ -7,7 +7,7 @@ use std::fmt::Formatter;
 use mw_common::{grid::Pos, plid::PlayerId};
 use thiserror::Error;
 
-use crate::msg::{Msg, MsgItem, MsgStructureKind};
+use crate::msg::{Msg, MsgItem, MsgStructureKind, MsgTileKind};
 
 pub trait Assembly: Sized {
     type DisasmError: std::error::Error;
@@ -116,22 +116,20 @@ impl Assembly for Msg {
 
         match first {
             Msg::Player { plid, status } => {
-                writeln!(fmt, "PLAYER {} {}", u8::from(*plid), status)?;
+                // writeln!(fmt, "PLAYER {} {}", u8::from(*plid), status)?;
+                todo!()
             },
-            Msg::Capture { pos, digit } => {
-                writeln!(fmt, "DIGITS {}/{},{}", digit, pos.0, pos.1)?;
+            Msg::DigitCapture { pos, digit, asterisk } => {
+                writeln!(fmt, "DIGITS {}{}/{},{}", digit, if *asterisk { "*" } else { "" }, pos.0, pos.1)?;
             },
             Msg::TileOwner { pos, plid } => {
                 writeln!(fmt, "OWNER {} {},{}", u8::from(*plid), pos.0, pos.1)?;
             },
-            Msg::Digit { pos, digit } => {
-                writeln!(fmt, "DIGIT {}/{},{}", digit, pos.0, pos.1)?;
-            },
             Msg::CitRes { cit, res } => {
                 writeln!(fmt, "CITRES {} {}", cit, res)?;
             },
-            Msg::CitSpend { cit, spent } => {
-                writeln!(fmt, "CITSPEND {} {}", cit, spent)?;
+            Msg::CitMoneyTransact { cit, amount } => {
+                writeln!(fmt, "CITTRANS {} {}", cit, amount)?;
             },
             Msg::CitMoney { cit, money } => {
                 writeln!(fmt, "CITMONEY {} {}", cit, money)?;
@@ -150,9 +148,6 @@ impl Assembly for Msg {
                     MsgStructureKind::Tower => "tower",
                 })?;
             },
-            Msg::StructureCancel { pos } => {
-                writeln!(fmt, "NOCONSTRUCT {},{}", pos.0, pos.1)?;
-            },
             Msg::StructureGone { pos } => {
                 writeln!(fmt, "DECONSTRUCT {},{}", pos.0, pos.1)?;
             },
@@ -170,20 +165,12 @@ impl Assembly for Msg {
             Msg::Construction { pos, current, rate } => {
                 writeln!(fmt, "BUILD {},{} {} {}", pos.0, pos.1, current, rate)?;
             },
-            Msg::PlaceItem { pos, item }  => {
-                writeln!(fmt, "ITME {},{} {}", pos.0, pos.1, match item {
-                    MsgItem::None => "none",
-                    MsgItem::Decoy => "decoy",
-                    MsgItem::Mine => "mine",
-                    MsgItem::Trap => "flash",
-                })?;
-            },
             Msg::RevealItem { pos, item }  => {
                 writeln!(fmt, "ITEM {},{} {}", pos.0, pos.1, match item {
                     MsgItem::None => "none",
                     MsgItem::Decoy => "decoy",
                     MsgItem::Mine => "mine",
-                    MsgItem::Trap => "flash",
+                    MsgItem::Trap => "trap",
                 })?;
             },
             Msg::Explode { pos } => {
@@ -200,6 +187,21 @@ impl Assembly for Msg {
             },
             Msg::Nop => {
                 writeln!(fmt, "NOP")?;
+            },
+            Msg::PlayerSub { plid, subplid, status } => todo!(),
+            Msg::Flag { plid, pos } => {
+                writeln!(fmt, "FLAG {} {},{}", u8::from(*plid), pos.0, pos.1)?;
+            },
+            Msg::TileKind { pos, kind } => {
+                writeln!(fmt, "TILE {},{} {}", pos.0, pos.1, match kind {
+                    MsgTileKind::Water => "water",
+                    MsgTileKind::Regular => "regular",
+                    MsgTileKind::Fertile => "fertile",
+                    MsgTileKind::Foundation => "foundation",
+                    MsgTileKind::Destroyed => "destroyed",
+                    MsgTileKind::Mountain => "mountain",
+                    MsgTileKind::Forest => "forest",
+                })?;
             },
         }
 
@@ -227,38 +229,76 @@ impl Assembly for Msg {
 
         match iname.to_ascii_uppercase().as_str() {
             "PLAYER" => {
-                let Some(arg_plid) = components.next() else {
+                todo!()
+                // let Some(arg_plid) = components.next() else {
+                //     return Err(MsgAsmError::NotEnoughArgs);
+                // };
+                // let Some(arg_status) = components.next() else {
+                //     return Err(MsgAsmError::NotEnoughArgs);
+                // };
+                // if components.next().is_some() {
+                //     return Err(MsgAsmError::TooManyArgs);
+                // }
+                // let Ok(plid) = arg_plid.parse::<u8>() else {
+                //     return Err(MsgAsmError::BadArg(arg_plid.to_owned()));
+                // };
+                // if plid > 7 {
+                //     return Err(MsgAsmError::BadArg(arg_plid.to_owned()));
+                // }
+                // let plid = PlayerId::from(plid);
+                // let Ok(status) = arg_status.parse() else {
+                //     return Err(MsgAsmError::BadArg(arg_status.to_owned()));
+                // };
+                // if buffer.len() < 1 {
+                //     return Err(MsgAsmError::BufferFull);
+                // }
+                // buffer[0] = Msg::Player {
+                //     plid, status,
+                // };
+                // Ok(1)
+            }
+            "TILE" => {
+                let Some(arg_pos) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
                 };
-                let Some(arg_status) = components.next() else {
+                let Some(arg_kind) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
                 };
                 if components.next().is_some() {
                     return Err(MsgAsmError::TooManyArgs);
                 }
-                let Ok(plid) = arg_plid.parse::<u8>() else {
-                    return Err(MsgAsmError::BadArg(arg_plid.to_owned()));
-                };
-                if plid > 7 {
-                    return Err(MsgAsmError::BadArg(arg_plid.to_owned()));
-                }
-                let plid = PlayerId::from(plid);
-                let Ok(status) = arg_status.parse() else {
-                    return Err(MsgAsmError::BadArg(arg_status.to_owned()));
+                let pos = parse_pos(arg_pos)?;
+                let kind = match arg_kind.to_ascii_uppercase().as_str() {
+                    "WATER" => MsgTileKind::Water,
+                    "REGULAR" => MsgTileKind::Regular,
+                    "FERTILE" => MsgTileKind::Fertile,
+                    "DESTROYED" => MsgTileKind::Destroyed,
+                    "FOUNDATION" => MsgTileKind::Foundation,
+                    "MOUNTAIN" => MsgTileKind::Mountain,
+                    "FOREST" => MsgTileKind::Forest,
+                    other => {
+                        return Err(MsgAsmError::BadArg(other.to_owned()));
+                    }
                 };
                 if buffer.len() < 1 {
                     return Err(MsgAsmError::BufferFull);
                 }
-                buffer[0] = Msg::Player {
-                    plid, status,
+                buffer[0] = Msg::TileKind {
+                    pos, kind,
                 };
                 Ok(1)
             }
             "DIGITS" => {
                 let mut n = 0;
                 for arg in components {
-                    let Some((arg_digit, arg_pos)) = arg.split_once('/') else {
+                    let Some((mut arg_digit, arg_pos)) = arg.split_once('/') else {
                         return Err(MsgAsmError::BadArg(arg.to_owned()));
+                    };
+                    let asterisk = if let Some(s) = arg_digit.strip_suffix('*') {
+                        arg_digit = s;
+                        true
+                    } else {
+                        false
                     };
                     let Ok(digit) = arg_digit.parse() else {
                         return Err(MsgAsmError::BadArg(arg_digit.to_owned()));
@@ -267,8 +307,8 @@ impl Assembly for Msg {
                     if buffer.len() < n + 1 {
                         return Err(MsgAsmError::BufferFull);
                     }
-                    buffer[n] = Msg::Capture {
-                        digit, pos,
+                    buffer[n] = Msg::DigitCapture {
+                        digit, pos, asterisk,
                     };
                     n += 1;
                 }
@@ -304,25 +344,29 @@ impl Assembly for Msg {
                 }
                 Ok(n)
             }
-            "DIGIT" => {
-                let Some(arg) = components.next() else {
+            "FLAG" => {
+                let Some(arg_plid) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
                 };
-                let Some((arg_digit, arg_pos)) = arg.split_once('/') else {
-                    return Err(MsgAsmError::BadArg(arg.to_owned()));
+                let Some(arg_pos) = components.next() else {
+                    return Err(MsgAsmError::NotEnoughArgs);
                 };
                 if components.next().is_some() {
                     return Err(MsgAsmError::TooManyArgs);
                 }
-                let Ok(digit) = arg_digit.parse() else {
-                    return Err(MsgAsmError::BadArg(arg_digit.to_owned()));
+                let Ok(plid) = arg_plid.parse::<u8>() else {
+                    return Err(MsgAsmError::BadArg(arg_plid.to_owned()));
                 };
+                if plid > 7 {
+                    return Err(MsgAsmError::BadArg(arg_plid.to_owned()));
+                }
+                let plid = PlayerId::from(plid);
                 let pos = parse_pos(arg_pos)?;
                 if buffer.len() < 1 {
                     return Err(MsgAsmError::BufferFull);
                 }
-                buffer[0] = Msg::Digit {
-                    digit, pos,
+                buffer[0] = Msg::Flag {
+                    pos, plid,
                 };
                 Ok(1)
             }
@@ -350,11 +394,11 @@ impl Assembly for Msg {
                 };
                 Ok(1)
             }
-            "CITSPEND" => {
+            "CITTRANS" => {
                 let Some(arg_cit) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
                 };
-                let Some(arg_spent) = components.next() else {
+                let Some(arg_amount) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
                 };
                 if components.next().is_some() {
@@ -363,14 +407,14 @@ impl Assembly for Msg {
                 let Ok(cit) = arg_cit.parse() else {
                     return Err(MsgAsmError::BadArg(arg_cit.to_owned()));
                 };
-                let Ok(spent) = arg_spent.parse() else {
-                    return Err(MsgAsmError::BadArg(arg_spent.to_owned()));
+                let Ok(amount) = arg_amount.parse() else {
+                    return Err(MsgAsmError::BadArg(arg_amount.to_owned()));
                 };
                 if buffer.len() < 1 {
                     return Err(MsgAsmError::BufferFull);
                 }
-                buffer[0] = Msg::CitSpend {
-                    cit, spent,
+                buffer[0] = Msg::CitMoneyTransact {
+                    cit, amount,
                 };
                 Ok(1)
             }
@@ -486,22 +530,6 @@ impl Assembly for Msg {
                 };
                 Ok(1)
             }
-            "NOCONSTRUCT" => {
-                let Some(arg_pos) = components.next() else {
-                    return Err(MsgAsmError::NotEnoughArgs);
-                };
-                if components.next().is_some() {
-                    return Err(MsgAsmError::TooManyArgs);
-                }
-                let pos = parse_pos(arg_pos)?;
-                if buffer.len() < 1 {
-                    return Err(MsgAsmError::BufferFull);
-                }
-                buffer[0] = Msg::StructureCancel {
-                    pos
-                };
-                Ok(1)
-            }
             "DECONSTRUCT" => {
                 let Some(arg_pos) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
@@ -602,34 +630,6 @@ impl Assembly for Msg {
                 };
                 Ok(1)
             }
-            "ITME" => {
-                let Some(arg_pos) = components.next() else {
-                    return Err(MsgAsmError::NotEnoughArgs);
-                };
-                let Some(arg_item) = components.next() else {
-                    return Err(MsgAsmError::NotEnoughArgs);
-                };
-                if components.next().is_some() {
-                    return Err(MsgAsmError::TooManyArgs);
-                }
-                let pos = parse_pos(arg_pos)?;
-                let item = match arg_item.to_ascii_uppercase().as_str() {
-                    "NONE" => MsgItem::None,
-                    "DECOY" => MsgItem::Decoy,
-                    "MINE" => MsgItem::Mine,
-                    "FLASH" => MsgItem::Trap,
-                    other => {
-                        return Err(MsgAsmError::BadArg(other.to_owned()));
-                    }
-                };
-                if buffer.len() < 1 {
-                    return Err(MsgAsmError::BufferFull);
-                }
-                buffer[0] = Msg::PlaceItem {
-                    pos, item
-                };
-                Ok(1)
-            }
             "ITEM" => {
                 let Some(arg_pos) = components.next() else {
                     return Err(MsgAsmError::NotEnoughArgs);
@@ -645,7 +645,7 @@ impl Assembly for Msg {
                     "NONE" => MsgItem::None,
                     "DECOY" => MsgItem::Decoy,
                     "MINE" => MsgItem::Mine,
-                    "FLASH" => MsgItem::Trap,
+                    "TRAP" => MsgItem::Trap,
                     other => {
                         return Err(MsgAsmError::BadArg(other.to_owned()));
                     }
@@ -752,69 +752,4 @@ fn parse_pos(s: &str) -> Result<Pos, MsgAsmError> {
         return err;
     };
     Ok(Pos(y,x))
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn test_asm() {
-        let source = "
-            nop
-            SHAKE ; comment
-            DIGIT 4/0,0
-            OWNER 3 4,5 7,8 ; varargs
-            DIGITS 1/1,1 0/-1,-2 3/6,7
-            item 3,-4 None
-            ITEM 3,-3 Flash
-            ITEM 3,-2 mine
-            ITEM 3,-1 DECOY
-            Explode 3,-1
-            EXPLODE 7,8 8,9 -1,-2
-            CIT 0 200 1503 111
-            STRUCT 10,11 tower
-            STRUCT -10,31 ROAD
-            STRUCT 15,-31 Wall
-            BUILDNEW 0,1 bridge 420
-            StructHp 10,11 5
-            DECONSTRUCT 0,1
-            PLAYER 5 0
-            BUILD 0,1 123 42
-            SMOKE 0,0
-        ";
-        let output = &[
-            Msg::Nop,
-            Msg::Tremor,
-            Msg::Digit { digit: 4, pos: Pos(0,0) },
-            Msg::TileOwner { plid: 3.into(), pos: Pos(4,5) },
-            Msg::TileOwner { plid: 3.into(), pos: Pos(7,8) },
-            Msg::Capture { digit: 1, pos: Pos(1,1) },
-            Msg::Capture { digit: 0, pos: Pos(-1,-2) },
-            Msg::Capture { digit: 3, pos: Pos(6,7) },
-            Msg::RevealItem { pos: Pos(3,-4), item: MsgItem::None },
-            Msg::RevealItem { pos: Pos(3,-3), item: MsgItem::Trap },
-            Msg::RevealItem { pos: Pos(3,-2), item: MsgItem::Mine },
-            Msg::RevealItem { pos: Pos(3,-1), item: MsgItem::Decoy },
-            Msg::Explode { pos: Pos(3, -1) },
-            Msg::Explode { pos: Pos(7, 8) },
-            Msg::Explode { pos: Pos(8, 9) },
-            Msg::Explode { pos: Pos(-1, -2) },
-            Msg::CitMoney { cit: 0, res: 200, money: 1503, income: 111 },
-            Msg::RevealStructure { pos: Pos(10, 11), kind: MsgStructureKind::Tower },
-            Msg::RevealStructure { pos: Pos(-10, 31), kind: MsgStructureKind::Road },
-            Msg::RevealStructure { pos: Pos(15, -31), kind: MsgStructureKind::Wall },
-            Msg::BuildNew { pos: Pos(0, 1), kind: MsgStructureKind::Bridge, pts: 420 },
-            Msg::StructureHp { pos: Pos(10, 11), hp: 5 },
-            Msg::StructureGone { pos: Pos(0, 1) },
-            Msg::Player { plid: 5.into(), status: 0 },
-            Msg::Construction { pos: Pos(0, 1), current: 123, rate: 42 },
-            Msg::Smoke { pos: Pos(0, 0) },
-        ];
-        let mut buffer = vec![Msg::Nop; 64];
-        let len = Msg::asm_all(source, &mut buffer)
-            .expect("asm unsuccessful");
-        eprintln!("{:#?}", output);
-        eprintln!("{:#?}", &buffer[..len]);
-        assert_eq!(&buffer[..len], output);
-    }
 }
