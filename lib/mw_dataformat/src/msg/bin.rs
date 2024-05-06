@@ -197,7 +197,7 @@ impl MsgWriter for MsgBinWrite {
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
-                let byte0 = 0b01110000 | (*item as u8 & 0x07);
+                let byte0 = 0b00010000 | (*item as u8 & 0x0F);
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
             },
             Msg::TileKind { pos, kind } => {
@@ -205,7 +205,7 @@ impl MsgWriter for MsgBinWrite {
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
-                let byte0 = 0b01111000 | (*kind as u8 & 0x07);
+                let byte0 = 0b01110000 | (*kind as u8 & 0x0F);
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
             },
             Msg::TileOwner { pos, plid } => {
@@ -489,26 +489,26 @@ impl MsgReader for MsgBinRead {
             out.push(Msg::RevealStructure { pos, kind });
             return Ok(1);
         }
-        if byte0 & 0b11111000 == 0b01110000 {
+        if byte0 & 0b11110000 == 0b00010000 {
             let mut bytes = [0; 2];
             r.read_exact(&mut bytes)?;
             let mut pos = Pos::default();
             pos.set_y(bytes[0] as i8);
             pos.set_x(bytes[1] as i8);
-            let kind_byte = byte0 & 0x07;
+            let kind_byte = byte0 & 0x0F;
             let Some(item) = MsgItem::from_u8(kind_byte) else {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             };
             out.push(Msg::RevealItem { pos, item });
             return Ok(1);
         }
-        if byte0 & 0b11111000 == 0b01111000 {
+        if byte0 & 0b11110000 == 0b01110000 {
             let mut bytes = [0; 2];
             r.read_exact(&mut bytes)?;
             let mut pos = Pos::default();
             pos.set_y(bytes[0] as i8);
             pos.set_x(bytes[1] as i8);
-            let kind_byte = byte0 & 0x07;
+            let kind_byte = byte0 & 0x0F;
             let Some(kind) = MsgTileKind::from_u8(kind_byte) else {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             };

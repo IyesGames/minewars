@@ -193,8 +193,7 @@ unused, reserved for future use.
 |`0000110-`| --                  |                                |
 |`00001110`| --                  |                                |
 |`00001111`| Flag State          | PvP                            |
-|`00010---`| --                  |                                |
-|`00011---`| --                  |                                |
+|`0001----`| Reveal Item         | PvP (foreign), Personal (own)  |
 |`00100000`| Structure Gone      | PvP, Personal (cancel pending) |
 |`0010----`| Structure HP        | PvP                            |
 |`0011----`| Explosions          | PvP                            |
@@ -203,8 +202,7 @@ unused, reserved for future use.
 |`0101----`| Reveal Structure    | PvP                            |
 |`01011111`| --                  |                                |
 |`0110----`| Digits (single)     | PvP                            |
-|`01110---`| Reveal Item         | PvP (foreign), Personal (own)  |
-|`01111---`| Tile Kind Update    | PvP                            |
+|`0111----`| Tile Kind Update    | PvP                            |
 |`1000----`| Digits (multi)      | PvP                            |
 |`1-------`| Ownership Updates   | PvP                            |
 
@@ -629,18 +627,19 @@ Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`01111---`| (opcode)       |
-|`-----xxx`| Tile Kind      |
+|`0111----`| (opcode)       |
+|`----xxxx`| Tile Kind      |
 
 The Tile Kind is:
- - `000`: Water
- - `001`: (reserved)
- - `010`: Mountain
- - `011`: Forest
- - `100`: Destroyed Land
- - `101`: Foundation
- - `110`: Regular Land
- - `111`: Fertile Land
+ - `0000`: Water
+ - `0001`: (reserved)
+ - `0010`: Mountain
+ - `0011`: Forest
+ - `0100`: Destroyed Land
+ - `0101`: Foundation
+ - `0110`: Regular Land
+ - `0111`: Fertile Land
+ - ...   : (reserved)
 
 Followed by tile coordinate.
 
@@ -659,15 +658,15 @@ Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`01110---`| (opcode)       |
-|`-----xxx`| Item Kind      |
+|`0001----`| (opcode)       |
+|`----xxxx`| Item Kind      |
 
 The Item Kind is:
- - `000`: None
- - `001`: Decoy
- - `010`: Mine
- - `011`: Trap
- - `1--`: (reserved)
+ - `0000`: None
+ - `0001`: Decoy
+ - `0010`: Mine
+ - `0011`: Trap
+ - ...   : (reserved)
 
 Followed by tile coordinate.
 
