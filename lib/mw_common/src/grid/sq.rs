@@ -120,16 +120,6 @@ impl Coord for Sq {
     fn xmax(r: u8, _y: i8) -> i8 {
         r as i8
     }
-    fn index(r: u8, c: Self) -> usize {
-        assert!(r <= 127);
-        let r = r as i8;
-        assert!(c.0 >= -r && c.0 <= r && c.1 >= -r && c.1 <= r);
-        let r = r as i16;
-        let w = r * 2 + 1;
-        let x = c.1 as i16 + r;
-        let y = c.0 as i16 + r;
-        (y * w + x) as usize
-    }
     fn row_len(r: u8, _y: i8) -> usize {
         r as usize * 2 + 1
     }

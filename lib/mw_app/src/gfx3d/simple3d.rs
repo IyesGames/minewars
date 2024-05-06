@@ -33,9 +33,9 @@ struct CursorMesh;
 fn setup_tilemap(
     world: &mut World,
 ) {
-    let index = world.remove_resource::<MapTileIndex<Hex>>().unwrap();
+    let index = world.remove_resource::<MapTileIndex>().unwrap();
     for (c, &e) in index.0.iter() {
-        let translation = c.translation();
+        let translation = Hex::from(c).translation(); // FIXME: hex only
         let transform = Transform::from_xyz(
             (translation.x as f64 * 3f64.sqrt() * TILE_SCALE as f64 / 2.0) as f32,
             0.0,

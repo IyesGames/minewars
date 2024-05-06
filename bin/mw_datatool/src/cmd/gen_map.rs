@@ -21,7 +21,7 @@ pub fn main(common: &CommonArgs, args: &GenMapArgs) -> AnyResult<()> {
     let mut tile = MapGenTileData::default();
     tile.set_kind(TileKind::Regular);
     tile.set_region(0xFF);
-    let map: MapData<Hex, _> = MapData::new(args.size, tile);
+    let map: MapDataC<Hex, _> = MapData::new(args.size, tile);
 
     let bufwriter = BufWriter::new(file);
     let (b_file, b_is) = mw_dataformat::write::MwFileBuilder::new(bufwriter, &mut buf)?

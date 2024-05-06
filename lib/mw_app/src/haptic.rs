@@ -27,12 +27,7 @@ pub fn plugin(app: &mut App) {
         #[cfg(feature = "buttplug")]
         buttplug::plugin,
     ));
-    app.add_systems(Update, (
-        emit_haptic_events::<Hex>
-            .in_set(MapTopologySet(Topology::Hex)),
-        emit_haptic_events::<Sq>
-            .in_set(MapTopologySet(Topology::Sq)),
-    )
+    app.add_systems(Update, emit_haptic_events
         .in_set(SetStage::WantChanged(GameOutEventSS))
         .in_set(SetStage::Provide(HapticEventSS))
         .after(MapUpdateSet::TileOwner)
@@ -81,11 +76,11 @@ pub enum HapticEventKind {
     StructureDestroyedTheir,
 }
 
-fn emit_haptic_events<C: Coord>(
+fn emit_haptic_events(
     mut evr_game: EventReader<GameEvent>,
     mut evw_haptic: EventWriter<HapticEvent>,
     viewing: Res<PlidViewing>,
-    index: Res<MapTileIndex<C>>,
+    index: Res<MapTileIndex>,
     q_owner: Query<&TileOwner>,
     mut buf: Local<HashMap<Pos, u8>>,
 ) {

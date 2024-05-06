@@ -156,46 +156,6 @@ impl Coord for Hex {
             r - y
         }
     }
-    fn index(r: u8, c: Self) -> usize {
-        // PERF: this is a very naive and suboptimal implementation
-        // (and likely to be a perf hotspot)
-
-        let y = c.0 as isize;
-        let x = c.1 as isize;
-
-        let row0 = Hex::map_area(r) as isize / 2 - r as isize;
-
-        let xmin = Self::xmin(r, c.0) as isize;
-        let xmax = Self::xmax(r, c.0) as isize;
-
-        let r = r as isize;
-
-        if y < 0 {
-            assert!(x >= xmin);
-            assert!(x <= xmax);
-
-            let fix = -y * (r * 2 + 1);
-            let miss = (1 + -y) * -y / 2;
-
-            let xoff = x + r + y;
-
-            let i = row0 - (fix - miss) + xoff;
-
-            i as usize
-        } else {
-            assert!(x >= xmin);
-            assert!(x <= xmax);
-
-            let fix = y * (r * 2 + 1);
-            let miss = y * (y - 1) / 2;
-
-            let xoff = x + r;
-
-            let i = row0 + (fix - miss) + xoff;
-
-            i as usize
-        }
-    }
     fn row_len(r: u8, y: i8) -> usize {
         (r as usize * 2 + 1) - y.abs() as usize
     }

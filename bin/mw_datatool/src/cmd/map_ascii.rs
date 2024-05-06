@@ -1,5 +1,5 @@
 use mw_common::game::{MapGenTileData, TileKind};
-use mw_common::grid::{Coord, MapDataTopo, Pos};
+use mw_common::grid::*;
 use mw_dataformat::read::MwFileReader;
 
 use crate::prelude::*;
@@ -21,8 +21,6 @@ pub fn main(common: &CommonArgs, _args: &MapAsciiArgs) -> AnyResult<()> {
         .context("Failed to load input file as a MineWars format file!")?;
 
     let (_, mut isr) = mfr.read_is()?;
-    let map: MapDataTopo<MapGenTileData> = isr.read_map_dyntopo(Some(&mut scratch), false)?;
-    let cits = isr.read_cits_pos()?;
 
     fn f_tile_ascii(cits: &[Pos], pos: Pos, kind: TileKind) -> u8 {
         if cits.iter().position(|p| *p == pos).is_some() {
@@ -41,11 +39,17 @@ pub fn main(common: &CommonArgs, _args: &MapAsciiArgs) -> AnyResult<()> {
         }
     }
 
-    match map {
-        MapDataTopo::Hex(map) => {
+    match isr.map_topology() {
+        Topology::Hex => {
+            let map: MapDataC<Hex, MapGenTileData> =
+                isr.read_map(Some(&mut scratch), true)?;
+            let cits = isr.read_cits_pos()?;
             map.ascii_art(&mut std::io::stdout().lock(), |c, d| f_tile_ascii(cits, c.into(), d.kind()))?;
         }
-        MapDataTopo::Sq(map) => {
+        Topology::Sq => {
+            let map: MapDataC<Sq, MapGenTileData> =
+                isr.read_map(Some(&mut scratch), true)?;
+            let cits = isr.read_cits_pos()?;
             map.ascii_art(&mut std::io::stdout().lock(), |c, d| f_tile_ascii(cits, c.into(), d.kind()))?;
         }
     }

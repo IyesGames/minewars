@@ -54,20 +54,11 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
         switch_view_despawn,
         switch_view_showhide,
-        (
-            switch_view_update_map_tilekind::<Hex>.in_set(MapUpdateSet::TileKind),
-            switch_view_update_map_owners::<Hex>.in_set(MapUpdateSet::TileOwner),
-            switch_view_update_map_digits::<Hex>.in_set(MapUpdateSet::TileDigit),
-            switch_view_update_map_gents::<Hex>.in_set(MapUpdateSet::TileGent),
-            switch_view_update_map_roads::<Hex>.in_set(MapUpdateSet::TileRoads),
-        ).in_set(MapTopologySet(Topology::Hex)),
-        (
-            switch_view_update_map_tilekind::<Sq>.in_set(MapUpdateSet::TileKind),
-            switch_view_update_map_owners::<Sq>.in_set(MapUpdateSet::TileOwner),
-            switch_view_update_map_digits::<Sq>.in_set(MapUpdateSet::TileDigit),
-            switch_view_update_map_gents::<Sq>.in_set(MapUpdateSet::TileGent),
-            switch_view_update_map_roads::<Sq>.in_set(MapUpdateSet::TileRoads),
-        ).in_set(MapTopologySet(Topology::Sq)),
+        switch_view_update_map_tilekind.in_set(MapUpdateSet::TileKind),
+        switch_view_update_map_owners.in_set(MapUpdateSet::TileOwner),
+        switch_view_update_map_digits.in_set(MapUpdateSet::TileDigit),
+        switch_view_update_map_gents.in_set(MapUpdateSet::TileGent),
+        switch_view_update_map_roads.in_set(MapUpdateSet::TileRoads),
     ).in_set(ViewSwitchSet));
 }
 
@@ -111,12 +102,12 @@ pub struct ViewTileData {
 
 /// The map data of a view
 #[derive(Component, Clone)]
-pub struct ViewMapData<C: Coord>(pub MapData<C, ViewTileData>);
+pub struct ViewMapData(pub MapDataPos<ViewTileData>);
 
 /// Bundle for a view entity
 #[derive(Bundle)]
-pub struct ViewBundle<C: Coord> {
-    pub mapdata: ViewMapData<C>,
+pub struct ViewBundle {
+    pub mapdata: ViewMapData,
 }
 
 /// Marker for entities that should be discarded on view switch.
@@ -157,10 +148,10 @@ fn switch_view_showhide(
     }
 }
 
-fn switch_view_update_map_tilekind<C: Coord>(
+fn switch_view_update_map_tilekind(
     viewing: Res<PlidViewing>,
     players: Res<PlayersIndex>,
-    q_view: Query<&ViewMapData<C>>,
+    q_view: Query<&ViewMapData>,
     mut q_maptile: Query<(&MwTilePos, &mut TileKind)>,
 ) {
     let e_view = players.0[viewing.0.i()];
@@ -170,16 +161,15 @@ fn switch_view_update_map_tilekind<C: Coord>(
     };
     // TODO: handle any need for bundle/component changes due to tile kind
     for (pos, mut kind) in q_maptile.iter_mut() {
-        let c: C = pos.0.into();
-        let tiledata = &viewdata.0[c];
+        let tiledata = &viewdata.0[pos.0];
         *kind = tiledata.kind();
     }
 }
 
-fn switch_view_update_map_owners<C: Coord>(
+fn switch_view_update_map_owners(
     viewing: Res<PlidViewing>,
     players: Res<PlayersIndex>,
-    q_view: Query<&ViewMapData<C>>,
+    q_view: Query<&ViewMapData>,
     mut q_maptile: Query<(&MwTilePos, &mut TileOwner)>,
     mut evw_visrecompute: EventWriter<RecomputeVisEvent>,
 ) {
@@ -191,16 +181,15 @@ fn switch_view_update_map_owners<C: Coord>(
         return;
     };
     for (pos, mut owner) in q_maptile.iter_mut() {
-        let c: C = pos.0.into();
-        let tiledata = &viewdata.0[c];
+        let tiledata = &viewdata.0[pos.0];
         owner.0 = tiledata.owner().into();
     }
 }
 
-fn switch_view_update_map_digits<C: Coord>(
+fn switch_view_update_map_digits(
     viewing: Res<PlidViewing>,
     players: Res<PlayersIndex>,
-    q_view: Query<&ViewMapData<C>>,
+    q_view: Query<&ViewMapData>,
     mut q_maptile: Query<(&MwTilePos, &mut TileDigit)>,
 ) {
     let e_view = players.0[viewing.0.i()];
@@ -209,17 +198,16 @@ fn switch_view_update_map_digits<C: Coord>(
         return;
     };
     for (pos, mut digit) in q_maptile.iter_mut() {
-        let c: C = pos.0.into();
-        let tiledata = &viewdata.0[c];
+        let tiledata = &viewdata.0[pos.0];
         digit.0 = tiledata.digit();
         digit.1 = tiledata.asterisk();
     }
 }
 
-fn switch_view_update_map_gents<C: Coord>(
+fn switch_view_update_map_gents(
     viewing: Res<PlidViewing>,
     players: Res<PlayersIndex>,
-    q_view: Query<&ViewMapData<C>>,
+    q_view: Query<&ViewMapData>,
     mut q_maptile: Query<(&MwTilePos, &mut TileGent)>,
 ) {
     let e_view = players.0[viewing.0.i()];
@@ -228,8 +216,7 @@ fn switch_view_update_map_gents<C: Coord>(
         return;
     };
     for (pos, mut gent) in q_maptile.iter_mut() {
-        let c: C = pos.0.into();
-        let tiledata = &viewdata.0[c];
+        let tiledata = &viewdata.0[pos.0];
         // preserve CITS, they are special
         if let TileGent::Cit(_) = *gent {
             continue;
@@ -248,10 +235,11 @@ fn switch_view_update_map_gents<C: Coord>(
     }
 }
 
-fn switch_view_update_map_roads<C: Coord>(
+fn switch_view_update_map_roads(
+    desc: Res<MapDescriptor>,
     viewing: Res<PlidViewing>,
     players: Res<PlayersIndex>,
-    q_view: Query<&ViewMapData<C>>,
+    q_view: Query<&ViewMapData>,
     mut q_maptile: Query<(&MwTilePos, &mut TileRoads)>,
 ) {
     let e_view = players.0[viewing.0.i()];
@@ -260,9 +248,17 @@ fn switch_view_update_map_roads<C: Coord>(
         return;
     };
     for (pos, mut roads) in q_maptile.iter_mut() {
-        let c: C = pos.0.into();
-        roads.0 = if viewdata.0[c].structure() == StructureKind::Road {
-            viewdata.0.get_ringmask(c, |d| d.structure() == StructureKind::Road)
+        roads.0 = if viewdata.0[pos.0].structure() == StructureKind::Road {
+            match desc.topology {
+                Topology::Hex => {
+                    let c = Hex::from(pos.0);
+                    viewdata.0.get_ringmask(c, |d| d.structure() == StructureKind::Road)
+                }
+                Topology::Sq => {
+                    let c = Sq::from(pos.0);
+                    viewdata.0.get_ringmask(c, |d| d.structure() == StructureKind::Road)
+                }
+            }
         } else {
             0
         };
@@ -274,7 +270,7 @@ fn kbd_viewswitch(
     mut viewing: ResMut<PlidViewing>,
     mut playingas: ResMut<PlidPlayingAs>,
     players: Res<PlayersIndex>,
-    q_view: Query<(), Or<(With<ViewMapData<Hex>>, With<ViewMapData<Sq>>)>>,
+    q_view: Query<(), With<ViewMapData>>,
     q_plid: Query<(), With<PlidPlayable>>,
 ) {
     let mut newplid = if kbd.just_pressed(KeyCode::F1) {

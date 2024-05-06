@@ -26,13 +26,10 @@ pub fn plugin(app: &mut App) {
      .in_set(Gfx2dModeSet::Any)
      .in_set(SetStage::Provide(CameraControlSS))
     );
-    app.add_systems(Update, (
-        grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
-        grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
-    )
-     .in_set(Gfx2dModeSet::Any)
-     .in_set(SetStage::Provide(GridCursorSS))
-     .in_set(SetStage::WantChanged(WorldCursorSS))
+    app.add_systems(Update, grid_cursor
+        .in_set(Gfx2dModeSet::Any)
+        .in_set(SetStage::Provide(GridCursorSS))
+        .in_set(SetStage::WantChanged(WorldCursorSS))
     );
     app.add_systems(Update, component_animator_system::<OrthographicProjection>);
 }
@@ -45,14 +42,14 @@ fn setup_game_camera_2d(
     world.spawn((StateDespawnMarker, GameCamera, UiCamera, WorldCursorCamera, camera));
 }
 
-fn grid_cursor<C: Coord>(
+fn grid_cursor(
     crs_in: Res<WorldCursor>,
     mut crs_out: ResMut<GridCursor>,
     mapdesc: Res<MapDescriptor>,
-    index: Option<Res<MapTileIndex<C>>>,
+    index: Option<Res<MapTileIndex>>,
     mut cursor_tile: ResMut<GridCursorTileEntity>,
 ) {
-    match C::TOPOLOGY {
+    match mapdesc.topology {
         Topology::Hex => {
             let tdim = Vec2::new(super::sprite::WIDTH6, super::sprite::HEIGHT6);
             let conv = bevy::math::Mat2::from_cols_array(

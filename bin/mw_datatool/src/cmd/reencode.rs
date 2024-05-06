@@ -1,7 +1,7 @@
 use std::io::{Read, Seek, Write};
 
 use mw_common::game::MapGenTileData;
-use mw_common::grid::MapDataTopo;
+use mw_common::grid::*;
 use mw_dataformat::read::MwFileReader;
 use mw_dataformat::write::MwFileBuilder;
 
@@ -59,7 +59,6 @@ fn reencode<R: Read + Seek, W: Write + Seek>(reader: R, writer: W, args: &Reenco
         .start_is()?;
 
     let (mfr, mut isr) = mfr.read_is()?;
-    let map: MapDataTopo<MapGenTileData> = isr.read_map_dyntopo(Some(&mut scratch), true)?;
 
     let compress_map = match (isr.is_mapdata_compressed(), args.compress_map, args.decompress_map) {
         (_, true, true) => bail!("--compress-map and --decompress-map cannot both be specified!"),
@@ -70,20 +69,28 @@ fn reencode<R: Read + Seek, W: Write + Seek>(reader: R, writer: W, args: &Reenco
     };
 
     let b_is = if compress_map {
-        match map {
-            MapDataTopo::Hex(map) => {
+        match isr.map_topology() {
+            Topology::Hex => {
+                let map: MapDataC<Hex, MapGenTileData> =
+                    isr.read_map(Some(&mut scratch), true)?;
                 b_is.with_map_lz4compressed(&map, true, &mut scratch)?
             }
-            MapDataTopo::Sq(map) => {
+            Topology::Sq => {
+                let map: MapDataC<Sq, MapGenTileData> =
+                    isr.read_map(Some(&mut scratch), true)?;
                 b_is.with_map_lz4compressed(&map, true, &mut scratch)?
             }
         }
     } else {
-        match map {
-            MapDataTopo::Hex(map) => {
+        match isr.map_topology() {
+            Topology::Hex => {
+                let map: MapDataC<Hex, MapGenTileData> =
+                    isr.read_map(Some(&mut scratch), true)?;
                 b_is.with_map_uncompressed(&map, true)?
             }
-            MapDataTopo::Sq(map) => {
+            Topology::Sq => {
+                let map: MapDataC<Sq, MapGenTileData> =
+                    isr.read_map(Some(&mut scratch), true)?;
                 b_is.with_map_uncompressed(&map, true)?
             }
         }

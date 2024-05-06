@@ -68,7 +68,7 @@ fn setup_minesweeper_playground_flatmap<C: Coord>(
     map_size: u8
 ) {
     let n_plids = minesweeper_settings.n_plids;
-    let dummy_map = MapData::<C, ()>::new(map_size, ());
+    let dummy_map = MapDataC::<C, ()>::new(map_size, ());
     crate::map::setup_map(world, &dummy_map, &[], |_| TileKind::Regular, |_| 0);
     let game = GameMinesweeper::<C>::new(minesweeper_settings, &dummy_map, |_| TileKind::Regular);
     world.insert_resource(BevyHost::new(game, ()));
@@ -91,7 +91,7 @@ fn setup_minesweeper_playground_flatmap<C: Coord>(
                 state: PlayerState::Alive,
             },
             ViewBundle {
-                mapdata: ViewMapData(MapData::<C, _>::new(map_size, viewtile)),
+                mapdata: ViewMapData(MapDataPos::new(map_size, viewtile)),
             },
             PlidPlayable,
         )).id();

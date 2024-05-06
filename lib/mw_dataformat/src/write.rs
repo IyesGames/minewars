@@ -348,9 +348,9 @@ impl<'b, W: Write + Seek> MwISBuilder<'b, W> {
             hash: self.hasher.map(|h| h.finish()),
         })
     }
-    pub fn with_map_uncompressed<C: Coord, D: MapTileDataOut>(
+    pub fn with_map_uncompressed<C: Coord, D: MapTileDataOut, L: MapDataLayout<C>>(
         mut self,
-        mapdata: &MapData<C, D>,
+        mapdata: &MapData<C, D, L>,
         include_items: bool,
     ) -> Result<MwISBuilderWithMap<'b, W>, MwWriterError> {
         self.header.map_size = mapdata.size();
@@ -370,9 +370,9 @@ impl<'b, W: Write + Seek> MwISBuilder<'b, W> {
             hasher: self.hasher,
         })
     }
-    pub fn with_map_lz4compressed<C: Coord, D: MapTileDataOut>(
+    pub fn with_map_lz4compressed<C: Coord, D: MapTileDataOut, L: MapDataLayout<C>>(
         mut self,
-        mapdata: &MapData<C, D>,
+        mapdata: &MapData<C, D, L>,
         include_items: bool,
         scratch: &mut Vec<u8>,
     ) -> Result<MwISBuilderWithMap<'b, W>, MwWriterError> {

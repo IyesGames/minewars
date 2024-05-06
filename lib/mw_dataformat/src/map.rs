@@ -4,7 +4,7 @@ use mw_common::game::MapGenTileData;
 use thiserror::Error;
 
 use mw_common::prelude::*;
-use mw_common::{game::{ItemKind, TileKind}, grid::{Coord, MapData}};
+use mw_common::{game::{ItemKind, TileKind}, grid::*};
 
 /// Implement for types that can be serialized as a MW map.
 pub trait MapTileDataOut: Sized {
@@ -64,13 +64,13 @@ pub enum MapDecodeError {
 /// Encode map data in uncompressed form.
 ///
 /// The binary map data will be appended to `out`.
-pub fn serialize_map_uncompressed<C: Coord, D: MapTileDataOut>(
-    data: &MapData<C, D>,
+pub fn serialize_map_uncompressed<C: Coord, D: MapTileDataOut, L: MapDataLayout<C>>(
+    data: &MapData<C, D, L>,
     include_items: bool,
     out: &mut Vec<u8>,
 ) {
     // preallocate: 1 byte per tile + 1 byte per region = 2 * map_area
-    out.reserve(2 * data.map_area());
+    out.reserve(2 * C::map_area(data.size()));
     // encode tiles
     {
         let d = &data[C::origin()];
@@ -109,8 +109,8 @@ pub fn serialize_map_uncompressed<C: Coord, D: MapTileDataOut>(
 ///
 /// A `scratch` buffer must be provided (to help reuse allocations).
 /// This function will clear it before and after use.
-pub fn serialize_map_lz4compressed<C: Coord, D: MapTileDataOut>(
-    data: &MapData<C, D>,
+pub fn serialize_map_lz4compressed<C: Coord, D: MapTileDataOut, L: MapDataLayout<C>>(
+    data: &MapData<C, D, L>,
     include_items: bool,
     out: &mut Vec<u8>,
     scratch: &mut Vec<u8>,
@@ -131,12 +131,12 @@ pub fn serialize_map_lz4compressed<C: Coord, D: MapTileDataOut>(
 ///
 /// The size of the input must be appropriate for the map size.
 /// The `data` will be mutated in-place by setting the new values.
-pub fn deserialize_map_uncompressed<C: Coord, D: MapTileDataIn>(
-    data: &mut MapData<C, D>,
+pub fn deserialize_map_uncompressed<C: Coord, D: MapTileDataIn, L: MapDataLayout<C>>(
+    data: &mut MapData<C, D, L>,
     include_items: bool,
     mut input: &[u8],
 ) -> Result<(), MapDecodeError> {
-    if input.len() != 2 * data.map_area() {
+    if input.len() != 2 * C::map_area(data.size()) {
         return Err(MapDecodeError::BadSize);
     }
     // decode tiles
@@ -193,14 +193,14 @@ pub fn deserialize_map_uncompressed<C: Coord, D: MapTileDataIn>(
 ///
 /// A `scratch` buffer must be provided (to help reuse allocations).
 /// This function will clear it before and after use.
-pub fn deserialize_map_lz4compressed<C: Coord, D: MapTileDataIn>(
-    data: &mut MapData<C, D>,
+pub fn deserialize_map_lz4compressed<C: Coord, D: MapTileDataIn, L: MapDataLayout<C>>(
+    data: &mut MapData<C, D, L>,
     include_items: bool,
     input: &[u8],
     scratch: &mut Vec<u8>,
 ) -> Result<(), MapDecodeError> {
     scratch.clear();
-    scratch.resize(2 * data.map_area(), 0);
+    scratch.resize(2 * C::map_area(data.size()), 0);
     let data_len = lz4_flex::block::decompress_into(input, scratch)
         .map_err(MapDecodeError::BadCompression)?;
     scratch.truncate(data_len);

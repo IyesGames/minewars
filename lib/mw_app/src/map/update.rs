@@ -6,22 +6,12 @@ use super::*;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
+        event_kind.in_set(MapUpdateSet::TileKind),
+        event_owner.in_set(MapUpdateSet::TileOwner),
+        event_digit.in_set(MapUpdateSet::TileDigit),
         (
-            event_kind::<Hex>.in_set(MapUpdateSet::TileKind),
-            event_owner::<Hex>.in_set(MapUpdateSet::TileOwner),
-            event_digit::<Hex>.in_set(MapUpdateSet::TileDigit),
-            (
-                (event_gents::<Hex>, event_explosion::<Hex>).chain(),
-            ).in_set(MapUpdateSet::TileGent),
-        ).in_set(MapTopologySet(Topology::Hex)),
-        (
-            event_kind::<Sq>.in_set(MapUpdateSet::TileKind),
-            event_owner::<Sq>.in_set(MapUpdateSet::TileOwner),
-            event_digit::<Sq>.in_set(MapUpdateSet::TileDigit),
-            (
-                (event_gents::<Sq>, event_explosion::<Sq>).chain(),
-            ).in_set(MapUpdateSet::TileGent),
-        ).in_set(MapTopologySet(Topology::Sq)),
+            (event_gents, event_explosion).chain(),
+        ).in_set(MapUpdateSet::TileGent),
     )
         .in_set(NeedsMapSet)
         .in_set(SetStage::WantChanged(GameOutEventSS))
@@ -31,10 +21,10 @@ pub fn plugin(app: &mut App) {
     ).in_set(NeedsMapSet));
 }
 
-fn event_kind<C: Coord>(
+fn event_kind(
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
-    index: Res<MapTileIndex<C>>,
+    index: Res<MapTileIndex>,
     mut q_tile: Query<&mut TileKind>,
 ) {
     for ev in evr.read() {
@@ -42,18 +32,18 @@ fn event_kind<C: Coord>(
             continue;
         }
         if let MwEv::Map { pos, ev: MapEv::TileKind { kind }} = ev.ev {
-            if let Ok(mut tilekind) = q_tile.get_mut(index.0[pos.into()]) {
+            if let Ok(mut tilekind) = q_tile.get_mut(index.0[pos]) {
                 *tilekind = kind;
             }
         }
     }
 }
 
-fn event_owner<C: Coord>(
+fn event_owner(
     mut commands: Commands,
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
-    index: Res<MapTileIndex<C>>,
+    index: Res<MapTileIndex>,
     cits: Res<CitIndex>,
     mut q_tile: Query<&mut TileOwner>,
     mut q_cit: Query<&mut CitOwner>,
@@ -64,13 +54,13 @@ fn event_owner<C: Coord>(
         }
         match ev.ev {
             MwEv::Map { pos, ev: MapEv::Digit { .. }} => {
-                let e_tile = index.0[pos.into()];
+                let e_tile = index.0[pos];
                 if let Ok(mut owner) = q_tile.get_mut(e_tile) {
                     owner.0 = viewing.0;
                 }
             }
             MwEv::Map { pos, ev: MapEv::Owner { plid }} => {
-                let e_tile = index.0[pos.into()];
+                let e_tile = index.0[pos];
                 if let Ok(mut owner) = q_tile.get_mut(e_tile) {
                     if owner.0 == viewing.0 && plid != viewing.0 {
                         commands.entity(e_tile).insert(
@@ -89,10 +79,10 @@ fn event_owner<C: Coord>(
     }
 }
 
-fn event_digit<C: Coord>(
+fn event_digit(
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
-    index: Res<MapTileIndex<C>>,
+    index: Res<MapTileIndex>,
     mut q_tile: Query<&mut TileDigit>,
 ) {
     for ev in evr.read() {
@@ -100,7 +90,7 @@ fn event_digit<C: Coord>(
             continue;
         }
         if let MwEv::Map { pos, ev: MapEv::Digit { digit, asterisk }} = ev.ev {
-            if let Ok(mut tiledigit) = q_tile.get_mut(index.0[pos.into()]) {
+            if let Ok(mut tiledigit) = q_tile.get_mut(index.0[pos]) {
                 tiledigit.0 = digit;
                 tiledigit.1 = asterisk;
             }
@@ -108,10 +98,10 @@ fn event_digit<C: Coord>(
     }
 }
 
-fn event_gents<C: Coord>(
+fn event_gents(
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
-    index: Res<MapTileIndex<C>>,
+    index: Res<MapTileIndex>,
     mut q_tile: Query<&mut TileGent>,
 ) {
     for ev in evr.read() {
@@ -133,7 +123,7 @@ fn event_gents<C: Coord>(
             // TODO: structures
             _ => continue,
         };
-        if let Ok(mut tilegent) = q_tile.get_mut(index.0[pos.into()]) {
+        if let Ok(mut tilegent) = q_tile.get_mut(index.0[pos]) {
             match *tilegent {
                 // Cits are important, protect them against bad updates
                 TileGent::Cit(_) => continue,
@@ -145,11 +135,11 @@ fn event_gents<C: Coord>(
     }
 }
 
-fn event_explosion<C: Coord>(
+fn event_explosion(
     mut commands: Commands,
     mut evr: EventReader<GameEvent>,
     viewing: Res<PlidViewing>,
-    index: Res<MapTileIndex<C>>,
+    index: Res<MapTileIndex>,
     mut q_tile: Query<(Entity, &MwTilePos, &mut TileGent)>,
 ) {
     for ev in evr.read() {
@@ -157,7 +147,7 @@ fn event_explosion<C: Coord>(
             continue;
         }
         if let MwEv::Map { pos, ev: MapEv::Explode } = ev.ev {
-            if let Ok((e, tilepos, mut tilegent)) = q_tile.get_mut(index.0[pos.into()]) {
+            if let Ok((e, tilepos, mut tilegent)) = q_tile.get_mut(index.0[pos]) {
                 let kind = if let TileGent::Item(ItemKind::Decoy) = *tilegent {
                     TileExplosionKind::Decoy
                 } else {

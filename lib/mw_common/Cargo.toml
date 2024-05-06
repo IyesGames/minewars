@@ -25,6 +25,7 @@ tracing = "0.1.40"
 rand_pcg = "0.3.1"
 noise = "0.9.0"
 interpolation = "0.3.0"
+morton-encoding = "2.0.1"
 
 [dependencies.hashbrown]
 version = "0.14.3"

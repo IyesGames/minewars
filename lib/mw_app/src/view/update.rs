@@ -1,13 +1,11 @@
 use mw_common::game::event::*;
-use mw_common::grid::*;
 
 use crate::prelude::*;
 use super::*;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
-        event_map::<Hex>.in_set(MapTopologySet(Topology::Hex)),
-        event_map::<Sq>.in_set(MapTopologySet(Topology::Sq)),
+        event_map,
     )
         .in_set(ViewUpdateSet)
         .in_set(NeedsMapSet)
@@ -16,10 +14,10 @@ pub fn plugin(app: &mut App) {
 }
 
 /// Apply *all* incoming game events to their respective views
-fn event_map<C: Coord>(
+fn event_map(
     mut evr: EventReader<GameEvent>,
     plids: Res<PlayersIndex>,
-    mut q_view: Query<&mut ViewMapData<C>>,
+    mut q_view: Query<&mut ViewMapData>,
 ) {
     for ev in evr.read() {
         let plid = ev.plid;

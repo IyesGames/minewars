@@ -275,11 +275,16 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
     pub fn is_anonymized(&self) -> bool {
         self.is_header.is_anonymized()
     }
-    pub fn read_map<'s, C: Coord, D: MapTileDataIn>(
+    pub fn read_map<'s, C, D, L>(
         &mut self,
         scratch: Option<&'s mut Vec<u8>>,
         include_items: bool,
-    ) -> Result<MapData<C, D>, MwReaderError> {
+    ) -> Result<MapData<C, D, L>, MwReaderError>
+    where
+        C: Coord,
+        D: MapTileDataIn,
+        L: MapDataLayout<C>,
+    {
         if C::TOPOLOGY != self.map_topology() {
             return Err(MwReaderError::WrongTopology);
         }
@@ -293,7 +298,7 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
         if self.is_mapdata_compressed() {
             if let Some(scratch) = scratch {
                 scratch.clear();
-                scratch.resize(2 * mapdata.map_area(), 0);
+                scratch.resize(2 * C::map_area(self.map_size()), 0);
                 let data_len = lz4_flex::block::decompress_into(self.buf, scratch)?;
                 scratch.truncate(data_len);
                 crate::map::deserialize_map_uncompressed(&mut mapdata, include_items, scratch)?;
@@ -305,22 +310,6 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
         }
 
         Ok(mapdata)
-    }
-    pub fn read_map_dyntopo<'s, D: MapTileDataIn>(
-        &mut self,
-        scratch: Option<&'s mut Vec<u8>>,
-        include_items: bool,
-    ) -> Result<MapDataTopo<D>, MwReaderError> {
-        match self.map_topology() {
-            Topology::Hex => {
-                let mapdata = self.read_map::<Hex, D>(scratch, include_items)?;
-                Ok(mapdata.into())
-            }
-            Topology::Sq => {
-                let mapdata = self.read_map::<Sq, D>(scratch, include_items)?;
-                Ok(mapdata.into())
-            }
-        }
     }
     pub fn read_cits_pos(&mut self) -> Result<&[Pos], MwReaderError> {
         self.buf.resize(self.is_header.len_citdata_pos(), 0);

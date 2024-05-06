@@ -12,7 +12,7 @@ pub struct MapManager {
 }
 
 pub struct Map {
-    data: MapDataTopo<MapGenTileData>,
+    data: MapDataPos<MapGenTileData>,
     cits: Vec<Pos>,
 }
 

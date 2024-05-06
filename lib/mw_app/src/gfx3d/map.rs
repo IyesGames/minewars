@@ -3,8 +3,6 @@ use mw_common::{game::{StructureKind, TileKind}, grid::{Coord, Hex}};
 use crate::prelude::*;
 use crate::map::{MapTileIndex, MwTilePos, TileGent};
 
-use super::*;
-
 pub fn plugin(app: &mut App) {
 }
 
@@ -70,7 +68,7 @@ pub enum Ass3dTileVariant {
 }
 
 pub fn compute_tile_ass3d(
-    tile_index: Res<MapTileIndex<Hex>>,
+    tile_index: Res<MapTileIndex>,
     mut q_tile: Query<
         (&mut TileAss3d, &MwTilePos, &TileKind, Option<&TileGent>),
         Or<(Changed<TileKind>, Changed<TileGent>)>,
@@ -95,7 +93,7 @@ pub fn compute_tile_ass3d(
         };
         let mut neighs = [TileKind::Water; 6];
         for (i, cc) in Hex::from(tilepos.0).iter_n1().enumerate() {
-            if let Some(kind) = tile_index.0.get(cc).and_then(|ee| q_tilekind.get(*ee).ok()) {
+            if let Some(kind) = tile_index.0.get(cc.into()).and_then(|ee| q_tilekind.get(*ee).ok()) {
                 neighs[i] = *kind;
             }
         }

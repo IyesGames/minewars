@@ -14,19 +14,11 @@ use super::*;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
-        (
-            setup_tilemap::<Hex>
-                .in_set(MapTopologySet(Topology::Hex)),
-            setup_tilemap::<Sq>
-                .in_set(MapTopologySet(Topology::Sq)),
-        )
+        setup_tilemap
             .in_set(TilemapSetupSet)
             .run_if(not(resource_exists::<TilemapInitted>)),
         (
-            tile_kind::<Hex>
-                .in_set(MapTopologySet(Topology::Hex)),
-            tile_kind::<Sq>
-                .in_set(MapTopologySet(Topology::Sq)),
+            tile_kind,
             tile_owner.after(MapUpdateSet::TileOwner),
             tile_digit_sprite_mgr.after(MapUpdateSet::TileDigit),
             tile_gent_sprite_mgr.after(MapUpdateSet::TileGent),
@@ -39,12 +31,7 @@ pub fn plugin(app: &mut App) {
         setup_cursor,
     ).in_set(Gfx2dModeSet::Any));
     app.add_systems(Update, (
-        (
-            cursor_sprite::<Hex>
-                .in_set(MapTopologySet(Topology::Hex)),
-            cursor_sprite::<Sq>
-                .in_set(MapTopologySet(Topology::Sq)),
-        )
+        cursor_sprite
             .in_set(SetStage::WantChanged(GridCursorSS)),
     ).in_set(Gfx2dModeSet::Any));
 }
@@ -89,7 +76,8 @@ fn setup_cursor(
     ));
 }
 
-fn cursor_sprite<C: Coord>(
+fn cursor_sprite(
+    desc: Res<MapDescriptor>,
     mut q: Query<(&mut Transform, &mut MwTilePos), With<CursorSprite>>,
     crs: Res<GridCursor>,
 ) {
@@ -98,27 +86,29 @@ fn cursor_sprite<C: Coord>(
     };
     *pos = MwTilePos(crs.0);
 
-    let (width, height) = match C::TOPOLOGY {
+    let (width, height, trans) = match desc.topology {
         Topology::Hex => (
             super::sprite::WIDTH6, super::sprite::HEIGHT6,
+            Hex::from(crs.0).translation(),
         ),
         Topology::Sq => (
             super::sprite::WIDTH4, super::sprite::HEIGHT4,
+            Sq::from(crs.0).translation(),
         ),
     };
-    let trans = C::from(crs.0).translation();
     xf.translation = Vec3::new(trans.x * width, trans.y * height, super::zpos::CURSOR);
 }
 
-fn setup_tilemap<C: Coord>(
+fn setup_tilemap(
     world: &mut World,
 ) {
+    let topology = world.resource::<MapDescriptor>().topology;
     let (sprites_layout, sprites_img) = {
         let gas = world.resource::<GameAssets>();
         (gas.sprites_layout.clone(), gas.sprites_img.clone())
     };
-    let index = world.remove_resource::<MapTileIndex<C>>().unwrap();
-    let (sprite_index, width, height) = match C::TOPOLOGY {
+    let index = world.remove_resource::<MapTileIndex>().unwrap();
+    let (sprite_index, width, height) = match topology {
         Topology::Hex => (
             super::sprite::TILES6 + super::sprite::TILE_WATER,
             super::sprite::WIDTH6, super::sprite::HEIGHT6,
@@ -129,7 +119,10 @@ fn setup_tilemap<C: Coord>(
         ),
     };
     for (c, &e) in index.0.iter() {
-        let trans = c.translation();
+        let trans = match topology {
+            Topology::Hex => Hex::from(c).translation(),
+            Topology::Sq => Sq::from(c).translation(),
+        };
         world.entity_mut(e).insert((
             BaseSprite,
             SpriteSheetBundle {
@@ -152,16 +145,17 @@ fn setup_tilemap<C: Coord>(
     debug!("Initialized map using Sprites renderer.");
 }
 
-fn tile_kind<C: Coord>(
+fn tile_kind(
     mut q: Query<
         (&mut TextureAtlas, &mut Sprite, &TileKind, &MwTilePos),
         (With<BaseSprite>, Changed<TileKind>)
     >,
     plids: Res<PlayersIndex>,
     viewing: Res<PlidViewing>,
-    q_view: Query<&ViewMapData<C>>,
+    q_view: Query<&ViewMapData>,
+    desc: Res<MapDescriptor>,
 ) {
-    let i_base = match C::TOPOLOGY {
+    let i_base = match desc.topology {
         Topology::Hex => super::sprite::TILES6,
         Topology::Sq => super::sprite::TILES4,
     };
@@ -182,11 +176,18 @@ fn tile_kind<C: Coord>(
                 .expect("Plid has no entity??");
             let view = q_view.get(*e_plid)
                 .expect("Plid has no view??");
-            let a =  fancytint(
-                view.0.size(),
-                C::from(pos.0),
-                |c| view.0[c].kind()
-            );
+            let a = match desc.topology {
+                Topology::Hex => fancytint(
+                    view.0.size(),
+                    Hex::from(pos.0),
+                    |c| view.0[c.into()].kind()
+                ),
+                Topology::Sq => fancytint(
+                    view.0.size(),
+                    Sq::from(pos.0),
+                    |c| view.0[c.into()].kind()
+                ),
+            };
             spr.color.set_a(a);
         } else {
             spr.color.set_a(1.0);

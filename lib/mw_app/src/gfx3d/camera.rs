@@ -19,10 +19,7 @@ pub fn plugin(app: &mut App) {
             .in_set(InStateSet(AppState::InGame))
             .in_set(Gfx3dModeSet::Any)
             .in_set(SetStage::Provide(WorldCursorSS)),
-        (
-            grid_cursor::<Hex>.in_set(MapTopologySet(Topology::Hex)),
-            grid_cursor::<Sq>.in_set(MapTopologySet(Topology::Sq)),
-        )
+        grid_cursor
             .in_set(Gfx3dModeSet::Any)
             .in_set(SetStage::Provide(GridCursorSS))
             .in_set(SetStage::WantChanged(WorldCursorSS)),
@@ -195,14 +192,14 @@ fn compute_cursor_to_ground_plane(
     Some(Vec2::new(global_cursor.x, -global_cursor.z))
 }
 
-fn grid_cursor<C: Coord>(
+fn grid_cursor(
     crs_in: Res<WorldCursor>,
     mut crs_out: ResMut<GridCursor>,
     mapdesc: Res<MapDescriptor>,
-    index: Option<Res<MapTileIndex<C>>>,
+    index: Option<Res<MapTileIndex>>,
     mut cursor_tile: ResMut<GridCursorTileEntity>,
 ) {
-    match C::TOPOLOGY {
+    match mapdesc.topology {
         Topology::Hex => {
             let tdim = Vec2::new((3f64.sqrt() * TILE_SCALE as f64 / 2.0) as f32, TILE_SCALE);
             let conv = bevy::math::Mat2::from_cols_array(

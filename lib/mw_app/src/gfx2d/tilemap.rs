@@ -17,19 +17,11 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Startup, prealloc_tilemap);
     app.add_systems(OnExit(AppState::AssetsLoading), preprocess_tilemap_assets);
     app.add_systems(Update, (
-        (
-            setup_tilemap::<Hex>
-                .in_set(MapTopologySet(Topology::Hex)),
-            setup_tilemap::<Sq>
-                .in_set(MapTopologySet(Topology::Sq)),
-        )
+        setup_tilemap
             .in_set(TilemapSetupSet)
             .run_if(not(resource_exists::<TilemapInitted>)),
         (
-            tile_kind::<Hex>
-                .in_set(MapTopologySet(Topology::Hex)),
-            tile_kind::<Sq>
-                .in_set(MapTopologySet(Topology::Sq)),
+            tile_kind,
             tile_owner.after(MapUpdateSet::TileOwner),
             digit_tilemap_mgr.after(MapUpdateSet::TileDigit),
             gent_tilemap_mgr.after(MapUpdateSet::TileGent),
@@ -119,20 +111,21 @@ fn preprocess_tilemap_assets(
     });
 }
 
-fn setup_tilemap<C: Coord>(
+fn setup_tilemap(
     world: &mut World,
 ) {
+    let topology = world.resource::<MapDescriptor>().topology;
     let (img_sprites, img_roads) = {
         let gas = world.resource::<GameAssets>();
         (
             gas.sprites_img.clone(),
-            match C::TOPOLOGY {
+            match topology {
                 Topology::Hex => gas.roads6_img.clone(),
                 Topology::Sq => gas.roads4_img.clone(),
             },
         )
     };
-    let index = world.remove_resource::<MapTileIndex<C>>().unwrap();
+    let index = world.remove_resource::<MapTileIndex>().unwrap();
 
     let map_size = world.resource::<MapDescriptor>().size;
     let tm_size = TilemapSize {
@@ -140,7 +133,7 @@ fn setup_tilemap<C: Coord>(
         y: map_size as u32 * 2 + 1,
     };
 
-    let (sprite_index, width, height, map_type) = match C::TOPOLOGY {
+    let (sprite_index, width, height, map_type) = match topology {
         Topology::Hex => (
             super::sprite::TILES6 + super::sprite::TILE_WATER,
             super::sprite::WIDTH6, super::sprite::HEIGHT6,
@@ -251,16 +244,17 @@ fn setup_tilemap<C: Coord>(
     world.insert_resource(TilemapInitted);
 }
 
-fn tile_kind<C: Coord>(
+fn tile_kind(
     mut q: Query<
         (&mut TileTextureIndex, &mut TileColor, &TileKind, &MwTilePos),
         (With<BaseSprite>, Changed<TileKind>)
     >,
     plids: Res<PlayersIndex>,
     viewing: Res<PlidViewing>,
-    q_view: Query<&ViewMapData<C>>,
+    q_view: Query<&ViewMapData>,
+    desc: Res<MapDescriptor>,
 ) {
-    let i_base = match C::TOPOLOGY {
+    let i_base = match desc.topology {
         Topology::Hex => super::sprite::TILES6,
         Topology::Sq => super::sprite::TILES4,
     };
@@ -281,11 +275,18 @@ fn tile_kind<C: Coord>(
                 .expect("Plid has no entity??");
             let view = q_view.get(*e_plid)
                 .expect("Plid has no view??");
-            let a = fancytint(
-                view.0.size(),
-                C::from(pos.0),
-                |c| view.0[c].kind()
-            );
+            let a = match desc.topology {
+                Topology::Hex => fancytint(
+                    view.0.size(),
+                    Hex::from(pos.0),
+                    |c| view.0[c.into()].kind()
+                ),
+                Topology::Sq => fancytint(
+                    view.0.size(),
+                    Sq::from(pos.0),
+                    |c| view.0[c.into()].kind()
+                ),
+            };
             color.0.set_a(a);
         } else {
             color.0.set_a(1.0);

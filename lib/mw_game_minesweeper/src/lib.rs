@@ -59,14 +59,14 @@ pub enum MinesweeperSchedEvent {
 
 pub struct GameMinesweeper<C: Coord> {
     settings: MinesweeperSettings,
-    mapdata: MapData<C, TileData>,
+    mapdata: MapDataC<C, TileData>,
     playerdata: Vec<PlayerData>,
     n_unexplored_tiles: u16,
     floodq: FloodQ,
 }
 
 impl<C: Coord> GameMinesweeper<C> {
-    pub fn new<D>(mut settings: MinesweeperSettings, map_src: &MapData<C, D>, f_tilekind: impl Fn(&D) -> TileKind) -> Self {
+    pub fn new<D>(mut settings: MinesweeperSettings, map_src: &MapDataC<C, D>, f_tilekind: impl Fn(&D) -> TileKind) -> Self {
         let mut n_unexplored_tiles = 0;
         settings.n_lives = settings.n_lives.max(1);
         settings.n_plids = settings.n_plids.max(1);

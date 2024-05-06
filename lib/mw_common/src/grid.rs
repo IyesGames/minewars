@@ -24,14 +24,18 @@ use enum_map::Enum;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
-pub mod hex;
+pub mod layout;
 pub mod map;
+
 pub mod pos;
+pub mod hex;
 pub mod sq;
 
 pub use hex::Hex;
 pub use map::MapData;
-pub use map::MapDataTopo;
+pub use map::MapDataC;
+pub use map::MapDataPos;
+pub use layout::{IsMapKey, MapDataLayout};
 pub use pos::Pos;
 pub use sq::Sq;
 
@@ -73,6 +77,7 @@ pub trait Coord:
     + MulAssign<u8>
     + bytemuck::Pod
     + bytemuck::Zeroable
+    + layout::IsMapKey
 {
     const N0: usize;
     const N1: usize;
@@ -102,13 +107,12 @@ pub trait Coord:
     fn as_pos(self) -> Pos {
         self.into()
     }
-    fn map_area(r: u8) -> usize;
     fn row_len(r: u8, y: i8) -> usize;
-    fn aa_indent(y: i8) -> usize;
     fn xmin(r: u8, y: i8) -> i8;
     fn xmax(r: u8, y: i8) -> i8;
-    fn index(r: u8, c: Self) -> usize;
     fn iter_coords(r: u8) -> Self::IterCoords;
+    fn map_area(r: u8) -> usize;
+    fn aa_indent(y: i8) -> usize;
 }
 
 #[derive(Error, Debug)]

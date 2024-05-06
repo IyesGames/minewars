@@ -54,7 +54,7 @@ pub enum MapUpdateSet {
 pub struct GridCursorTileEntity(pub Option<Entity>);
 
 #[derive(Resource)]
-pub struct MapTileIndex<C: Coord>(pub MapData<C, Entity>);
+pub struct MapTileIndex(pub MapDataPos<Entity>);
 
 #[derive(Resource)]
 pub struct ItemIndex(pub HashMap<Pos, Entity>);
@@ -228,7 +228,7 @@ impl TileUpdateQueue {
             self.0.push(entity);
         }
     }
-    pub fn mark_coord<C: Coord>(&mut self, index: &MapTileIndex<C>, c: C) {
+    pub fn mark_coord(&mut self, index: &MapTileIndex, c: Pos) {
         // if we are already checking all tiles, no need to do anything
         if self.is_marked_all() {
             if let Some(e) = index.0.get(c) {
@@ -243,15 +243,15 @@ impl TileUpdateQueue {
 /// This is not a standalone system, because we can have map data
 /// that comes from different sources (server, file, procgen) and
 /// we want to be able to initialize the tilemap from any of them.
-pub fn setup_map<C: Coord, D>(
+pub fn setup_map<C: Coord, D, L: MapDataLayout<C>>(
     world: &mut World,
-    mapdata: &MapData<C, D>,
+    mapdata: &MapData<C, D, L>,
     cits: &[Pos],
     f_tilekind: impl Fn(&D) -> TileKind,
     f_regid: impl Fn(&D) -> u8,
 ) {
     let mut tile_index = MapTileIndex(
-        MapData::<C, _>::new(mapdata.size(), Entity::PLACEHOLDER)
+        MapDataPos::new(mapdata.size(), Entity::PLACEHOLDER)
     );
 
     let mut cit_index = CitIndex {
@@ -291,7 +291,7 @@ pub fn setup_map<C: Coord, D>(
         } else {
             world.spawn(b_base).id()
         };
-        tile_index.0[c] = e_tile;
+        tile_index.0[c.into()] = e_tile;
     }
 
     for (i, cit_pos) in cits.iter().enumerate() {
