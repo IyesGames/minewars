@@ -1,0 +1,70 @@
+[package]
+name = "mw_ui_desktop"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+dev = []
+release = []
+proprietary = []
+
+[dependencies.mw_common]
+path = "../mw_common"
+features = [ "bevy" ]
+
+[dependencies.mw_engine]
+path = "../mw_engine"
+
+[dependencies.mw_app]
+path = "../mw_app"
+
+[dependencies]
+
+[dependencies.bevy]
+version = "0.13.2"
+default-features = false
+features = [
+    "animation",
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi-threaded",
+    "png",
+    "jpeg",
+    "webp",
+    "hdr",
+    "dds",
+    "ktx2",
+    "zstd",
+    "vorbis",
+    "flac",
+    "wav",
+    "x11",
+    "wayland",
+    "bevy_gizmos",
+    "android_shared_stdcxx",
+    "tonemapping_luts",
+    "default_font",
+    "serialize",
+]
+
+[dependencies.bevy_tweening]
+version = "0.10.0"
+
+[dependencies.iyes_bevy_extras]
+git = "https://github.com/IyesGames/iyes_bevy_extras"
+
+[dependencies.iyes_ui]
+git = "https://github.com/IyesGames/iyes_ui"
+features = ["iyes_cli"]

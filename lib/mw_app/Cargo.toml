@@ -6,12 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-dev = [
-    "bevy/file_watcher",
-    "bevy/bevy_debug_stepping",
-    "bevy/glam_assert",
-    "bevy/dynamic_linking",
-]
+dev = []
 release = []
 proprietary = []
 gfx2d = ["iyes_bevy_extras/2d"]
@@ -22,6 +17,9 @@ buttplug = ["dep:buttplug"]
 [dependencies.mw_common]
 path = "../mw_common"
 features = [ "bevy", "net" ]
+
+[dependencies.mw_engine]
+path = "../mw_engine"
 
 [dependencies.mw_game_minesweeper]
 path = "../mw_game_minesweeper"
@@ -98,7 +96,7 @@ features = [
 
 [dependencies.iyes_progress]
 version = "0.11.0"
-features = []
+features = ["assets"]
 
 [dependencies.bevy_asset_loader]
 version = "0.20"

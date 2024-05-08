@@ -6,12 +6,26 @@ license = "MIT OR Apache-2.0"
 publish = false
 
 [features]
-dev = ["mw_app/dev"]
-release = ["mw_app/release"]
+default = ["gfx2d_tilemap", "gfx3d", "buttplug"]
+dev = ["mw_engine/dev", "mw_app/dev", "mw_ui_desktop/dev", "mw_ui_mobile/dev"]
+release = ["mw_engine/release", "mw_app/release", "mw_ui_desktop/release", "mw_ui_mobile/release"]
 proprietary = ["mw_app/proprietary", "dep:mw_app_proprietary"]
+gfx2d = ["mw_app/gfx2d"]
+gfx2d_tilemap = ["mw_app/gfx2d_tilemap"]
+gfx3d = ["mw_app/gfx3d"]
+buttplug = ["mw_app/buttplug"]
+
+[dependencies.mw_engine]
+path = "../lib/mw_engine"
 
 [dependencies.mw_app]
 path = "../lib/mw_app"
+
+[dependencies.mw_ui_mobile]
+path = "../lib/mw_ui_mobile"
+
+[dependencies.mw_ui_desktop]
+path = "../lib/mw_ui_desktop"
 
 [dependencies.mw_app_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"
@@ -27,7 +41,6 @@ apk_name = "MineWars"
 assets = "../assets"
 strip = "strip"
 build_targets = ["aarch64-linux-android"]
-# build_targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
 # build_targets = ["aarch64-linux-android", "armv7-linux-androideabi", "x86_64-linux-android"]
 
 [package.metadata.android.sdk]

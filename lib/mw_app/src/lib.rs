@@ -8,6 +8,7 @@ pub mod prelude {
     pub use iyes_cli::prelude::*;
     pub use iyes_ui::prelude::*;
     pub use mw_common::prelude::*;
+    pub use mw_engine::prelude::*;
     pub use crate::apporg::*;
     pub use crate::settings::AllSettings;
     pub use crate::PROPRIETARY;
@@ -47,6 +48,8 @@ pub mod dev;
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
+    // mw_engine
+    app.add_plugins(mw_engine::plugin);
     // external plugins
     app.add_plugins((
         #[cfg(feature = "gfx2d_tilemap")]

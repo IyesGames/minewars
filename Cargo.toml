@@ -26,32 +26,41 @@ mw_auth_proprietary = { path = "../minewars-proprietary/lib/mw_auth_proprietary"
 [workspace]
 resolver = "2"
 members = [
-    "mobile",
-    "lib/mw_app",
-    "lib/mw_dataformat",
-    "lib/mw_host",
-    "lib/mw_proto_hostauth",
-    "lib/mw_auth",
-    "lib/mw_game_minesweeper",
-    "lib/mw_proto_auth",
-    "lib/mw_proto_hostrpc",
-    "lib/mw_common",
-    "lib/mw_proto_host",
-    "bin/mw_authsrv",
-    "bin/mw_certgen",
-    "bin/mw_datatool",
-    "bin/mw_hostrpc",
-    "bin/mw_hostsrv",
+    # binaries:
+    # (self) # desktop client app
+    "mobile", # mobile client app
+    "bin/mw_authsrv", # Auth Server
+    "bin/mw_hostsrv", # Host Server
+    "bin/mw_certgen", # Cert Mgmt CLI
+    "bin/mw_datatool", # CLI for mw_dataformat
+    "bin/mw_hostrpc", # CLI for controlling Host
+    # foundational
+    "lib/mw_common", # Common code for everything
+    "lib/mw_dataformat", # Dataformat codec
+    # protocols
+    "lib/mw_proto_auth", # Client <> Auth
+    "lib/mw_proto_host", # Client <> Host
+    "lib/mw_proto_hostrpc", # HostRPC <> Host
+    "lib/mw_proto_hostauth", # Host <> Auth
+    # server stuff
+    "lib/mw_host", # FOSS part of Host Server
+    "lib/mw_auth", # FOSS part of Auth Server
+    # client stuff
+    "lib/mw_engine", # Bespoke tech for mw_app
+    "lib/mw_app", # FOSS part of Game Client sans UI
+    "lib/mw_ui_desktop", # Desktop UI of mw_app
+    "lib/mw_ui_mobile",  # Mobile UI of mw_app
+    # gameplay for different game modes
+    "lib/mw_game_minesweeper", # FOSS minesweeper mode
 ]
 
-# dev: Enable max optimizations for dependencies, but not for our code
-[profile.dev.package."*"]
-opt-level = 3
-# dev: no LTO, lots of codegen units for parallelism during compilation
+# dev: no LTO, some optimization,
+# lots of codegen units for parallelism during compilation
 [profile.dev]
+opt-level = 1
 debug = false
 lto = false
-codegen-units = 10
+codegen-units = 16
 # release: Enable LTO and limit codegen units for better codegen
 [profile.release]
 opt-level = 3
@@ -61,16 +70,25 @@ debug = false
 
 [features]
 default = ["gfx2d_tilemap", "gfx3d", "buttplug"]
-dev = ["mw_app/dev"]
-release = ["mw_app/release"]
+dev = ["mw_engine/dev", "mw_app/dev", "mw_ui_desktop/dev", "mw_ui_mobile/dev"]
+release = ["mw_engine/release", "mw_app/release", "mw_ui_desktop/release", "mw_ui_mobile/release"]
 proprietary = ["mw_app/proprietary", "dep:mw_app_proprietary"]
 gfx2d = ["mw_app/gfx2d"]
 gfx2d_tilemap = ["mw_app/gfx2d_tilemap"]
 gfx3d = ["mw_app/gfx3d"]
 buttplug = ["mw_app/buttplug"]
 
+[dependencies.mw_engine]
+path = "lib/mw_engine"
+
 [dependencies.mw_app]
 path = "lib/mw_app"
+
+[dependencies.mw_ui_desktop]
+path = "lib/mw_ui_desktop"
+
+[dependencies.mw_ui_mobile]
+path = "lib/mw_ui_mobile"
 
 [dependencies.mw_app_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"

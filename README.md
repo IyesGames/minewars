@@ -163,7 +163,8 @@ for networking. The servers do not use [Bevy], and are pure [tokio].
 Given that this is a multiplayer game, and there are many parts to it
 (game client, servers, tooling, etc.), this repo contains many Rust crates:
 
- - Top-level (`minewars`): the main game client binary
+ - Top-level (`minewars`): the main game client binary (Desktop Platforms)
+ - `mobile/`: the main game client binary (Mobile Platforms)
  - `bin/`: other binaries and tools
    - `mw_hostsrv`: the dedicated game server
    - `mw_hostrpc`: CLI tool for controlling and managing the Host server
@@ -172,29 +173,45 @@ Given that this is a multiplayer game, and there are many parts to it
    - `mw_datatool`: CLI tool for working with the MineWars data format
  - `lib/`: supporting libraries:
    - `mw_common`: common code for everything
-   - `mw_app`: the open-source part of the client
    - `mw_host`: the open-source part of the Host server
    - `mw_auth`: the open-source part of the Auth server
+   - `mw_engine`: bespoke tech used by `mw_app`
+   - `mw_app`: the open-source part of the client
+   - `mw_ui_desktop`: the desktop UI of `mw_app`
+   - `mw_ui_mobile`: the mobile UI of `mw_app`
    - `mw_dataformat`: co/dec for the format used for gameplay data
      (both replay/scenario files and over-the-wire gameplay)
    - `mw_proto_host`: protocol between the client/player and Host server
    - `mw_proto_auth`: protocol between the client/player and Auth server
    - `mw_proto_hostrpc`: RPC protocol for the Host server
    - `mw_proto_hostauth`: protocol between Host and Auth
-   - `mw_game_minesweeper`: the various Minesweeper game modes (not MineWars)
+   - `mw_game_minesweeper`: minimal FOSS Minesweeper game mode
  - `cfg/`: example config files and certificates for testing/development
 
 Crates from the Proprietary Repo (not publicly available, just stubbed):
  - `mw_app_proprietary`: proprietary parts of the client app
  - `mw_host_proprietary`: proprietary parts of the Host server
  - `mw_auth_proprietary`: proprietary parts of the Auth server
- - `mw_game_minewars`: the full-fledged MineWars game mode
+ - `mw_game_minewars`: the full-fledged MineWars game modes
 
-The top-level crate (`minewars`) just combines `mw_app` and (optionally)
-`mw_app_proprietary` (not in this repo) to create a single executable binary.
-All of the actual code for the client app lives in those crates.
+All of the actual code for the client app lives in library crates.
 
-Similarly:
+The top-level crate (`minewars`) just creates a single executable
+binary by combining:
+ - `mw_app`
+ - `mw_ui_desktop` (used by default)
+ - `mw_ui_mobile` (available behind a setting)
+ - `mw_app_proprietary` (optional, not in this repo)
+
+The `mobile` crate is very similar; it creates the mobile apps for
+iOS/Android by combining:
+ - `mw_app`
+ - `mw_ui_mobile` (used by default)
+ - `mw_ui_desktop` (available behind a setting)
+ - `mw_app_proprietary` (optional, not in this repo)
+ - extra mobile-specific code within the `mobile` crate
+
+Similarly, for the servers:
  - `mw_hostsrv` creates a binary out of `mw_host` and (optionally) `mw_host_proprietary`
  - `mw_authsrv` creates a binary out of `mw_auth` and (optionally) `mw_auth_proprietary`
 
@@ -219,11 +236,11 @@ This repo contains some basic assets needed to run MineWars.
  - `assets/ui/*`: CC-BY-SA 4.0
  - `assets/audio/*`: CC-BY-SA 4.0
 
-The `assets-src` folder contains the source files (Blender, Inkscape, etc.) used to generate
-the various assets that are not sourced externally. There are also some scripts to process
-them if needed.
+The `assets-src` folder contains the source files (Blender, Inkscape,
+etc.) used to generate the various assets that are not sourced
+externally. There are also some scripts to process them if needed.
 
-The official builds of the game contain extra/different assets, that are proprietary.
-If you have an official copy of the game, feel free to use those assets for private use
-with open-source builds of the game. They should be compatible. Just copy them into the
-`assets` folder.
+The official builds of the game contain extra/different assets, that
+are proprietary. If you have an official copy of the game, feel free to
+use those assets for private use with open-source builds of the game. They
+should be compatible. Just copy them into the `assets` folder.
