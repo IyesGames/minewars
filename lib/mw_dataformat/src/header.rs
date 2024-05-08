@@ -22,13 +22,11 @@ pub struct ISHeader {
     pub version: Version,
     pub flags: u8,
     pub map_size: u8,
-    pub n_players: u8,
+    pub plmax: u8,
     pub n_regions: u8,
     pub len_mapdata_compressed: u32,
     pub len_rules: u16,
     pub len_citdata_names: u16,
-    pub len_playerdata: u16,
-    pub reserved0: u16,
 }
 
 /// The MineWars File Header Extras
@@ -95,7 +93,6 @@ impl ISHeader {
         {
             let out_header: &mut ISHeader = bytemuck::from_bytes_mut(&mut out[start..]);
             out_header.len_rules = out_header.len_rules.swap_bytes();
-            out_header.len_playerdata = out_header.len_playerdata.swap_bytes();
             out_header.len_mapdata_compressed = out_header.len_mapdata_compressed.swap_bytes();
         }
     }
@@ -105,16 +102,24 @@ impl ISHeader {
         #[cfg(target_endian = "little")]
         {
             out_header.len_rules = out_header.len_rules.swap_bytes();
-            out_header.len_playerdata = out_header.len_playerdata.swap_bytes();
             out_header.len_mapdata_compressed = out_header.len_mapdata_compressed.swap_bytes();
         }
         out_header
     }
+    pub fn max_plid(&self) -> u8 {
+        self.plmax & 0x0F
+    }
+    pub fn max_sub_plid(&self) -> u8 {
+        (self.plmax & 0xF0) >> 4
+    }
+    pub fn set_max_plid(&mut self, x: u8) {
+        self.plmax = (self.plmax & 0xF0) | (x & 0x0F);
+    }
+    pub fn set_max_sub_plid(&mut self, x: u8) {
+        self.plmax = (self.plmax & 0x0F) | ((x & 0x0F) << 4);
+    }
     pub fn is_mapdata_compressed(&self) -> bool {
         self.len_mapdata_compressed() != self.len_mapdata_raw()
-    }
-    pub fn is_anonymized(&self) -> bool {
-        self.len_playerdata() == 0
     }
     pub fn len_total_is(&self) -> usize {
         Self::serialized_len() + self.len_total_data()
@@ -130,9 +135,6 @@ impl ISHeader {
             Topology::Hex => Hex::map_area(self.map_size),
             Topology::Sq => Sq::map_area(self.map_size),
         }
-    }
-    pub fn len_playerdata(&self) -> usize {
-        self.len_playerdata as usize
     }
     pub fn len_citdata_names(&self) -> usize {
         self.len_citdata_names as usize
@@ -150,22 +152,15 @@ impl ISHeader {
         self.len_mapdata_compressed()
         + self.len_citdata_pos()
     }
-    pub fn offset_playerdata(&self) -> usize {
-        self.len_mapdata_compressed()
-        + self.len_citdata_pos()
-        + self.len_citdata_names()
-    }
     pub fn offset_rules(&self) -> usize {
         self.len_mapdata_compressed()
         + self.len_citdata_pos()
         + self.len_citdata_names()
-        + self.len_playerdata()
     }
     pub fn len_total_data(&self) -> usize {
         self.len_mapdata_compressed()
         + self.len_citdata_pos()
         + self.len_citdata_names()
-        + self.len_playerdata()
         + self.len_rules()
     }
 }

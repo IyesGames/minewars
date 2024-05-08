@@ -1,7 +1,9 @@
+#![feature(str_split_whitespace_remainder)]
+#![feature(round_char_boundary)]
+
 pub mod header;
 pub mod map;
 pub mod msg;
-pub mod time;
 
 pub mod read;
 pub mod write;

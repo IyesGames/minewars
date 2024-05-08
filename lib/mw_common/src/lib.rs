@@ -43,6 +43,7 @@ pub mod prelude {
     pub use quinn;
     #[cfg(feature = "net")]
     pub use crate::net::prelude::*;
+    pub use crate::time::MwDur;
 }
 
 #[cfg(feature = "net")]
@@ -54,3 +55,4 @@ pub mod grid;
 pub mod plid;
 pub mod phoneme;
 pub mod game;
+pub mod time;

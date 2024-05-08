@@ -32,7 +32,6 @@ pub fn main(common: &CommonArgs, args: &GenMapArgs) -> AnyResult<()> {
             (Pos(12, 17), [Ph::A, Ph::B, Ph::E, Ph::Z].as_slice()),
             (Pos(7, 3), [Ph::I, Ph::D, Ph::A].as_slice()),
         ])?
-        .with_named_players(["iyes", "georgie", "gr.NET"])?
         .finish()?;
     let b_file = b_file.with_is(is)?;
     b_file.finish()?;

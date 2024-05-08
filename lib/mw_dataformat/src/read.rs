@@ -72,7 +72,7 @@ pub enum MwFrameReader<'b, 's, R: Read + Seek> {
 pub struct MwFrameDataReader<'b, R: Read + Seek> {
     off_data: u64,
     current_time_ms: u64,
-    n_players: u8,
+    max_plid: u8,
     n_views: u8,
     frame_kind: FrameKind,
     buf: &'b mut Vec<u8>,
@@ -154,7 +154,7 @@ impl<'b, R: Read + Seek> MwFileReader<'b, R> {
                 MwFrameDataReader {
                     off_data: 0,
                     current_time_ms: 0,
-                    n_players: self.is_header.n_players,
+                    max_plid: self.is_header.max_plid(),
                     n_views: 0,
                     frame_kind: FrameKind::Unknown,
                     buf: self.buf,
@@ -166,7 +166,7 @@ impl<'b, R: Read + Seek> MwFileReader<'b, R> {
                 MwFrameDataReader {
                     off_data: offset_framedata,
                     current_time_ms: 0,
-                    n_players: self.is_header.n_players,
+                    max_plid: self.is_header.max_plid(),
                     n_views: 0,
                     frame_kind: FrameKind::Unknown,
                     buf: self.buf,
@@ -257,8 +257,11 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
     pub fn header(&self) -> &ISHeader {
         &self.is_header
     }
-    pub fn n_players(&self) -> u8 {
-        self.is_header.n_players
+    pub fn max_plid(&self) -> u8 {
+        self.is_header.max_plid()
+    }
+    pub fn max_sub_plid(&self) -> u8 {
+        self.is_header.max_sub_plid()
     }
     pub fn n_regions(&self) -> u8 {
         self.is_header.n_regions
@@ -271,9 +274,6 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
     }
     pub fn is_mapdata_compressed(&self) -> bool {
         self.is_header.is_mapdata_compressed()
-    }
-    pub fn is_anonymized(&self) -> bool {
-        self.is_header.is_anonymized()
     }
     pub fn read_map<'s, C, D, L>(
         &mut self,
@@ -327,16 +327,6 @@ impl<'b, R: Read + Seek> MwISReader<'b, R> {
             buf: self.buf
         })
     }
-    pub fn read_players(&mut self) -> Result<PlayerNamesIter<'_>, MwReaderError> {
-        self.buf.resize(self.is_header.len_playerdata(), 0);
-        self.reader.seek(SeekFrom::Start(self.off_data as u64 + self.is_header.offset_playerdata() as u64))?;
-        self.reader.read_exact(self.buf)?;
-        Ok(PlayerNamesIter {
-            current_plid: 0,
-            total_plids: self.n_players(),
-            buf: self.buf
-        })
-    }
 }
 
 impl<'b, R: Read + Seek> MwFrameDataReader<'b, R> {
@@ -373,11 +363,11 @@ impl<'b, R: Read + Seek> MwFrameDataReader<'b, R> {
             let len_plidsmask = self.len_plidsmask();
             self.buf.resize(len_plidsmask, 0);
             self.reader.read_exact(self.buf)?;
-            self.n_views = 0;
-            for b in self.buf.iter() {
-                // PERF: can we do this more than one byte at a time?
-                self.n_views += b.count_ones() as u8;
-            }
+            self.n_views = match len_plidsmask {
+                1 => self.buf[0].count_ones() as u8,
+                2 => u16::from_ne_bytes([self.buf[0], self.buf[1]]).count_ones() as u8,
+                _ => unreachable!(),
+            };
             self.buf.resize(len_plidsmask + self.n_views as usize, 0);
             self.reader.read_exact(&mut self.buf[len_plidsmask..])?;
         }
@@ -436,7 +426,7 @@ impl<'b, R: Read + Seek> MwFrameDataReader<'b, R> {
         }
     }
     fn len_plidsmask(&self) -> usize {
-        (self.n_players as usize + 1) / 8 + 1
+        (self.max_plid as usize + 1) / 8 + 1
     }
     fn offset_next_frame(&self) -> u64 {
         let len_plidsmask = self.len_plidsmask();
@@ -462,7 +452,7 @@ impl<'b, R: Read + Seek> MwFrameDataReader<'b, R> {
             _ => {}
         }
         let plid = u8::from(plid);
-        if plid > self.n_players {
+        if plid > self.max_plid {
             return false;
         }
         let mask_byte = self.len_plidsmask() - plid as usize / 8; // Big Endian
@@ -486,7 +476,7 @@ pub struct MwFrameStreamIter<'a, 'b, R: Read + Seek> {
 impl<'a, 'b, R: Read + Seek> Iterator for MwFrameStreamIter<'a, 'b, R> {
     type Item = Result<&'a [u8], MwReaderError>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.i > self.reader.n_players as usize {
+        if self.i > self.reader.max_plid as usize {
             return None;
         }
         let i_sub = self.i % 8;
@@ -557,40 +547,7 @@ impl<'a, 'b, R: Read + Seek> Iterator for MwFrameStreamIter<'a, 'b, R> {
     }
 }
 
-pub struct PlayerNamesIter<'b> {
-    current_plid: u8,
-    total_plids: u8,
-    buf: &'b [u8],
-}
-
-impl<'b> Iterator for PlayerNamesIter<'b> {
-    type Item = &'b str;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current_plid >= self.total_plids {
-            return None;
-        }
-        self.current_plid += 1;
-        if self.buf.is_empty() {
-            return Some("");
-        }
-        let strlen = (self.buf[0] as usize).min(self.buf.len() - 1);
-        let s = std::str::from_utf8(&self.buf[1..(strlen + 1)])
-            .unwrap_or("");
-        self.buf = &self.buf[(strlen + 1)..];
-        Some(s)
-    }
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
-    }
-}
-
-impl<'b> ExactSizeIterator for PlayerNamesIter<'b> {
-    fn len(&self) -> usize {
-        (self.total_plids - self.current_plid) as usize
-    }
-}
-
-impl<'b> FusedIterator for PlayerNamesIter<'b> {}
+impl<'a, 'b, R: Read + Seek> FusedIterator for MwFrameStreamIter<'a, 'b, R> {}
 
 pub struct CitNamesIter<'b> {
     current_cit: u8,

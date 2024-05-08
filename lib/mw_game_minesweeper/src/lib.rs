@@ -190,20 +190,14 @@ impl<C: Coord> GameMinesweeper<C> {
         if self.mapdata[c].flag() == 0 {
             if c.iter_n1().any(|c2| self.mapdata[c2].owner() == u8::from(plid)) {
                 self.mapdata[c].set_flag(u8::from(plid));
-                host.msg(Plids::all(true), MwEv::Map {
-                    pos: c.into(),
-                    ev: MapEv::Flag {
-                        plid,
-                    }
+                host.msg(Plids::all(true), MwEv::Flag {
+                    plid, pos: c.into()
                 });
             }
         } else if self.mapdata[c].flag() == u8::from(plid) {
             self.mapdata[c].set_flag(0);
-            host.msg(Plids::all(true), MwEv::Map {
-                pos: c.into(),
-                ev: MapEv::Flag {
-                    plid: PlayerId::Neutral,
-                }
+            host.msg(Plids::all(true), MwEv::Flag {
+                plid: PlayerId::Neutral, pos: c.into()
             });
         }
     }
@@ -277,40 +271,28 @@ impl<C: Coord> GameMinesweeper<C> {
             self.mapdata[c].set_owner(u8::from(plid));
             if self.mapdata[c].flag() != 0 {
                 self.mapdata[c].set_flag(0);
-                host.msg(Plids::all(true), MwEv::Map {
-                    pos: c.into(),
-                    ev: MapEv::Flag {
-                        plid: PlayerId::Neutral,
-                    }
+                host.msg(Plids::all(true), MwEv::Flag {
+                    plid: PlayerId::Neutral, pos: c.into()
                 });
             }
-            host.msg(Plids::all(true), MwEv::Map {
-                pos: c.into(),
-                ev: MapEv::Owner {
-                    plid,
-                },
+            host.msg(Plids::all(true), MwEv::TileOwner {
+                plid, pos: c.into()
             });
             let digit = self.compute_send_digit(host, plid, c);
             for c2 in c.iter_n1() {
                 let kind = self.mapdata[c2].kind();
                 if kind.is_rescluster() {
                     self.mapdata[c2].set_owner(u8::from(plid));
-                    host.msg(Plids::all(true), MwEv::Map {
-                        pos: c2.into(),
-                        ev: MapEv::Owner {
-                            plid,
-                        },
+                    host.msg(Plids::all(true), MwEv::TileOwner {
+                        plid, pos: c2.into()
                     });
                     self.floodq.clear();
                     self.floodq.push_back(c2.into());
                     flood(&mut self.floodq, |c3, _| {
                         if self.mapdata[c3].kind() == kind && self.mapdata[c3].owner() != u8::from(plid) {
                             self.mapdata[c3].set_owner(u8::from(plid));
-                            host.msg(Plids::all(true), MwEv::Map {
-                                pos: c3.into(),
-                                ev: MapEv::Owner {
-                                    plid,
-                                },
+                            host.msg(Plids::all(true), MwEv::TileOwner {
+                                plid, pos: c3.into()
                             });
                             FloodSelect::Yes
                         } else {
@@ -342,22 +324,15 @@ impl<C: Coord> GameMinesweeper<C> {
             ItemKind::Decoy | ItemKind::Trap => {
                 if self.mapdata[c].flag() != 0 {
                     self.mapdata[c].set_flag(0);
-                    host.msg(Plids::all(true), MwEv::Map {
-                        pos: c.into(),
-                        ev: MapEv::Flag {
-                            plid: PlayerId::Neutral,
-                        }
+                    host.msg(Plids::all(true), MwEv::Flag {
+                        plid: PlayerId::Neutral, pos: c.into(),
                     });
                 }
-                host.msg(Plids::all(true), MwEv::Map {
-                    pos: c.into(),
-                    ev: MapEv::RevealItem {
-                        kind: ItemKind::Decoy,
-                    },
+                host.msg(Plids::all(true), MwEv::RevealItem {
+                    item: ItemKind::Decoy, pos: c.into(),
                 });
-                host.msg(Plids::all(true), MwEv::Map {
+                host.msg(Plids::all(true), MwEv::Explode {
                     pos: c.into(),
-                    ev: MapEv::Explode,
                 });
             },
             ItemKind::Mine => {
@@ -365,28 +340,18 @@ impl<C: Coord> GameMinesweeper<C> {
                 self.n_unexplored_tiles += 1;
                 if self.mapdata[c].flag() != 0 {
                     self.mapdata[c].set_flag(0);
-                    host.msg(Plids::all(true), MwEv::Map {
-                        pos: c.into(),
-                        ev: MapEv::Flag {
-                            plid: PlayerId::Neutral,
-                        }
+                    host.msg(Plids::all(true), MwEv::Flag {
+                        plid: PlayerId::Neutral, pos: c.into(),
                     });
                 }
-                host.msg(Plids::all(true), MwEv::Map {
-                    pos: c.into(),
-                    ev: MapEv::RevealItem {
-                        kind: ItemKind::Mine,
-                    },
+                host.msg(Plids::all(true), MwEv::RevealItem {
+                    item: ItemKind::Mine, pos: c.into(),
                 });
-                host.msg(Plids::all(true), MwEv::Map {
+                host.msg(Plids::all(true), MwEv::Explode {
                     pos: c.into(),
-                    ev: MapEv::Explode,
                 });
-                host.msg(Plids::all(true), MwEv::Map {
-                    pos: c.into(),
-                    ev: MapEv::TileKind {
-                        kind: TileKind::Destroyed,
-                    },
+                host.msg(Plids::all(true), MwEv::TileKind {
+                    kind: TileKind::Destroyed, pos: c.into(),
                 });
                 if let Some(playerdata) = self.playerdata.get_mut(plid.i()-1) {
                     if playerdata.n_lives > 0 {
@@ -447,11 +412,8 @@ impl<C: Coord> GameMinesweeper<C> {
     }
     fn compute_send_digit<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) -> (u8, bool) {
         let (digit, asterisk) = self.compute_digit(plid, c);
-        host.msg(Plids::from(plid), MwEv::Map {
-            pos: c.into(),
-            ev: MapEv::Digit {
-                digit, asterisk,
-            }
+        host.msg(Plids::from(plid), MwEv::DigitCapture {
+            digit, asterisk, pos: c.into(),
         });
         (digit, asterisk)
     }

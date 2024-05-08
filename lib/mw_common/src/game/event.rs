@@ -22,129 +22,139 @@ impl From<(PlayerId, MwEv)> for GameEvent {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MwEv {
+    Nop,
+    Debug(u8, Pos),
     Player {
         plid: PlayerId,
         subplid: Option<u8>,
         ev: PlayerEv,
     },
-    Map {
+    Tremor,
+    Smoke {
         pos: Pos,
-        ev: MapEv,
     },
-    Cit {
+    Unsmoke {
+        pos: Pos,
+    },
+    CitMoney {
         cit: u8,
-        ev: CitEv,
+        money: u32,
     },
-    Background(BackgroundEv),
-    Nop,
-    Debug(u8),
+    CitIncome {
+        cit: u8,
+        money: u32,
+        income: u16,
+    },
+    CitMoneyTransact {
+        cit: u8,
+        amount: i16,
+    },
+    CitRes {
+        cit: u8,
+        res: u16,
+    },
+    CitTradeInfo {
+        cit: u8,
+        export: u8,
+        import: u8,
+    },
+    Flag {
+        plid: PlayerId,
+        pos: Pos,
+    },
+    StructureGone {
+        pos: Pos,
+    },
+    StructureHp {
+        pos: Pos,
+        hp: u8,
+    },
+    Explode {
+        pos: Pos,
+    },
+    BuildNew {
+        pos: Pos,
+        kind: StructureKind,
+        pts: u16,
+    },
+    Construction {
+        pos: Pos,
+        current: u16,
+        rate: u16,
+    },
+    RevealStructure {
+        pos: Pos,
+        kind: StructureKind,
+    },
+    DigitCapture {
+        pos: Pos,
+        digit: u8,
+        asterisk: bool,
+    },
+    RevealItem {
+        pos: Pos,
+        item: ItemKind,
+    },
+    TileKind {
+        pos: Pos,
+        kind: TileKind,
+    },
+    TileOwner {
+        pos: Pos,
+        plid: PlayerId,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PlayerEv {
-    Eliminated,
-    Surrendered,
-    Protected,
-    Unprotected,
+    Joined {
+        name: String,
+    },
+    NetRttInfo {
+        duration: MwDur,
+    },
+    Timeout {
+        duration: MwDur,
+    },
+    TimeoutFinished,
     Exploded {
         pos: Pos,
         killer: PlayerId,
     },
-    Timeout {
-        millis: u16,
-    },
-    TimeoutFinished,
     LivesRemain {
         lives: u8,
     },
+    Protected,
+    Unprotected,
+    Eliminated,
+    Surrendered,
+    Disconnected,
+    Kicked,
     MatchTimeRemain {
         secs: u16,
     },
-    Joined,
-    NetRttInfo {
-        millis: u16,
+    ChatFriendly {
+        text: String,
     },
-    Disconnected,
-    Kicked,
-    FriendlyChat(String),
-    AllChat(String),
-    VoteStart(String),
-    VoteCast(String),
-    VoteFail(String),
-    VoteSuccess(String),
-    Debug(u8),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MapEv {
-    TileKind {
-        kind: TileKind,
+    ChatAll {
+        text: String,
     },
-    Owner {
-        plid: PlayerId,
+    VoteNew {
+        id: u8,
+        l10nkey: String,
     },
-    Digit {
-        digit: u8,
-        asterisk: bool,
+    VoteNo {
+        id: u8,
     },
-    PlaceItem {
-        kind: ItemKind,
+    VoteYes {
+        id: u8,
     },
-    RevealItem {
-        kind: ItemKind,
+    VoteFail {
+        id: u8,
     },
-    Flag {
-        plid: PlayerId,
+    VotePass {
+        id: u8,
     },
-    Unflag,
-    Explode,
-    Smoke {
-        state: bool,
-    },
-    StructureReveal {
-        kind: StructureKind,
-    },
-    StructureHp {
-        hp: u8,
-    },
-    StructureCancel,
-    StructureGone,
-    StructureBuildNew {
-        kind: StructureKind,
-        pts: u16,
-    },
-    StructureProgress {
-        current: u16,
-        rate: u16,
-    },
-    Debug(u8),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CitEv {
-    ResUpdate {
-        res: u16,
-    },
-    MoneyTransaction {
-        amount: i16,
-    },
-    MoneyUpdate {
-        money: u32,
-    },
-    IncomeUpdate {
-        money: u32,
-        income: u16,
-    },
-    TradePolicy {
-        export: u8,
-        import: u8,
-    },
-    Debug(u8),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BackgroundEv {
-    Tremor,
 }
 
 /// The priority class to use when sending a message or stream.
@@ -170,7 +180,7 @@ pub enum MessageClass {
     /// Reliable, ordered, lower priority.
     Personal,
     /// Messages that are not directly involved in gameplay.
-    /// Reliable, unordered, lowest priority.
+    /// Reliable, ordered, lowest priority.
     Background,
     /// Messages for real-time updates that can be dropped.
     /// Can be sent as datagrams.
@@ -179,39 +189,38 @@ pub enum MessageClass {
 
 impl MwEv {
     pub fn message_class(self) -> MessageClass {
+        use MessageClass::*;
         match self {
-            MwEv::Nop => MessageClass::Unreliable,
-            MwEv::Debug(_) => MessageClass::Unreliable,
-            MwEv::Player { ev: PlayerEv::Debug(_), .. } => MessageClass::Unreliable,
-            MwEv::Player { ev: PlayerEv::NetRttInfo { .. }, .. } => MessageClass::Unreliable,
-            MwEv::Player { .. } => MessageClass::Notification,
-            MwEv::Background(_)  => MessageClass::Background,
-            MwEv::Cit { ev, .. } => match ev {
-                CitEv::ResUpdate { .. } => MessageClass::Personal,
-                CitEv::MoneyTransaction { .. } => MessageClass::Personal,
-                CitEv::MoneyUpdate { .. } => MessageClass::Unreliable,
-                CitEv::IncomeUpdate { .. } => MessageClass::Personal,
-                CitEv::TradePolicy { .. } => MessageClass::Personal,
-                CitEv::Debug(_) => MessageClass::Unreliable,
-            },
-            MwEv::Map { ev, .. } => match ev {
-                MapEv::TileKind { .. } => MessageClass::PvP,
-                MapEv::Owner { .. } => MessageClass::PvP,
-                MapEv::Digit { .. } => MessageClass::PvP,
-                MapEv::PlaceItem { .. } => MessageClass::Personal,
-                MapEv::RevealItem { .. } => MessageClass::PvP,
-                MapEv::Flag { .. } => MessageClass::PvP,
-                MapEv::Unflag => MessageClass::PvP,
-                MapEv::Explode => MessageClass::PvP,
-                MapEv::Smoke { .. } => MessageClass::PvP,
-                MapEv::StructureReveal { .. } => MessageClass::PvP,
-                MapEv::StructureHp { .. } => MessageClass::PvP,
-                MapEv::StructureCancel => MessageClass::Personal,
-                MapEv::StructureGone => MessageClass::PvP,
-                MapEv::StructureBuildNew { .. } => MessageClass::Personal,
-                MapEv::StructureProgress { .. } => MessageClass::Unreliable,
-                MapEv::Debug(_) => MessageClass::Unreliable,
-            },
+            MwEv::Nop => Unreliable,
+            MwEv::Debug(_, _) => Background,
+            MwEv::Player { ev: PlayerEv::NetRttInfo { .. } , .. } => Unreliable,
+            MwEv::Player { ev: PlayerEv::ChatAll { .. } , .. } => Background,
+            MwEv::Player { ev: PlayerEv::ChatFriendly { .. } , .. } => Background,
+            MwEv::Player { ev: PlayerEv::VoteNew { .. } , .. } => Background,
+            MwEv::Player { ev: PlayerEv::VoteNo { .. } , .. } => Background,
+            MwEv::Player { ev: PlayerEv::VoteYes { .. } , .. } => Background,
+            MwEv::Player { ev: PlayerEv::VoteFail { .. } , .. } => Background,
+            MwEv::Player { ev: PlayerEv::VotePass { .. } , .. } => Background,
+            MwEv::Player { .. } => Notification,
+            MwEv::Tremor => Background,
+            MwEv::Smoke { .. } => PvP,
+            MwEv::Unsmoke { .. } => PvP,
+            MwEv::CitMoney { .. } => Unreliable,
+            MwEv::CitIncome { .. } => Personal,
+            MwEv::CitMoneyTransact { .. } => Personal,
+            MwEv::CitRes { .. } => Personal,
+            MwEv::CitTradeInfo { .. } => Personal,
+            MwEv::Flag { .. } => PvP,
+            MwEv::StructureGone { .. } => PvP,
+            MwEv::StructureHp { .. } => PvP,
+            MwEv::Explode { .. } => PvP,
+            MwEv::BuildNew { .. } => Personal,
+            MwEv::Construction { .. } => Unreliable,
+            MwEv::RevealStructure { .. } => PvP,
+            MwEv::DigitCapture { .. } => PvP,
+            MwEv::RevealItem { .. } => PvP,
+            MwEv::TileKind { .. } => PvP,
+            MwEv::TileOwner { .. } => PvP,
         }
     }
 }

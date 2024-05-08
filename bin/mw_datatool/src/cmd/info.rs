@@ -45,16 +45,9 @@ pub fn main(common: &CommonArgs, args: &InfoArgs) -> AnyResult<()> {
     eprintln!("MapData is compressed?: {}", isr.is_mapdata_compressed());
     eprintln!("MapData length (compressed): {}", isr.header().len_mapdata_compressed());
     eprintln!("MapData length (raw):        {}", isr.header().len_mapdata_raw());
-    eprintln!("Number of players: {}", isr.n_players());
-    eprintln!("Player names anonymized?: {}", isr.header().len_playerdata() == 0);
-    eprintln!("PlayerData length: {}", isr.header().len_playerdata());
+    eprintln!("Maximum PlayerId: {}", isr.max_plid());
+    eprintln!("Maximum PlayerSubId: {}", isr.max_sub_plid());
     eprintln!("RulesData length: {}", isr.header().len_rules());
-
-    eprintln!();
-    eprintln!("Player Names:");
-    for (i, name) in isr.read_players()?.enumerate() {
-        eprintln!("{}: {:?}", i, name);
-    }
 
     eprintln!();
     eprintln!("Cits:");

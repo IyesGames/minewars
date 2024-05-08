@@ -11,9 +11,9 @@
 //!  - `self::gamepad_rumble`: vibrates a gamepad
 //!  - `self::buttplug`: vibrates buttplugs
 
-use mw_common::{game::{event::{BackgroundEv, GameEvent, MapEv, MwEv, PlayerEv}, ItemKind}, grid::{Coord, Hex, Pos, Sq, Topology}, plid::PlayerId};
+use mw_common::{game::{event::{MwEv, PlayerEv}, ItemKind}, grid::Pos, plid::PlayerId};
 
-use crate::{map::{MapTileIndex, MapTopologySet, MapUpdateSet, TileOwner}, prelude::*, view::PlidViewing};
+use crate::{map::{MapTileIndex, MapUpdateSet, TileOwner}, prelude::*, view::PlidViewing};
 
 mod gamepad_rumble;
 #[cfg(feature = "buttplug")]
@@ -106,7 +106,7 @@ fn emit_haptic_events(
             continue;
         }
         match ev.ev {
-            MwEv::Background(BackgroundEv::Tremor) => {
+            MwEv::Tremor => {
                 evw_haptic.send(HapticEvent {
                     pos: None,
                     kind: HapticEventKind::BackgroundTremor,
@@ -123,18 +123,18 @@ fn emit_haptic_events(
                     setbit(pos, BUF_DEATH_BIT);
                 }
             }
-            MwEv::Map { pos, ev: MapEv::Explode } => {
+            MwEv::Explode { pos } => {
                 setbit(pos, BUF_EXPLOSION_BIT);
             }
-            MwEv::Map { pos, ev: MapEv::RevealItem { kind } } => {
-                match kind {
+            MwEv::RevealItem { pos, item } => {
+                match item {
                     ItemKind::Mine | ItemKind::Safe => {}
                     ItemKind::Decoy | ItemKind::Trap => {
                         setbit(pos, BUF_INHIBIT_BIT);
                     }
                 }
             }
-            MwEv::Map { pos, ev: MapEv::StructureGone } => {
+            MwEv::StructureGone { pos } => {
                 setbit(pos, BUF_STRUCTURE_BIT);
             }
             _ => {}

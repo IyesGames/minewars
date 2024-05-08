@@ -1,10 +1,10 @@
 //! MineWars protocol message stream codec
 
-use mw_common::{grid::Pos, plid::PlayerId};
+use mw_common::{game::{event::MwEv, ItemKind, StructureKind, TileKind}, grid::Pos, plid::PlayerId, time::MwDur};
 use thiserror::Error;
 use num_traits::FromPrimitive;
 
-use crate::msg::*;
+use super::*;
 
 #[derive(Debug, Error)]
 pub enum MsgBinWriteError {
@@ -20,8 +20,12 @@ pub enum MsgBinReadError {
     Io(#[from] std::io::Error),
     #[error("Unknown Instruction: {0}")]
     UnknownOp(u8),
+    #[error("Unknown Player Instruction: {0}")]
+    UnknownPlayerOp(u8),
     #[error("Invalid value: {0}")]
     InvalidValue(u32),
+    #[error("String is not UTF-8: {0}")]
+    Utf8(#[from] std::string::FromUtf8Error),
 }
 
 pub struct MsgBinRead {
@@ -29,9 +33,23 @@ pub struct MsgBinRead {
 pub struct MsgBinWrite {
 }
 
+impl MsgBinRead {
+    pub fn new() -> Self {
+        Self {
+        }
+    }
+}
+
+impl MsgBinWrite {
+    pub fn new() -> Self {
+        Self {
+        }
+    }
+}
+
 impl MsgWriter for MsgBinWrite {
     type Error = MsgBinWriteError;
-    fn write<W: std::io::Write>(&mut self, w: &mut W, msgs: &[Msg], max_bytes: usize) -> Result<(usize, usize), Self::Error> {
+    fn write<W: std::io::Write>(&mut self, w: &mut W, msgs: &[MwEv], max_bytes: usize) -> Result<(usize, usize), Self::Error> {
         if max_bytes == 0 {
             return Ok((0, 0));
         }
@@ -41,24 +59,38 @@ impl MsgWriter for MsgBinWrite {
         let mut n_msgs = 1;
         let mut n_bytes = 0;
         match first {
-            Msg::Nop => {},
-            Msg::Player { plid, subplid, status } => {
-                let (n_bytes, byte_status) = match status {
-                    MsgPlayer::Joined =>                 (3, 0b00000000),
-                    MsgPlayer::NetRttInfo { .. } =>      (4, 0b00000001),
-                    MsgPlayer::Timeout { .. } =>         (4, 0b00000010),
-                    MsgPlayer::TimeoutFinished =>        (3, 0b00000011),
-                    MsgPlayer::Exploded { .. } =>        (6, 0b00000100),
-                    MsgPlayer::LivesRemain { .. } =>     (4, 0b00000101),
-                    MsgPlayer::Protected =>              (3, 0b00000110),
-                    MsgPlayer::Unprotected =>            (3, 0b00000111),
-                    MsgPlayer::Eliminated =>             (3, 0b00001000),
-                    MsgPlayer::Surrendered =>            (3, 0b00001001),
-                    MsgPlayer::Disconnected =>           (3, 0b00001010),
-                    MsgPlayer::Kicked =>                 (3, 0b00001011),
-                    MsgPlayer::MatchTimeRemain { .. } => (5, 0b00010011),
-                };
+            MwEv::Nop => {},
+            MwEv::Debug(i, pos) => {
+                n_bytes = 4;
                 if max_bytes < n_bytes {
+                    return Ok((0, 0));
+                }
+                w.write_all(&[0b00001110, *i, pos.y() as u8, pos.x() as u8])?;
+            }
+            MwEv::Player { plid, subplid, ev: status } => {
+                let (byte_status, n_bytes, strlen) = match status {
+                    PlayerEv::Joined { name } =>         (0b00000000, 4, name.floor_char_boundary(255)),
+                    PlayerEv::NetRttInfo { .. } =>       (0b00000001, 4, 0),
+                    PlayerEv::Timeout { .. } =>          (0b00000010, 3, 0),
+                    PlayerEv::TimeoutFinished =>         (0b00000011, 6, 0),
+                    PlayerEv::Exploded { .. } =>         (0b00000100, 4, 0),
+                    PlayerEv::LivesRemain { .. } =>      (0b00000101, 3, 0),
+                    PlayerEv::Protected =>               (0b00000110, 3, 0),
+                    PlayerEv::Unprotected =>             (0b00000111, 3, 0),
+                    PlayerEv::Eliminated =>              (0b00001000, 3, 0),
+                    PlayerEv::Surrendered =>             (0b00001001, 3, 0),
+                    PlayerEv::Disconnected =>            (0b00001010, 3, 0),
+                    PlayerEv::Kicked =>                  (0b00001011, 5, 0),
+                    PlayerEv::ChatAll { text } =>        (0b00010000, 4, text.floor_char_boundary(255)),
+                    PlayerEv::ChatFriendly { text }  =>  (0b00010001, 4, text.floor_char_boundary(255)),
+                    PlayerEv::MatchTimeRemain { .. } =>  (0b00010010, 4, 0),
+                    PlayerEv::VoteNew { l10nkey, .. } => (0b00010011, 5, l10nkey.floor_char_boundary(255)),
+                    PlayerEv::VoteNo { .. } =>           (0b00001100, 4, 0),
+                    PlayerEv::VoteYes { .. } =>          (0b00001101, 4, 0),
+                    PlayerEv::VoteFail { .. } =>         (0b00001110, 4, 0),
+                    PlayerEv::VotePass { .. } =>         (0b00001111, 4, 0),
+                };
+                if max_bytes < n_bytes + strlen {
                     return Ok((0, 0));
                 }
                 let byte1 = (u8::from(*plid) & 0x0F) | if let Some(x) = subplid {
@@ -68,33 +100,53 @@ impl MsgWriter for MsgBinWrite {
                 };
                 w.write_all(&[0b00000000, byte1, byte_status])?;
                 match status {
-                    MsgPlayer::NetRttInfo { duration } => w.write_all(&[duration.0])?,
-                    MsgPlayer::Timeout { duration } => w.write_all(&[duration.0])?,
-                    MsgPlayer::Exploded { pos, killer } => w.write_all(&[pos.y() as u8, pos.x() as u8, u8::from(*killer)])?,
-                    MsgPlayer::LivesRemain { lives } => w.write_all(&[*lives])?,
-                    MsgPlayer::MatchTimeRemain { secs } => w.write_all(&secs.to_be_bytes())?,
+                    PlayerEv::Joined { name } => {
+                        w.write_all(&[strlen as u8])?;
+                        w.write_all(&name[..strlen].as_bytes())?;
+                    }
+                    PlayerEv::NetRttInfo { duration } => w.write_all(&[duration.0])?,
+                    PlayerEv::Timeout { duration } => w.write_all(&[duration.0])?,
+                    PlayerEv::Exploded { pos, killer } => w.write_all(&[pos.y() as u8, pos.x() as u8, u8::from(*killer)])?,
+                    PlayerEv::LivesRemain { lives } => w.write_all(&[*lives])?,
+                    PlayerEv::MatchTimeRemain { secs } => w.write_all(&secs.to_be_bytes())?,
+                    PlayerEv::VoteNo { id } => w.write_all(&[*id])?,
+                    PlayerEv::VoteYes { id } => w.write_all(&[*id])?,
+                    PlayerEv::VoteFail { id } => w.write_all(&[*id])?,
+                    PlayerEv::VotePass { id } => w.write_all(&[*id])?,
+                    PlayerEv::ChatAll { text } => {
+                        w.write_all(&[strlen as u8])?;
+                        w.write_all(&text[..strlen].as_bytes())?;
+                    }
+                    PlayerEv::ChatFriendly { text } => {
+                        w.write_all(&[strlen as u8])?;
+                        w.write_all(&text[..strlen].as_bytes())?;
+                    }
+                    PlayerEv::VoteNew { id, l10nkey } => {
+                        w.write_all(&[*id, strlen as u8])?;
+                        w.write_all(&l10nkey[..strlen].as_bytes())?;
+                    }
                     _ => {}
                 }
             },
-            Msg::Tremor => {
+            MwEv::Tremor => {
                 n_bytes = 1;
                 w.write_all(&[0b00000001])?;
             },
-            Msg::Smoke { pos } => {
+            MwEv::Smoke { pos } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
                 w.write_all(&[0b00000010, pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::Unsmoke { pos } => {
+            MwEv::Unsmoke { pos } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
                 w.write_all(&[0b00000011, pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::CitMoney { cit, money } => {
+            MwEv::CitMoney { cit, money } => {
                 n_bytes = 6;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -105,7 +157,7 @@ impl MsgWriter for MsgBinWrite {
                 w.write_all(&[0b00000100, *cit])?;
                 w.write_all(&money.to_be_bytes())?;
             },
-            Msg::CitIncome { cit, money, income } => {
+            MwEv::CitIncome { cit, money, income } => {
                 n_bytes = 8;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -118,7 +170,7 @@ impl MsgWriter for MsgBinWrite {
                 w.write_all(&money.to_be_bytes())?;
                 w.write_all(&income.to_be_bytes())?;
             },
-            Msg::CitMoneyTransact { cit, amount } => {
+            MwEv::CitMoneyTransact { cit, amount } => {
                 n_bytes = 4;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -126,7 +178,7 @@ impl MsgWriter for MsgBinWrite {
                 w.write_all(&[0b00000101, *cit])?;
                 w.write_all(&amount.to_be_bytes())?;
             },
-            Msg::CitRes { cit, res } => {
+            MwEv::CitRes { cit, res } => {
                 n_bytes = 4;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -134,28 +186,28 @@ impl MsgWriter for MsgBinWrite {
                 w.write_all(&[0b00000110, *cit])?;
                 w.write_all(&res.to_be_bytes())?;
             },
-            Msg::CitTradeInfo { cit, export, import } => {
+            MwEv::CitTradeInfo { cit, export, import } => {
                 n_bytes = 4;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
                 w.write_all(&[0b00000111, *cit, *export, *import])?;
             },
-            Msg::Flag { plid, pos } => {
+            MwEv::Flag { plid, pos } => {
                 n_bytes = 4;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
                 w.write_all(&[0b00001111, u8::from(*plid), pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::StructureGone { pos } => {
+            MwEv::StructureGone { pos } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
                 w.write_all(&[0b00100000, pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::StructureHp { pos, hp } => {
+            MwEv::StructureHp { pos, hp } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -166,7 +218,7 @@ impl MsgWriter for MsgBinWrite {
                 let byte0 = 0b00100000 | *hp;
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::BuildNew { pos, kind, pts } => {
+            MwEv::BuildNew { pos, kind, pts } => {
                 n_bytes = 5;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -175,7 +227,7 @@ impl MsgWriter for MsgBinWrite {
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
                 w.write_all(&pts.to_be_bytes())?;
             },
-            Msg::Construction { pos, current, rate } => {
+            MwEv::Construction { pos, current, rate } => {
                 n_bytes = 7;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -184,7 +236,7 @@ impl MsgWriter for MsgBinWrite {
                 w.write_all(&current.to_be_bytes())?;
                 w.write_all(&rate.to_be_bytes())?;
             },
-            Msg::RevealStructure { pos, kind } => {
+            MwEv::RevealStructure { pos, kind } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -192,7 +244,7 @@ impl MsgWriter for MsgBinWrite {
                 let byte0 = 0b01010000 | (*kind as u8 & 0x0F);
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::RevealItem { pos, item } => {
+            MwEv::RevealItem { pos, item } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -200,7 +252,7 @@ impl MsgWriter for MsgBinWrite {
                 let byte0 = 0b00010000 | (*item as u8 & 0x0F);
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::TileKind { pos, kind } => {
+            MwEv::TileKind { pos, kind } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
@@ -208,18 +260,18 @@ impl MsgWriter for MsgBinWrite {
                 let byte0 = 0b01110000 | (*kind as u8 & 0x0F);
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
             },
-            Msg::TileOwner { pos, plid } => {
+            MwEv::TileOwner { pos, plid } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
-                let mut byte0 = 0b10000000 | ((u8::from(*plid) & 0x0F) << 3);
+                let mut byte0 = 0b10000000 | (u8::from(*plid) & 0x0F);
                 let mut tilecount = 0;
                 for msg in msgs.iter().skip(1) {
                     if tilecount >= 7 {
                         break;
                     }
-                    if let Msg::TileOwner { plid: plid2, pos: _ } = msg {
+                    if let MwEv::TileOwner { plid: plid2, pos: _ } = msg {
                         if plid2 != plid {
                             break;
                         }
@@ -231,28 +283,28 @@ impl MsgWriter for MsgBinWrite {
                     }
                     break;
                 }
-                byte0 |= tilecount;
+                byte0 |= tilecount << 4;
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
                 for msg in msgs.iter().skip(1).take(tilecount as usize) {
-                    let Msg::TileOwner { pos, plid: _ } = msg else {
+                    let MwEv::TileOwner { pos, plid: _ } = msg else {
                         unreachable!();
                     };
                     w.write_all(&[pos.y() as u8, pos.x() as u8])?;
                 }
                 n_msgs += tilecount as usize;
             },
-            Msg::Explode { pos } => {
+            MwEv::Explode { pos } => {
                 n_bytes = 3;
                 if max_bytes < n_bytes {
                     return Ok((0, 0));
                 }
-                let mut byte0 = 0b00100000;
+                let mut byte0 = 0b00110000;
                 let mut tilecount = 0;
                 for msg in msgs.iter().skip(1) {
                     if tilecount >= 15 {
                         break;
                     }
-                    if let Msg::Explode { .. } = msg {
+                    if let MwEv::Explode { .. } = msg {
                         if max_bytes >= n_bytes + 2 {
                             tilecount += 1;
                             n_bytes += 2;
@@ -264,21 +316,21 @@ impl MsgWriter for MsgBinWrite {
                 byte0 |= tilecount;
                 w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
                 for msg in msgs.iter().skip(1).take(tilecount as usize) {
-                    let Msg::Explode { pos } = msg else {
+                    let MwEv::Explode { pos } = msg else {
                         unreachable!();
                     };
                     w.write_all(&[pos.y() as u8, pos.x() as u8])?;
                 }
                 n_msgs += tilecount as usize;
             },
-            Msg::DigitCapture { pos, digit, asterisk } => {
+            MwEv::DigitCapture { pos, digit, asterisk } => {
                 n_bytes = 4;
                 let mut tilecount = 0;
                 for msg in msgs.iter().skip(1) {
-                    if tilecount >= 15 {
+                    if tilecount >= 7 {
                         break;
                     }
-                    if let Msg::DigitCapture { .. } = msg {
+                    if let MwEv::DigitCapture { .. } = msg {
                         let needed_bytes = 2 + (tilecount & 1) as usize;
                         if max_bytes >= n_bytes + needed_bytes {
                             tilecount += 1;
@@ -305,10 +357,10 @@ impl MsgWriter for MsgBinWrite {
                         return Ok((0, 0));
                     }
                     let mut byte0 = 0b10000000;
-                    byte0 |= tilecount;
+                    byte0 |= tilecount << 4;
                     w.write_all(&[byte0, pos.y() as u8, pos.x() as u8])?;
                     for msg in msgs.iter().skip(1).take(tilecount as usize) {
-                        let Msg::DigitCapture { pos, .. } = msg else {
+                        let MwEv::DigitCapture { pos, .. } = msg else {
                             unreachable!();
                         };
                         w.write_all(&[pos.y() as u8, pos.x() as u8])?;
@@ -318,7 +370,7 @@ impl MsgWriter for MsgBinWrite {
                     digbyte |= (*asterisk as u8) << 7;
                     digbyte |= (*digit & 0x07) << 4;
                     for msg in msgs.iter().skip(1).take(tilecount as usize) {
-                        let Msg::DigitCapture { asterisk, digit, .. } = msg else {
+                        let MwEv::DigitCapture { asterisk, digit, .. } = msg else {
                             unreachable!();
                         };
                         if high {
@@ -345,13 +397,162 @@ impl MsgWriter for MsgBinWrite {
 
 impl MsgReader for MsgBinRead {
     type Error = MsgBinReadError;
-    fn read<R: std::io::BufRead>(&mut self, r: &mut R, out: &mut Vec<Msg>) -> Result<usize, Self::Error> {
+    fn read<R: std::io::BufRead>(&mut self, r: &mut R, out: &mut Vec<MwEv>) -> Result<usize, Self::Error> {
         let mut byte0 = [0u8];
-        r.read_exact(&mut byte0)?;
+        match r.read(&mut byte0) {
+            Ok(0) => return Ok(0),
+            Ok(_) => {},
+            Err(e) => return Err(e.into()),
+        }
         let byte0 = byte0[0];
 
+        if byte0 == 0b00000000 {
+            let mut bytes = [0; 2];
+            r.read_exact(&mut bytes)?;
+            let plid = PlayerId::from(bytes[0] & 0x0F);
+            let subplid = (bytes[0] & 0xF0) >> 4;
+            let subplid = if subplid == 15 {
+                None
+            } else {
+                Some(subplid)
+            };
+            return match bytes[1] {
+                0b00000000 => {
+                    let mut strlen = [0; 1];
+                    r.read_exact(&mut strlen)?;
+                    let mut sbuf = vec![0; strlen[0] as usize];
+                    r.read_exact(&mut sbuf)?;
+                    let name = String::from_utf8(sbuf)?;
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Joined { name } });
+                    Ok(1)
+                }
+                0b00000001 => {
+                    let mut dur = [0; 1];
+                    r.read_exact(&mut dur)?;
+                    let duration = MwDur(dur[0]);
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::NetRttInfo { duration } });
+                    Ok(1)
+                }
+                0b00000010 => {
+                    let mut dur = [0; 1];
+                    r.read_exact(&mut dur)?;
+                    let duration = MwDur(dur[0]);
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Timeout { duration } });
+                    Ok(1)
+                }
+                0b00000011 => {
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::TimeoutFinished });
+                    Ok(1)
+                }
+                0b00000100 => {
+                    let mut data = [0; 3];
+                    r.read_exact(&mut data)?;
+                    let mut pos = Pos::default();
+                    pos.set_y(data[0] as i8);
+                    pos.set_x(data[1] as i8);
+                    let killer = PlayerId::from(data[2]);
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Exploded { pos, killer } });
+                    Ok(1)
+                }
+                0b00000101 => {
+                    let mut lives = [0; 1];
+                    r.read_exact(&mut lives)?;
+                    let lives = lives[0];
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::LivesRemain { lives } });
+                    Ok(1)
+                }
+                0b00000110 => {
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Protected });
+                    Ok(1)
+                }
+                0b00000111 => {
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Unprotected });
+                    Ok(1)
+                }
+                0b00001000 => {
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Eliminated });
+                    Ok(1)
+                }
+                0b00001001 => {
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Surrendered });
+                    Ok(1)
+                }
+                0b00001010 => {
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Disconnected });
+                    Ok(1)
+                }
+                0b00001011 => {
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::Kicked });
+                    Ok(1)
+                }
+                0b00001100 => {
+                    let mut id = [0; 1];
+                    r.read_exact(&mut id)?;
+                    let id = id[0];
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::VoteNo { id } });
+                    Ok(1)
+                }
+                0b00001101 => {
+                    let mut id = [0; 1];
+                    r.read_exact(&mut id)?;
+                    let id = id[0];
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::VoteYes { id } });
+                    Ok(1)
+                }
+                0b00001110 => {
+                    let mut id = [0; 1];
+                    r.read_exact(&mut id)?;
+                    let id = id[0];
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::VoteFail { id } });
+                    Ok(1)
+                }
+                0b00001111 => {
+                    let mut id = [0; 1];
+                    r.read_exact(&mut id)?;
+                    let id = id[0];
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::VotePass { id } });
+                    Ok(1)
+                }
+                0b00010000 => {
+                    let mut strlen = [0; 1];
+                    r.read_exact(&mut strlen)?;
+                    let mut sbuf = vec![0; strlen[0] as usize];
+                    r.read_exact(&mut sbuf)?;
+                    let text = String::from_utf8(sbuf)?;
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::ChatAll { text } });
+                    Ok(1)
+                }
+                0b00010001 => {
+                    let mut strlen = [0; 1];
+                    r.read_exact(&mut strlen)?;
+                    let mut sbuf = vec![0; strlen[0] as usize];
+                    r.read_exact(&mut sbuf)?;
+                    let text = String::from_utf8(sbuf)?;
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::ChatFriendly { text } });
+                    Ok(1)
+                }
+                0b00010010 => {
+                    let mut data = [0; 2];
+                    r.read_exact(&mut data)?;
+                    let secs = u16::from_be_bytes(data);
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::MatchTimeRemain { secs } });
+                    Ok(1)
+                }
+                0b00010011 => {
+                    let mut data = [0; 2];
+                    r.read_exact(&mut data)?;
+                    let id = data[0];
+                    let mut sbuf = vec![0; data[1] as usize];
+                    r.read_exact(&mut sbuf)?;
+                    let l10nkey = String::from_utf8(sbuf)?;
+                    out.push(MwEv::Player { plid, subplid, ev: PlayerEv::VoteNew { id, l10nkey } });
+                    Ok(1)
+                }
+                _ => Err(MsgBinReadError::UnknownPlayerOp(bytes[1])),
+            };
+        }
         if byte0 == 0b00000001 {
-            out.push(Msg::Tremor);
+            out.push(MwEv::Tremor);
             return Ok(1);
         }
         if byte0 & 0b11111110 == 0b00000010 {
@@ -361,9 +562,9 @@ impl MsgReader for MsgBinRead {
             pos.set_y(bytes[0] as i8);
             pos.set_x(bytes[1] as i8);
             if byte0 & 1 == 0 {
-                out.push(Msg::Smoke { pos });
+                out.push(MwEv::Smoke { pos });
             } else {
-                out.push(Msg::Unsmoke { pos });
+                out.push(MwEv::Unsmoke { pos });
             }
             return Ok(1);
         }
@@ -380,9 +581,9 @@ impl MsgReader for MsgBinRead {
                 let income = u16::from_be_bytes([
                     bytes[0], bytes[1]
                 ]);
-                out.push(Msg::CitIncome { cit, money, income });
+                out.push(MwEv::CitIncome { cit, money, income });
             } else {
-                out.push(Msg::CitMoney { cit, money });
+                out.push(MwEv::CitMoney { cit, money });
             }
             return Ok(1);
         }
@@ -393,7 +594,7 @@ impl MsgReader for MsgBinRead {
             let amount = i16::from_be_bytes([
                 bytes[1], bytes[2]
             ]);
-            out.push(Msg::CitMoneyTransact { cit, amount });
+            out.push(MwEv::CitMoneyTransact { cit, amount });
             return Ok(1);
         }
         if byte0 == 0b00000110 {
@@ -403,7 +604,7 @@ impl MsgReader for MsgBinRead {
             let res = u16::from_be_bytes([
                 bytes[1], bytes[2]
             ]);
-            out.push(Msg::CitRes { cit, res });
+            out.push(MwEv::CitRes { cit, res });
             return Ok(1);
         }
         if byte0 == 0b00000111 {
@@ -412,7 +613,16 @@ impl MsgReader for MsgBinRead {
             let cit = bytes[0];
             let export = bytes[1];
             let import = bytes[2];
-            out.push(Msg::CitTradeInfo { cit, export, import });
+            out.push(MwEv::CitTradeInfo { cit, export, import });
+            return Ok(1);
+        }
+        if byte0 == 0b00001110 {
+            let mut bytes = [0; 3];
+            r.read_exact(&mut bytes)?;
+            let mut pos = Pos::default();
+            pos.set_y(bytes[1] as i8);
+            pos.set_x(bytes[2] as i8);
+            out.push(MwEv::Debug(bytes[0], pos));
             return Ok(1);
         }
         if byte0 == 0b00001111 {
@@ -422,7 +632,7 @@ impl MsgReader for MsgBinRead {
             let mut pos = Pos::default();
             pos.set_y(bytes[1] as i8);
             pos.set_x(bytes[2] as i8);
-            out.push(Msg::Flag { plid, pos });
+            out.push(MwEv::Flag { plid, pos });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b00100000 {
@@ -433,9 +643,9 @@ impl MsgReader for MsgBinRead {
             pos.set_x(bytes[1] as i8);
             let hp = byte0 & 0b00001111;
             if hp > 0 {
-                out.push(Msg::StructureHp { pos, hp });
+                out.push(MwEv::StructureHp { pos, hp });
             } else {
-                out.push(Msg::StructureGone { pos });
+                out.push(MwEv::StructureGone { pos });
             }
             return Ok(1);
         }
@@ -451,7 +661,7 @@ impl MsgReader for MsgBinRead {
             let rate = u16::from_be_bytes([
                 bytes[4], bytes[5]
             ]);
-            out.push(Msg::Construction { pos, current, rate });
+            out.push(MwEv::Construction { pos, current, rate });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b01000000 {
@@ -467,10 +677,10 @@ impl MsgReader for MsgBinRead {
             if kind_byte == 0x0F {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             }
-            let Some(kind) = MsgStructureKind::from_u8(kind_byte) else {
+            let Some(kind) = StructureKind::from_u8(kind_byte) else {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             };
-            out.push(Msg::BuildNew { pos, kind, pts });
+            out.push(MwEv::BuildNew { pos, kind, pts });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b01010000 {
@@ -483,10 +693,10 @@ impl MsgReader for MsgBinRead {
             if kind_byte == 0x0F {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             }
-            let Some(kind) = MsgStructureKind::from_u8(kind_byte) else {
+            let Some(kind) = StructureKind::from_u8(kind_byte) else {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             };
-            out.push(Msg::RevealStructure { pos, kind });
+            out.push(MwEv::RevealStructure { pos, kind });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b00010000 {
@@ -496,10 +706,10 @@ impl MsgReader for MsgBinRead {
             pos.set_y(bytes[0] as i8);
             pos.set_x(bytes[1] as i8);
             let kind_byte = byte0 & 0x0F;
-            let Some(item) = MsgItem::from_u8(kind_byte) else {
+            let Some(item) = ItemKind::from_u8(kind_byte) else {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             };
-            out.push(Msg::RevealItem { pos, item });
+            out.push(MwEv::RevealItem { pos, item });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b01110000 {
@@ -509,10 +719,10 @@ impl MsgReader for MsgBinRead {
             pos.set_y(bytes[0] as i8);
             pos.set_x(bytes[1] as i8);
             let kind_byte = byte0 & 0x0F;
-            let Some(kind) = MsgTileKind::from_u8(kind_byte) else {
+            let Some(kind) = TileKind::from_u8(kind_byte) else {
                 return Err(MsgBinReadError::InvalidValue(kind_byte as u32));
             };
-            out.push(Msg::TileKind { pos, kind });
+            out.push(MwEv::TileKind { pos, kind });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b01100000 {
@@ -523,7 +733,7 @@ impl MsgReader for MsgBinRead {
             pos.set_x(bytes[1] as i8);
             let asterisk = byte0 & 0b00001000 != 0;
             let digit = byte0 & 0b00000111;
-            out.push(Msg::DigitCapture { pos, digit, asterisk });
+            out.push(MwEv::DigitCapture { pos, digit, asterisk });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b00110000 {
@@ -534,13 +744,13 @@ impl MsgReader for MsgBinRead {
                 let mut pos = Pos::default();
                 pos.set_y(bytes[i * 2 + 0] as i8);
                 pos.set_x(bytes[i * 2 + 1] as i8);
-                out.push(Msg::Explode { pos });
+                out.push(MwEv::Explode { pos });
             }
             return Ok(n_tiles);
         }
-        if byte0 & 0b11110000 == 0b10000000 {
+        if byte0 & 0b10001111 == 0b10000000 {
             let mut bytes = [0; 2 * 16 + 8];
-            let n_tiles = ((byte0 & 0b00001111) + 1) as usize;
+            let n_tiles = (((byte0 & 0b01110000) >> 4) + 1) as usize;
             let n_bytes = n_tiles * 2 + (n_tiles + 1) / 2;
             r.read_exact(&mut bytes[..n_bytes])?;
             for i in 0..n_tiles {
@@ -559,20 +769,20 @@ impl MsgReader for MsgBinRead {
                         bytes[off_digit] & 0b00000111,
                     )
                 };
-                out.push(Msg::DigitCapture { pos, digit, asterisk });
+                out.push(MwEv::DigitCapture { pos, digit, asterisk });
             }
             return Ok(n_tiles);
         }
         if byte0 & 0b10000000 == 0b10000000 {
             let mut bytes = [0; 2 * 8];
-            let plid = PlayerId::from((byte0 & 0b01111000) >> 3);
-            let n_tiles = ((byte0 & 0b00000111) + 1) as usize;
+            let plid = PlayerId::from(byte0 & 0b00001111);
+            let n_tiles = (((byte0 & 0b01110000) >> 4) + 1) as usize;
             r.read_exact(&mut bytes[..(2 * n_tiles)])?;
             for i in 0..n_tiles {
                 let mut pos = Pos::default();
                 pos.set_y(bytes[i * 2 + 0] as i8);
                 pos.set_x(bytes[i * 2 + 1] as i8);
-                out.push(Msg::TileOwner { pos, plid });
+                out.push(MwEv::TileOwner { pos, plid });
             }
             return Ok(n_tiles);
         }

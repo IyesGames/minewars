@@ -44,13 +44,11 @@ It begins with a header:
  - (`u8`,`u8`,`u8`,`u8`): protocol version (must be `(0, 1, 0, 0)`)
  - `u8`: flags
  - `u8`: map size (radius)
- - `u8`: number of players
+ - `u8`: `max_plid` (bits 0-3), `max_sub_plid` (bits 4-7)
  - `u8`: number of cities/regions
  - `u32`: length of compressed map data in bytes
  - `u16`: length of the Rules data
  - `u16`: length of the Cits names data
- - `u16`: length of the player names data (0 for an anonymized stream)
- - `u16`: (reserved)
 
 The `flags` field is encoded as follows:
 
@@ -122,11 +120,6 @@ Then, names for each city on the map:
 The name uses a special Phoneme encoding (undocumented, see source code),
 which can be rendered/localized based on client language.
 
-### Player Names
-
-If the file is not anonymized, then follow the display names of each player,
-encoded as: `u8` length in bytes, followed by UTF-8 encoded data.
-
 ### Game Parameters / Rules
 
 Then follow the parameters used for the game rules, in this game.
@@ -180,8 +173,8 @@ Quick table summarizing the opcodes of all the message types. A few are left
 unused, reserved for future use.
 
 |Bits      |Message Kind         |Class                           |
-|----------|---------------------|---                             |
-|`00000000`| Player Update       | Notification                   |
+|----------|---------------------|--------------------------------|
+|`00000000`| Player Update       | *                              |
 |`00000001`| Tremor              | Background                     |
 |`00000010`| Smoke Start         | PvP                            |
 |`00000011`| Smoke End           | PvP                            |
@@ -191,7 +184,7 @@ unused, reserved for future use.
 |`00000111`| City TradeInfo      | Personal                       |
 |`000010--`| --                  |                                |
 |`0000110-`| --                  |                                |
-|`00001110`| --                  |                                |
+|`00001110`| Debug               | Background                     |
 |`00001111`| Flag State          | PvP                            |
 |`0001----`| Reveal Item         | PvP (foreign), Personal (own)  |
 |`00100000`| Structure Gone      | PvP, Personal (cancel pending) |
@@ -248,29 +241,29 @@ the PlayerSubId field must be all-ones.
 
 The next byte specifies the message kind (what happened):
 
-|Bits      |Meaning         |Granularity|Assembly             |
-|----------|----------------|-----------|---------------------|
-|`00000000`| Joined         |PlayerSubId|`JOIN`               |
-|`00000001`| Ping/RTT Info  |PlayerSubId|`RTT millis`         |
-|`00000010`| Timeout        |Either     |`TIMEOUT millis`     |
-|`00000011`| TimeoutDone    |Either     |`RESUME`             |
-|`00000100`| Exploded       |Either     |`EXPLODE y,x killer` |
-|`00000101`| LivesRemain    |Either     |`LIVES n`            |
-|`00000110`| Protected      |PlayerId   |`PROTECT`            |
-|`00000111`| Un-Protected   |PlayerId   |`UNPROTECT`          |
-|`00001000`| Eliminated     |PlayerId   |`ELIMINATE`          |
-|`00001001`| Surrendered    |PlayerId   |`SURRENDER`          |
-|`00001010`| Disconnected   |PlayerSubId|`LEAVE`              |
-|`00001011`| Kicked         |PlayerSubId|`KICK`               |
-|`00001100`| Vote No        |PlayerSubId|`VOTE N`             |
-|`00001101`| Vote Yes       |PlayerSubId|`VOTE Y`             |
-|`00001110`| Vote Failed    |PlayerSubId|`VOTEFAIL`           |
-|`00001111`| Vote Success   |PlayerSubId|`VOTEPASS`           |
-|`00010000`| Chat (All)     |PlayerSubId|`CHATALL`            |
-|`00010001`| Chat (Friendly)|PlayerSubId|`CHAT string`        |
-|`00010010`| MatchTimeRemain|Either     |`TIMELIMIT secs`     |
-|`00010011`| Initiate Vote  |PlayerSubId|`VOTENEW string`     |
-| ...      | (reserved)     |           |                     |
+|Bits      |Meaning         |Granularity|Assembly             |Class        |
+|----------|----------------|-----------|---------------------|-------------|
+|`00000000`| Joined         |PlayerSubId|`JOIN name`          |Notification |
+|`00000001`| Ping/RTT Info  |PlayerSubId|`RTT millis`         |Unreliable   |
+|`00000010`| Timeout        |Either     |`TIMEOUT millis`     |Notification |
+|`00000011`| TimeoutDone    |Either     |`RESUME`             |Notification |
+|`00000100`| Exploded       |Either     |`EXPLODE y,x killer` |Notification |
+|`00000101`| LivesRemain    |Either     |`LIVES n`            |Notification |
+|`00000110`| Protected      |PlayerId   |`PROTECT`            |Notification |
+|`00000111`| Un-Protected   |PlayerId   |`UNPROTECT`          |Notification |
+|`00001000`| Eliminated     |PlayerId   |`ELIMINATE`          |Notification |
+|`00001001`| Surrendered    |PlayerId   |`SURRENDER`          |Notification |
+|`00001010`| Disconnected   |PlayerSubId|`LEAVE`              |Notification |
+|`00001011`| Kicked         |PlayerSubId|`KICK`               |Notification |
+|`00001100`| Vote No        |PlayerSubId|`VOTE id N`          |Background   |
+|`00001101`| Vote Yes       |PlayerSubId|`VOTE id Y`          |Background   |
+|`00001110`| Vote Failed    |PlayerSubId|`VOTEFAIL id`        |Background   |
+|`00001111`| Vote Success   |PlayerSubId|`VOTEPASS id`        |Background   |
+|`00010000`| Chat (All)     |PlayerSubId|`CHATALL string`     |Background   |
+|`00010001`| Chat (Friendly)|PlayerSubId|`CHAT string`        |Background   |
+|`00010010`| MatchTimeRemain|Either     |`TIMELIMIT secs`     |Notification |
+|`00010011`| Initiate Vote  |PlayerSubId|`VOTENEW id string`  |Background   |
+| ...      | (reserved)     |           |                     |             |
 
 Then follows the data payload for the given message kind.
 
@@ -322,6 +315,26 @@ Encoding:
 |`00000011`| (opcode)       |
 
 Followed by the coordinate of the tile.
+
+#### Debug
+
+Special message reserved for use during development.
+
+Assembly:
+```
+DEBUG i y,x
+```
+
+Encoding:
+
+|Bits      |Meaning         |
+|----------|----------------|
+|`00001110`| (opcode)       |
+
+Followed by:
+
+ - `u8` magic value
+ - Tile coordinate
 
 #### Flag State
 
@@ -399,8 +412,8 @@ Multi-tile Encoding:
 
 |Bits      |Meaning         |
 |----------|----------------|
-|`1000----`| (opcode)       |
-|`----xxxx`| Tile Count - 1 |
+|`1---0000`| (opcode)       |
+|`-xxx----`| Tile Count - 1 |
 
 Followed by the coordinates of the tiles.
 
@@ -684,8 +697,8 @@ Encoding:
 |Bits      |Meaning         |
 |----------|----------------|
 |`1-------`| (opcode)       |
-|`-xxxx---`| PlayerId       |
-|`-----xxx`| Tile Count - 1 |
+|`----xxxx`| PlayerId       |
+|`-xxx----`| Tile Count - 1 |
 
 The PlayerId must not be zero.
 

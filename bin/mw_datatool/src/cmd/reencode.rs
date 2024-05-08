@@ -1,4 +1,4 @@
-use std::io::{Read, Seek, Write};
+use std::io::{BufReader, BufWriter, Read, Seek, Write};
 
 use mw_common::game::MapGenTileData;
 use mw_common::grid::*;
@@ -19,7 +19,8 @@ pub fn main(common: &CommonArgs, args: &ReencodeArgs) -> AnyResult<()> {
                 .create(false)
                 .open(in_path)
                 .context("Cannot open file for writing!")?;
-            reencode(std::io::Cursor::new(file_in_mem), file, args)?;
+            let bufw = BufWriter::new(file);
+            reencode(std::io::Cursor::new(file_in_mem), bufw, args)?;
         }
         (Some(in_path), Some(out_path)) => {
             let in_file = std::fs::OpenOptions::new()
@@ -32,7 +33,9 @@ pub fn main(common: &CommonArgs, args: &ReencodeArgs) -> AnyResult<()> {
                 .create(true)
                 .open(out_path)
                 .context("Cannot open output file!")?;
-            reencode(in_file, out_file, args)?;
+            let bufr = BufReader::new(in_file);
+            let bufw = BufWriter::new(out_file);
+            reencode(bufr, bufw, args)?;
         }
         (None, _) => {
             bail!("Input filename must be specified!");
@@ -99,12 +102,6 @@ fn reencode<R: Read + Seek, W: Write + Seek>(reader: R, writer: W, args: &Reenco
     let cit_pos = isr.read_cits_pos()?.to_owned();
     let iter_cit_names = isr.read_cits_names()?;
     let b_is = b_is.with_cits(cit_pos.iter().cloned().zip(iter_cit_names))?;
-
-    let b_is = if args.anonymize || isr.is_anonymized() {
-        b_is.with_anonymous_players(isr.n_players())?
-    } else {
-        b_is.with_named_players(isr.read_players()?)?
-    };
 
     // TODO: rules
     let b_is = b_is.with_rules()?;

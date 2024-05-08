@@ -22,7 +22,6 @@ pub enum MwWriterError {
 /// let is = b_is
 ///   .with_map(...)?
 ///   .with_cits(...)?
-///   .with_players(...)?
 ///   .with_rules(...)?
 ///   .finish()?;
 /// let mut b_file
@@ -95,13 +94,6 @@ pub struct MwISBuilderWithMap<'b, W: Write + Seek> {
     writer: W,
 }
 pub struct MwISBuilderWithCits<'b, W: Write + Seek> {
-    buf: &'b mut Vec<u8>,
-    off_header: u32,
-    header: ISHeader,
-    hasher: Option<SeaHasher>,
-    writer: W,
-}
-pub struct MwISBuilderWithPlayers<'b, W: Write + Seek> {
     buf: &'b mut Vec<u8>,
     off_header: u32,
     header: ISHeader,
@@ -453,59 +445,6 @@ impl<'b, W: Write + Seek> MwISBuilderWithMap<'b, W> {
     }
 }
 impl<'b, W: Write + Seek> MwISBuilderWithCits<'b, W> {
-    pub fn into_inner(self) -> W {
-        self.writer
-    }
-    pub fn finish(mut self) -> Result<MwISComplete<'b, W>, MwWriterError> {
-        self.buf.clear();
-        self.header.serialize(self.buf);
-        self.writer.seek(SeekFrom::Start(self.off_header as u64))?;
-        self.writer.write_all(self.buf)?;
-        Ok(MwISComplete {
-            buf: self.buf,
-            writer: self.writer,
-            header: self.header,
-            hash: self.hasher.map(|h| h.finish()),
-        })
-    }
-    pub fn with_anonymous_players(mut self, n_plids: u8) -> Result<MwISBuilderWithPlayers<'b, W>, MwWriterError> {
-        self.header.n_players = n_plids;
-        Ok(MwISBuilderWithPlayers {
-            buf: self.buf,
-            off_header: self.off_header,
-            header: self.header,
-            writer: self.writer,
-            hasher: self.hasher,
-        })
-    }
-    pub fn with_named_players<'i>(mut self, names: impl IntoIterator<Item = &'i str>) -> Result<MwISBuilderWithPlayers<'b, W>, MwWriterError> {
-        self.buf.clear();
-        let mut count = 0;
-        for name in names {
-            if name.len() >= 255 {
-                self.buf.push(0);
-            } else {
-                self.buf.push(name.len() as u8);
-                self.buf.extend_from_slice(name.as_bytes());
-            }
-            count += 1;
-        }
-        self.header.n_players = count;
-        self.header.len_playerdata = self.buf.len() as u16;
-        if let Some(ref mut h) = &mut self.hasher {
-            h.write(self.buf);
-        }
-        self.writer.write_all(self.buf)?;
-        Ok(MwISBuilderWithPlayers {
-            buf: self.buf,
-            off_header: self.off_header,
-            header: self.header,
-            writer: self.writer,
-            hasher: self.hasher,
-        })
-    }
-}
-impl<'b, W: Write + Seek> MwISBuilderWithPlayers<'b, W> {
     pub fn into_inner(self) -> W {
         self.writer
     }

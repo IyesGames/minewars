@@ -15,6 +15,8 @@ mod cmd {
     pub mod checksum_verify;
     pub mod checksum_fix;
     pub mod reencode;
+    pub mod disasm;
+    pub mod asm;
 }
 
 #[derive(Parser, Debug)]
@@ -107,9 +109,6 @@ struct AnalyzeArgs {
 
 #[derive(Parser, Debug)]
 struct StripArgs {
-    /// Strip player info (names)
-    #[arg(short, long)]
-    players: bool,
     /// Strip all frames (gameplay data)
     #[arg(short, long)]
     frames: bool,
@@ -126,21 +125,17 @@ struct StripArgs {
     #[arg(short, long)]
     rules: bool,
     /// Strip everything except the map data and cities/regions
-    /// (enables: players, frames, rules)
+    /// (enables: frames, rules)
     #[arg(long)]
     mapcitonly: bool,
     /// Strip everything except the map data
-    /// (enables: players, frames, rules, cits)
+    /// (enables: frames, rules, cits)
     #[arg(long)]
     maponly: bool,
     /// Strip everything except the game rules
-    /// (enables: players, frames, map, cits)
+    /// (enables: frames, map, cits)
     #[arg(long)]
     rulesonly: bool,
-    /// Strip everything except the player info (names)
-    /// (enables: frames, rules, map, cits)
-    #[arg(long)]
-    playersonly: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -179,13 +174,13 @@ struct ReencodeArgs {
     /// Decompress the Frames Data (default is to keep as-is)
     #[arg(long)]
     decompress_frames: bool,
-    /// Anonymize (strip player names)
-    #[arg(short = 'a', long)]
-    anonymize: bool,
 }
 
 #[derive(Parser, Debug)]
 struct DisasmArgs {
+    /// Unframed Format: no frame headers, only messages
+    #[arg(short, long)]
+    unframed: bool,
     /// Timestamp (milliseconds) to start from (default is the very beginning)
     #[arg(short, long)]
     start_time: Option<u64>,
@@ -199,6 +194,9 @@ struct DisasmArgs {
 
 #[derive(Parser, Debug)]
 struct AsmArgs {
+    /// Unframed Format: no frame headers, only messages
+    #[arg(short, long)]
+    unframed: bool,
     /// Timestamp (milliseconds) where to insert the new data (default is at the end)
     #[arg(short, long)]
     time: Option<u64>,
@@ -223,8 +221,8 @@ impl Cli {
             CliCommand::ChecksumVerify(args) => crate::cmd::checksum_verify::main(&self.common, &args),
             CliCommand::ChecksumFix(args) => crate::cmd::checksum_fix::main(&self.common, &args),
             CliCommand::Reencode(args) => crate::cmd::reencode::main(&self.common, &args),
-            CliCommand::Disasm(args) => todo!(),
-            CliCommand::Asm(args) => todo!(),
+            CliCommand::Disasm(args) => crate::cmd::disasm::main(&self.common, &args),
+            CliCommand::Asm(args) => crate::cmd::asm::main(&self.common, &args),
         }
     }
 }

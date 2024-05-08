@@ -31,7 +31,7 @@ fn event_kind(
         if ev.plid != viewing.0 {
             continue;
         }
-        if let MwEv::Map { pos, ev: MapEv::TileKind { kind }} = ev.ev {
+        if let MwEv::TileKind { pos, kind } = ev.ev {
             if let Ok(mut tilekind) = q_tile.get_mut(index.0[pos]) {
                 *tilekind = kind;
             }
@@ -53,13 +53,13 @@ fn event_owner(
             continue;
         }
         match ev.ev {
-            MwEv::Map { pos, ev: MapEv::Digit { .. }} => {
+            MwEv::DigitCapture { pos, .. } => {
                 let e_tile = index.0[pos];
                 if let Ok(mut owner) = q_tile.get_mut(e_tile) {
                     owner.0 = viewing.0;
                 }
             }
-            MwEv::Map { pos, ev: MapEv::Owner { plid }} => {
+            MwEv::TileOwner { pos, plid } => {
                 let e_tile = index.0[pos];
                 if let Ok(mut owner) = q_tile.get_mut(e_tile) {
                     if owner.0 == viewing.0 && plid != viewing.0 {
@@ -89,7 +89,7 @@ fn event_digit(
         if ev.plid != viewing.0 {
             continue;
         }
-        if let MwEv::Map { pos, ev: MapEv::Digit { digit, asterisk }} = ev.ev {
+        if let MwEv::DigitCapture { pos, digit, asterisk } = ev.ev {
             if let Ok(mut tiledigit) = q_tile.get_mut(index.0[pos]) {
                 tiledigit.0 = digit;
                 tiledigit.1 = asterisk;
@@ -109,16 +109,14 @@ fn event_gents(
             continue;
         }
         let (pos, gent) = match ev.ev {
-            | MwEv::Map { pos, ev: MapEv::Unflag }
-            | MwEv::Map { pos, ev: MapEv::Flag { plid: PlayerId::Neutral }} => {
+            MwEv::Flag { pos, plid: PlayerId::Neutral } => {
                 (pos, TileGent::Empty)
             }
-            MwEv::Map { pos, ev: MapEv::Flag { plid }} => {
+            MwEv::Flag { pos, plid } => {
                 (pos, TileGent::Flag(plid))
             }
-            | MwEv::Map { pos, ev: MapEv::PlaceItem { kind }}
-            | MwEv::Map { pos, ev: MapEv::RevealItem { kind }} => {
-                (pos, TileGent::Item(kind))
+            MwEv::RevealItem { pos, item } => {
+                (pos, TileGent::Item(item))
             }
             // TODO: structures
             _ => continue,
@@ -146,7 +144,7 @@ fn event_explosion(
         if ev.plid != viewing.0 {
             continue;
         }
-        if let MwEv::Map { pos, ev: MapEv::Explode } = ev.ev {
+        if let MwEv::Explode { pos } = ev.ev {
             if let Ok((e, tilepos, mut tilegent)) = q_tile.get_mut(index.0[pos]) {
                 let kind = if let TileGent::Item(ItemKind::Decoy) = *tilegent {
                     TileExplosionKind::Decoy

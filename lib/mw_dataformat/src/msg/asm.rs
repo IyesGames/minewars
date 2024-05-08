@@ -3,7 +3,7 @@
 //! The idea is to help with debugging and development of the MineWars
 //! data stream by having a human-readable representation of the binary data.
 
-use mw_common::{grid::Pos, plid::PlayerId};
+use mw_common::{game::{ItemKind, StructureKind, TileKind}, grid::Pos, plid::PlayerId, time::MwDur};
 use thiserror::Error;
 
 use crate::msg::*;
@@ -56,7 +56,7 @@ impl MsgAsmWrite {
 impl MsgWriter for MsgAsmWrite {
     type Error = MsgAsmWriteError;
 
-    fn write<W: std::io::Write>(&mut self, w: &mut W, msgs: &[Msg], max_bytes: usize) -> Result<(usize, usize), Self::Error> {
+    fn write<W: std::io::Write>(&mut self, w: &mut W, msgs: &[MwEv], max_bytes: usize) -> Result<(usize, usize), Self::Error> {
         use std::fmt::Write;
         let Some(first) = msgs.get(0) else {
             return Ok((0, 0));
@@ -66,36 +66,46 @@ impl MsgWriter for MsgAsmWrite {
         let mut n_msgs = 1;
 
         match first {
-            Msg::Player { plid, subplid, status } => {
+            MwEv::Debug(i, pos) => {
+                writeln!(&mut self.buf, "DEBUG {} {},{}", i, pos.y(), pos.x())?;
+            }
+            MwEv::Player { plid, subplid, ev: status } => {
                 if let Some(subplid) = subplid {
                     write!(&mut self.buf, "PLAYER {}/{}", u8::from(*plid), subplid)?;
                 } else {
                     write!(&mut self.buf, "PLAYER {}", u8::from(*plid))?;
                 }
                 match status {
-                    MsgPlayer::Joined => write!(&mut self.buf, " JOIN")?,
-                    MsgPlayer::NetRttInfo { duration } => write!(&mut self.buf, " RTT {}", duration.as_millis())?,
-                    MsgPlayer::Timeout { duration } => write!(&mut self.buf, " TIMEOUT {}", duration.as_millis())?,
-                    MsgPlayer::TimeoutFinished => write!(&mut self.buf, " RESUME")?,
-                    MsgPlayer::Exploded { pos, killer } => write!(&mut self.buf, " EXPLODE {},{} {}", pos.y(), pos.x(), u8::from(*killer))?,
-                    MsgPlayer::LivesRemain { lives } => write!(&mut self.buf, " LIVES {}", *lives)?,
-                    MsgPlayer::Protected => write!(&mut self.buf, " PROTECT")?,
-                    MsgPlayer::Unprotected => write!(&mut self.buf, " UNPROTECT")?,
-                    MsgPlayer::Eliminated => write!(&mut self.buf, " ELIMINATE")?,
-                    MsgPlayer::Surrendered => write!(&mut self.buf, " SURRENDER")?,
-                    MsgPlayer::Disconnected => write!(&mut self.buf, " LEAVE")?,
-                    MsgPlayer::Kicked => write!(&mut self.buf, " KICK")?,
-                    MsgPlayer::MatchTimeRemain { secs } => write!(&mut self.buf, " TIMELIMIT {}", *secs)?,
+                    PlayerEv::Joined { name } => write!(&mut self.buf, " JOIN {}", name)?,
+                    PlayerEv::NetRttInfo { duration } => write!(&mut self.buf, " RTT {}", duration.as_millis())?,
+                    PlayerEv::Timeout { duration } => write!(&mut self.buf, " TIMEOUT {}", duration.as_millis())?,
+                    PlayerEv::TimeoutFinished => write!(&mut self.buf, " RESUME")?,
+                    PlayerEv::Exploded { pos, killer } => write!(&mut self.buf, " EXPLODE {},{} {}", pos.y(), pos.x(), u8::from(*killer))?,
+                    PlayerEv::LivesRemain { lives } => write!(&mut self.buf, " LIVES {}", *lives)?,
+                    PlayerEv::Protected => write!(&mut self.buf, " PROTECT")?,
+                    PlayerEv::Unprotected => write!(&mut self.buf, " UNPROTECT")?,
+                    PlayerEv::Eliminated => write!(&mut self.buf, " ELIMINATE")?,
+                    PlayerEv::Surrendered => write!(&mut self.buf, " SURRENDER")?,
+                    PlayerEv::Disconnected => write!(&mut self.buf, " LEAVE")?,
+                    PlayerEv::Kicked => write!(&mut self.buf, " KICK")?,
+                    PlayerEv::MatchTimeRemain { secs } => write!(&mut self.buf, " TIMELIMIT {}", *secs)?,
+                    PlayerEv::ChatAll { text } => write!(&mut self.buf, " CHATALL {}", text)?,
+                    PlayerEv::ChatFriendly { text } => write!(&mut self.buf, " CHAT {}", text)?,
+                    PlayerEv::VoteNew { id, l10nkey } => write!(&mut self.buf, " VOTENEW {} {}", id, l10nkey)?,
+                    PlayerEv::VoteNo { id } => write!(&mut self.buf, " VOTE {} N", id)?,
+                    PlayerEv::VoteYes { id } => write!(&mut self.buf, " VOTE {} Y", id)?,
+                    PlayerEv::VoteFail { id } => write!(&mut self.buf, " VOTEFAIL {}", id)?,
+                    PlayerEv::VotePass { id } => write!(&mut self.buf, " VOTEPASS {}", id)?,
                 }
                 writeln!(&mut self.buf, "")?;
             },
-            Msg::DigitCapture { pos, digit, asterisk } => {
+            MwEv::DigitCapture { pos, digit, asterisk } => {
                 write!(&mut self.buf, "DIGITS {}{}/{},{}", digit, if *asterisk { "*" } else { "" }, pos.y(), pos.x())?;
                 for (i, msg) in msgs[1..].iter().enumerate() {
                     if i >= 15 {
                         break;
                     }
-                    if let Msg::DigitCapture { pos, digit, asterisk } = msg {
+                    if let MwEv::DigitCapture { pos, digit, asterisk } = msg {
                         write!(&mut self.buf, " {}{}/{},{}", digit, if *asterisk { "*" } else { "" }, pos.y(), pos.x())?;
                         n_msgs += 1;
                     } else {
@@ -104,13 +114,13 @@ impl MsgWriter for MsgAsmWrite {
                 }
                 writeln!(&mut self.buf, "")?;
             },
-            Msg::TileOwner { pos, plid } => {
+            MwEv::TileOwner { pos, plid } => {
                 write!(&mut self.buf, "OWNER {} {},{}", u8::from(*plid), pos.y(), pos.x())?;
                 for (i, msg) in msgs[1..].iter().enumerate() {
                     if i >= 7 {
                         break;
                     }
-                    if let Msg::TileOwner { pos, plid: plid_new } = msg {
+                    if let MwEv::TileOwner { pos, plid: plid_new } = msg {
                         if plid_new != plid {
                             break;
                         }
@@ -122,61 +132,61 @@ impl MsgWriter for MsgAsmWrite {
                 }
                 writeln!(&mut self.buf, "")?;
             },
-            Msg::CitRes { cit, res } => {
+            MwEv::CitRes { cit, res } => {
                 writeln!(&mut self.buf, "CITRES {} {}", cit, res)?;
             },
-            Msg::CitMoneyTransact { cit, amount } => {
+            MwEv::CitMoneyTransact { cit, amount } => {
                 writeln!(&mut self.buf, "CITTRANS {} {}", cit, amount)?;
             },
-            Msg::CitMoney { cit, money } => {
+            MwEv::CitMoney { cit, money } => {
                 writeln!(&mut self.buf, "CITMONEY {} {}", cit, money)?;
             },
-            Msg::CitIncome { cit, money, income } => {
+            MwEv::CitIncome { cit, money, income } => {
                 writeln!(&mut self.buf, "CITINCOME {} {} {}", cit, money, income)?;
             },
-            Msg::CitTradeInfo { cit, export, import } => {
+            MwEv::CitTradeInfo { cit, export, import } => {
                 writeln!(&mut self.buf, "CITTRADE {} {} {}", cit, export, import)?;
             },
-            Msg::RevealStructure { pos, kind } => {
+            MwEv::RevealStructure { pos, kind } => {
                 writeln!(&mut self.buf, "STRUCT {},{} {}", pos.y(), pos.x(), match kind {
-                    MsgStructureKind::Road => "road",
-                    MsgStructureKind::Bridge => "bridge",
-                    MsgStructureKind::Wall => "wall",
-                    MsgStructureKind::Tower => "tower",
+                    StructureKind::Road => "road",
+                    StructureKind::Bridge => "bridge",
+                    StructureKind::Barricade => "wall",
+                    StructureKind::WatchTower => "tower",
                 })?;
             },
-            Msg::StructureGone { pos } => {
-                writeln!(&mut self.buf, "DECONSTRUCT {},{}", pos.y(), pos.x())?;
+            MwEv::StructureGone { pos } => {
+                writeln!(&mut self.buf, "NOSTRUCT {},{}", pos.y(), pos.x())?;
             },
-            Msg::StructureHp { pos, hp } => {
+            MwEv::StructureHp { pos, hp } => {
                 writeln!(&mut self.buf, "STRUCTHP {},{} {}", pos.y(), pos.x(), hp)?;
             },
-            Msg::BuildNew { pos, kind, pts } => {
+            MwEv::BuildNew { pos, kind, pts } => {
                 writeln!(&mut self.buf, "BUILDNEW {},{} {} {}", pos.y(), pos.x(), match kind {
-                    MsgStructureKind::Road => "road",
-                    MsgStructureKind::Bridge => "bridge",
-                    MsgStructureKind::Wall => "wall",
-                    MsgStructureKind::Tower => "tower",
+                    StructureKind::Road => "road",
+                    StructureKind::Bridge => "bridge",
+                    StructureKind::Barricade => "wall",
+                    StructureKind::WatchTower => "tower",
                 }, pts)?;
             },
-            Msg::Construction { pos, current, rate } => {
+            MwEv::Construction { pos, current, rate } => {
                 writeln!(&mut self.buf, "BUILD {},{} {} {}", pos.y(), pos.x(), current, rate)?;
             },
-            Msg::RevealItem { pos, item }  => {
+            MwEv::RevealItem { pos, item }  => {
                 writeln!(&mut self.buf, "ITEM {},{} {}", pos.y(), pos.x(), match item {
-                    MsgItem::None => "none",
-                    MsgItem::Decoy => "decoy",
-                    MsgItem::Mine => "mine",
-                    MsgItem::Trap => "trap",
+                    ItemKind::Safe => "none",
+                    ItemKind::Decoy => "decoy",
+                    ItemKind::Mine => "mine",
+                    ItemKind::Trap => "trap",
                 })?;
             },
-            Msg::Explode { pos } => {
+            MwEv::Explode { pos } => {
                 write!(&mut self.buf, "EXPLODE {},{}", pos.y(), pos.x())?;
                 for (i, msg) in msgs[1..].iter().enumerate() {
                     if i >= 15 {
                         break;
                     }
-                    if let Msg::Explode { pos } = msg {
+                    if let MwEv::Explode { pos } = msg {
                         write!(&mut self.buf, " {},{}", pos.y(), pos.x())?;
                         n_msgs += 1;
                     } else {
@@ -185,30 +195,31 @@ impl MsgWriter for MsgAsmWrite {
                 }
                 writeln!(&mut self.buf, "")?;
             },
-            Msg::Smoke { pos } => {
+            MwEv::Smoke { pos } => {
                 writeln!(&mut self.buf, "SMOKE {},{}", pos.y(), pos.x())?;
             },
-            Msg::Unsmoke { pos } => {
+            MwEv::Unsmoke { pos } => {
                 writeln!(&mut self.buf, "UNSMOKE {},{}", pos.y(), pos.x())?;
             },
-            Msg::Tremor => {
+            MwEv::Tremor => {
                 writeln!(&mut self.buf, "SHAKE")?;
             },
-            Msg::Nop => {
+            MwEv::Nop => {
                 writeln!(&mut self.buf, "NOP")?;
             },
-            Msg::Flag { plid, pos } => {
+            MwEv::Flag { plid, pos } => {
                 writeln!(&mut self.buf, "FLAG {} {},{}", u8::from(*plid), pos.y(), pos.x())?;
             },
-            Msg::TileKind { pos, kind } => {
+            MwEv::TileKind { pos, kind } => {
                 writeln!(&mut self.buf, "TILE {},{} {}", pos.y(), pos.x(), match kind {
-                    MsgTileKind::Water => "water",
-                    MsgTileKind::Regular => "regular",
-                    MsgTileKind::Fertile => "fertile",
-                    MsgTileKind::Foundation => "foundation",
-                    MsgTileKind::Destroyed => "destroyed",
-                    MsgTileKind::Mountain => "mountain",
-                    MsgTileKind::Forest => "forest",
+                    TileKind::Water => "water",
+                    TileKind::Regular => "regular",
+                    TileKind::Fertile => "fertile",
+                    TileKind::FoundationStruct => "foundation",
+                    TileKind::FoundationRoad => "foundation",
+                    TileKind::Destroyed => "destroyed",
+                    TileKind::Mountain => "mountain",
+                    TileKind::Forest => "forest",
                 })?;
             },
         }
@@ -224,7 +235,7 @@ impl MsgWriter for MsgAsmWrite {
 impl MsgReader for MsgAsmRead {
     type Error = MsgAsmReadError;
 
-    fn read<R: std::io::BufRead>(&mut self, r: &mut R, out: &mut Vec<Msg>) -> Result<usize, Self::Error> {
+    fn read<R: std::io::BufRead>(&mut self, r: &mut R, out: &mut Vec<MwEv>) -> Result<usize, Self::Error> {
         self.buf.clear();
         r.read_line(&mut self.buf)?;
         // get the part before any comment and trim whitespace
@@ -243,6 +254,23 @@ impl MsgReader for MsgAsmRead {
         }
 
         match iname.to_ascii_uppercase().as_str() {
+            "DEBUG" => {
+                let Some(arg_i) = components.next() else {
+                    return Err(MsgAsmReadError::NotEnoughArgs);
+                };
+                let Some(arg_pos) = components.next() else {
+                    return Err(MsgAsmReadError::NotEnoughArgs);
+                };
+                if components.next().is_some() {
+                    return Err(MsgAsmReadError::TooManyArgs);
+                }
+                let Ok(i) = arg_i.parse::<u8>() else {
+                    return Err(MsgAsmReadError::BadArg(arg_i.to_owned()));
+                };
+                let pos = parse_pos(arg_pos)?;
+                out.push(MwEv::Debug(i, pos));
+                Ok(1)
+            }
             "PLAYER" => {
                 let Some(arg_plid) = components.next() else {
                     return Err(MsgAsmReadError::NotEnoughArgs);
@@ -264,27 +292,34 @@ impl MsgReader for MsgAsmRead {
                     };
                     Some(subplid)
                 };
+                let mut boundless_args = false;
                 let status = match arg_status.to_ascii_uppercase().as_str() {
-                    "JOIN" => MsgPlayer::Joined,
+                    "JOIN" => {
+                        boundless_args = true;
+                        let Some(arg_name) = components.remainder() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        PlayerEv::Joined { name: arg_name.to_owned() }
+                    },
                     "RTT" => {
                         let Some(arg_duration) = components.next() else {
                             return Err(MsgAsmReadError::NotEnoughArgs);
                         };
                         let Ok(duration) = arg_duration.parse::<u16>() else {
-                            return Err(MsgAsmReadError::BadArg(arg_plid.to_owned()));
+                            return Err(MsgAsmReadError::BadArg(arg_duration.to_owned()));
                         };
-                        MsgPlayer::NetRttInfo { duration: MwDur::from_millis_lossy(duration) }
+                        PlayerEv::NetRttInfo { duration: MwDur::from_millis_lossy(duration) }
                     },
                     "TIMEOUT" => {
                         let Some(arg_duration) = components.next() else {
                             return Err(MsgAsmReadError::NotEnoughArgs);
                         };
                         let Ok(duration) = arg_duration.parse::<u16>() else {
-                            return Err(MsgAsmReadError::BadArg(arg_plid.to_owned()));
+                            return Err(MsgAsmReadError::BadArg(arg_duration.to_owned()));
                         };
-                        MsgPlayer::Timeout { duration: MwDur::from_millis_lossy(duration) }
+                        PlayerEv::Timeout { duration: MwDur::from_millis_lossy(duration) }
                     },
-                    "RESUME" => MsgPlayer::TimeoutFinished,
+                    "RESUME" => PlayerEv::TimeoutFinished,
                     "EXPLODE" => {
                         let Some(arg_pos) = components.next() else {
                             return Err(MsgAsmReadError::NotEnoughArgs);
@@ -297,41 +332,102 @@ impl MsgReader for MsgAsmRead {
                             return Err(MsgAsmReadError::BadArg(arg_plid.to_owned()));
                         };
                         let plid = PlayerId::from(plid);
-                        MsgPlayer::Exploded { pos, killer: plid }
+                        PlayerEv::Exploded { pos, killer: plid }
                     },
                     "LIVES" => {
                         let Some(arg_lives) = components.next() else {
                             return Err(MsgAsmReadError::NotEnoughArgs);
                         };
                         let Ok(lives) = arg_lives.parse::<u8>() else {
-                            return Err(MsgAsmReadError::BadArg(arg_plid.to_owned()));
+                            return Err(MsgAsmReadError::BadArg(arg_lives.to_owned()));
                         };
-                        MsgPlayer::LivesRemain { lives }
+                        PlayerEv::LivesRemain { lives }
                     },
-                    "PROTECT" => MsgPlayer::Protected,
-                    "UNPROTECT" => MsgPlayer::Unprotected,
-                    "ELIMINATE" => MsgPlayer::Eliminated,
-                    "SURRENDER" => MsgPlayer::Surrendered,
-                    "LEAVE" => MsgPlayer::Disconnected,
-                    "KICK" => MsgPlayer::Kicked,
+                    "PROTECT" => PlayerEv::Protected,
+                    "UNPROTECT" => PlayerEv::Unprotected,
+                    "ELIMINATE" => PlayerEv::Eliminated,
+                    "SURRENDER" => PlayerEv::Surrendered,
+                    "LEAVE" => PlayerEv::Disconnected,
+                    "KICK" => PlayerEv::Kicked,
                     "TIMELIMIT" => {
                         let Some(arg_secs) = components.next() else {
                             return Err(MsgAsmReadError::NotEnoughArgs);
                         };
                         let Ok(secs) = arg_secs.parse::<u16>() else {
-                            return Err(MsgAsmReadError::BadArg(arg_plid.to_owned()));
+                            return Err(MsgAsmReadError::BadArg(arg_secs.to_owned()));
                         };
-                        MsgPlayer::MatchTimeRemain { secs }
+                        PlayerEv::MatchTimeRemain { secs }
+                    },
+                    "CHAT" => {
+                        boundless_args = true;
+                        let Some(arg_text) = components.remainder() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        PlayerEv::ChatFriendly { text: arg_text.to_owned() }
+                    },
+                    "CHATALL" => {
+                        boundless_args = true;
+                        let Some(arg_text) = components.remainder() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        PlayerEv::ChatAll { text: arg_text.to_owned() }
+                    },
+                    "VOTENEW" => {
+                        boundless_args = true;
+                        let Some(arg_id) = components.next() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        let Some(arg_text) = components.remainder() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        let Ok(id) = arg_id.parse::<u8>() else {
+                            return Err(MsgAsmReadError::BadArg(arg_id.to_owned()));
+                        };
+                        PlayerEv::VoteNew { id, l10nkey: arg_text.to_owned() }
+                    },
+                    "VOTEFAIL" => {
+                        let Some(arg_id) = components.next() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        let Ok(id) = arg_id.parse::<u8>() else {
+                            return Err(MsgAsmReadError::BadArg(arg_id.to_owned()));
+                        };
+                        PlayerEv::VoteFail { id }
+                    },
+                    "VOTEPASS" => {
+                        let Some(arg_id) = components.next() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        let Ok(id) = arg_id.parse::<u8>() else {
+                            return Err(MsgAsmReadError::BadArg(arg_id.to_owned()));
+                        };
+                        PlayerEv::VotePass { id }
+                    },
+                    "VOTE" => {
+                        let Some(arg_id) = components.next() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        let Some(arg_yn) = components.next() else {
+                            return Err(MsgAsmReadError::NotEnoughArgs);
+                        };
+                        let Ok(id) = arg_id.parse::<u8>() else {
+                            return Err(MsgAsmReadError::BadArg(arg_id.to_owned()));
+                        };
+                        match arg_yn {
+                            "y" | "Y" => PlayerEv::VoteYes { id },
+                            "n" | "N" => PlayerEv::VoteNo { id },
+                            _ => return Err(MsgAsmReadError::BadArg(arg_yn.to_owned())),
+                        }
                     },
                     other => {
                         return Err(MsgAsmReadError::BadArg(other.to_owned()));
                     }
                 };
-                if components.next().is_some() {
+                if !boundless_args && components.next().is_some() {
                     return Err(MsgAsmReadError::TooManyArgs);
                 }
-                out.push(Msg::Player {
-                    plid, subplid, status,
+                out.push(MwEv::Player {
+                    plid, subplid, ev: status,
                 });
                 Ok(1)
             }
@@ -347,18 +443,18 @@ impl MsgReader for MsgAsmRead {
                 }
                 let pos = parse_pos(arg_pos)?;
                 let kind = match arg_kind.to_ascii_uppercase().as_str() {
-                    "WATER" => MsgTileKind::Water,
-                    "REGULAR" => MsgTileKind::Regular,
-                    "FERTILE" => MsgTileKind::Fertile,
-                    "DESTROYED" => MsgTileKind::Destroyed,
-                    "FOUNDATION" => MsgTileKind::Foundation,
-                    "MOUNTAIN" => MsgTileKind::Mountain,
-                    "FOREST" => MsgTileKind::Forest,
+                    "WATER" => TileKind::Water,
+                    "REGULAR" => TileKind::Regular,
+                    "FERTILE" => TileKind::Fertile,
+                    "DESTROYED" => TileKind::Destroyed,
+                    "FOUNDATION" => TileKind::FoundationStruct,
+                    "MOUNTAIN" => TileKind::Mountain,
+                    "FOREST" => TileKind::Forest,
                     other => {
                         return Err(MsgAsmReadError::BadArg(other.to_owned()));
                     }
                 };
-                out.push(Msg::TileKind {
+                out.push(MwEv::TileKind {
                     pos, kind,
                 });
                 Ok(1)
@@ -379,7 +475,7 @@ impl MsgReader for MsgAsmRead {
                         return Err(MsgAsmReadError::BadArg(arg_digit.to_owned()));
                     };
                     let pos = parse_pos(arg_pos)?;
-                    out.push(Msg::DigitCapture {
+                    out.push(MwEv::DigitCapture {
                         digit, pos, asterisk,
                     });
                     n += 1;
@@ -403,7 +499,7 @@ impl MsgReader for MsgAsmRead {
                 let mut n = 0;
                 for arg in components {
                     let pos = parse_pos(arg)?;
-                    out.push(Msg::TileOwner {
+                    out.push(MwEv::TileOwner {
                         plid, pos,
                     });
                     n += 1;
@@ -431,7 +527,7 @@ impl MsgReader for MsgAsmRead {
                 }
                 let plid = PlayerId::from(plid);
                 let pos = parse_pos(arg_pos)?;
-                out.push(Msg::Flag {
+                out.push(MwEv::Flag {
                     pos, plid,
                 });
                 Ok(1)
@@ -452,7 +548,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(res) = arg_res.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_res.to_owned()));
                 };
-                out.push(Msg::CitRes {
+                out.push(MwEv::CitRes {
                     cit, res,
                 });
                 Ok(1)
@@ -473,7 +569,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(amount) = arg_amount.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_amount.to_owned()));
                 };
-                out.push(Msg::CitMoneyTransact {
+                out.push(MwEv::CitMoneyTransact {
                     cit, amount,
                 });
                 Ok(1)
@@ -494,7 +590,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(money) = arg_money.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_money.to_owned()));
                 };
-                out.push(Msg::CitMoney {
+                out.push(MwEv::CitMoney {
                     cit, money,
                 });
                 Ok(1)
@@ -521,7 +617,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(income) = arg_income.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_income.to_owned()));
                 };
-                out.push(Msg::CitIncome {
+                out.push(MwEv::CitIncome {
                     cit, money, income,
                 });
                 Ok(1)
@@ -548,7 +644,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(import) = arg_import.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_import.to_owned()));
                 };
-                out.push(Msg::CitTradeInfo {
+                out.push(MwEv::CitTradeInfo {
                     cit, export, import,
                 });
                 Ok(1)
@@ -565,20 +661,20 @@ impl MsgReader for MsgAsmRead {
                 }
                 let pos = parse_pos(arg_pos)?;
                 let kind = match arg_kind.to_ascii_uppercase().as_str() {
-                    "ROAD" => MsgStructureKind::Road,
-                    "BRIDGE" => MsgStructureKind::Bridge,
-                    "WALL" => MsgStructureKind::Wall,
-                    "TOWER" => MsgStructureKind::Tower,
+                    "ROAD" => StructureKind::Road,
+                    "BRIDGE" => StructureKind::Bridge,
+                    "WALL" => StructureKind::Barricade,
+                    "TOWER" => StructureKind::WatchTower,
                     other => {
                         return Err(MsgAsmReadError::BadArg(other.to_owned()));
                     }
                 };
-                out.push(Msg::RevealStructure {
+                out.push(MwEv::RevealStructure {
                     pos, kind,
                 });
                 Ok(1)
             }
-            "DECONSTRUCT" => {
+            "NOSTRUCT" => {
                 let Some(arg_pos) = components.next() else {
                     return Err(MsgAsmReadError::NotEnoughArgs);
                 };
@@ -586,7 +682,7 @@ impl MsgReader for MsgAsmRead {
                     return Err(MsgAsmReadError::TooManyArgs);
                 }
                 let pos = parse_pos(arg_pos)?;
-                out.push(Msg::StructureGone {
+                out.push(MwEv::StructureGone {
                     pos
                 });
                 Ok(1)
@@ -605,7 +701,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(hp) = arg_hp.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_hp.to_owned()));
                 };
-                out.push(Msg::StructureHp {
+                out.push(MwEv::StructureHp {
                     pos, hp,
                 });
                 Ok(1)
@@ -625,10 +721,10 @@ impl MsgReader for MsgAsmRead {
                 }
                 let pos = parse_pos(arg_pos)?;
                 let kind = match arg_kind.to_ascii_uppercase().as_str() {
-                    "ROAD" => MsgStructureKind::Road,
-                    "BRIDGE" => MsgStructureKind::Bridge,
-                    "WALL" => MsgStructureKind::Wall,
-                    "TOWER" => MsgStructureKind::Tower,
+                    "ROAD" => StructureKind::Road,
+                    "BRIDGE" => StructureKind::Bridge,
+                    "WALL" => StructureKind::Barricade,
+                    "TOWER" => StructureKind::WatchTower,
                     other => {
                         return Err(MsgAsmReadError::BadArg(other.to_owned()));
                     }
@@ -636,7 +732,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(pts) = arg_pts.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_pts.to_owned()));
                 };
-                out.push(Msg::BuildNew {
+                out.push(MwEv::BuildNew {
                     pos, kind, pts,
                 });
                 Ok(1)
@@ -661,7 +757,7 @@ impl MsgReader for MsgAsmRead {
                 let Ok(rate) = arg_rate.parse() else {
                     return Err(MsgAsmReadError::BadArg(arg_current.to_owned()));
                 };
-                out.push(Msg::Construction {
+                out.push(MwEv::Construction {
                     pos, current, rate
                 });
                 Ok(1)
@@ -678,15 +774,15 @@ impl MsgReader for MsgAsmRead {
                 }
                 let pos = parse_pos(arg_pos)?;
                 let item = match arg_item.to_ascii_uppercase().as_str() {
-                    "NONE" => MsgItem::None,
-                    "DECOY" => MsgItem::Decoy,
-                    "MINE" => MsgItem::Mine,
-                    "TRAP" => MsgItem::Trap,
+                    "NONE" => ItemKind::Safe,
+                    "DECOY" => ItemKind::Decoy,
+                    "MINE" => ItemKind::Mine,
+                    "TRAP" => ItemKind::Trap,
                     other => {
                         return Err(MsgAsmReadError::BadArg(other.to_owned()));
                     }
                 };
-                out.push(Msg::RevealItem {
+                out.push(MwEv::RevealItem {
                     pos, item
                 });
                 Ok(1)
@@ -695,7 +791,7 @@ impl MsgReader for MsgAsmRead {
                 let mut n = 0;
                 for arg in components {
                     let pos = parse_pos(arg)?;
-                    out.push(Msg::Explode {
+                    out.push(MwEv::Explode {
                         pos,
                     });
                     n += 1;
@@ -713,7 +809,7 @@ impl MsgReader for MsgAsmRead {
                     return Err(MsgAsmReadError::TooManyArgs);
                 }
                 let pos = parse_pos(arg_pos)?;
-                out.push(Msg::Smoke {
+                out.push(MwEv::Smoke {
                     pos
                 });
                 Ok(1)
@@ -726,7 +822,7 @@ impl MsgReader for MsgAsmRead {
                     return Err(MsgAsmReadError::TooManyArgs);
                 }
                 let pos = parse_pos(arg_pos)?;
-                out.push(Msg::Unsmoke {
+                out.push(MwEv::Unsmoke {
                     pos
                 });
                 Ok(1)
@@ -735,14 +831,14 @@ impl MsgReader for MsgAsmRead {
                 if components.next().is_some() {
                     return Err(MsgAsmReadError::TooManyArgs);
                 }
-                out.push(Msg::Tremor);
+                out.push(MwEv::Tremor);
                 Ok(1)
             }
             "NOP" => {
                 if components.next().is_some() {
                     return Err(MsgAsmReadError::TooManyArgs);
                 }
-                out.push(Msg::Nop);
+                out.push(MwEv::Nop);
                 Ok(1)
             }
             other => {

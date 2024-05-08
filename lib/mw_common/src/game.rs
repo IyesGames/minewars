@@ -70,7 +70,7 @@ impl TileKind {
             TileKind::Fertile |
             TileKind::Destroyed |
             TileKind::FoundationRoad |
-            TileKind::FoundationStruct=> false,
+            TileKind::FoundationStruct => false,
         }
     }
 
