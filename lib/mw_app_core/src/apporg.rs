@@ -6,8 +6,7 @@ pub fn plugin(app: &mut App) {
         app.configure_sets(Update, InStateSet(state).run_if(in_state(state)));
     }
     app.add_plugins((
-        ProgressPlugin::new(AppState::StartupLoading)
-            .continue_to(AppState::Menu),
+        ProgressPlugin::new(AppState::StartupLoading),
         ProgressPlugin::new(AppState::GameLoading)
             .continue_to(AppState::InGame),
     ));

@@ -18,7 +18,12 @@ pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 use crate::prelude::*;
 
+mod splash;
+
 pub fn plugin(app: &mut App) {
+    app.add_plugins((
+        crate::splash::plugin,
+    ));
 }
 
 pub fn setup_bevy_app() -> App {
