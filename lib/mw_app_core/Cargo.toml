@@ -20,6 +20,7 @@ path = "../mw_common"
 features = [ "bevy", "net" ]
 
 [dependencies]
+anyhow = "1.0.79"
 enum-iterator = "1.5.0"
 fluent_content = "0.0.5"
 unic-langid = "0.9.4"

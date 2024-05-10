@@ -1,0 +1,15 @@
+({
+    "ui.bg.notify_simple.9p": NinePatch (
+        left: 4.0,
+        right: 4.0,
+        top: 4.0,
+        bottom: 4.0,
+    ),
+    "ui.bg.notify_killfeed.9p": NinePatch (
+        left: 7.0,
+        right: 7.0,
+        top: 4.0,
+        bottom: 4.0,
+    ),
+})
+
