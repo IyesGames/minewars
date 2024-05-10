@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 pub mod prelude {
     pub use mw_common::prelude::*;
     pub use crate::config::Config;

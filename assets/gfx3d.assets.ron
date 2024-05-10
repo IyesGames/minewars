@@ -1,0 +1,8 @@
+({
+    "gfx3d.fallback_skin": File (
+        path: "gfx3d/dev.ass3d.toml",
+    ),
+    "gfx3d.fallback_skin.gltf": File (
+        path: "gfx3d/dev.gltf",
+    ),
+})

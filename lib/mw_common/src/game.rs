@@ -125,7 +125,7 @@ pub enum ActionKind {
 }
 
 /// Values used by different game mechanics
-#[cfg_attr(feature = "bevy", derive(Resource))]
+#[cfg_attr(feature = "bevy", derive(Component))]
 pub struct BalancingTable {
     pub res_base: u8,
     pub res_tile: EnumMap<TileKind, u8>,
@@ -152,13 +152,6 @@ pub struct BalancingTable {
     pub dur_stun: Duration,
     pub dur_blind: Duration,
     pub dur_smoke: Duration,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "bevy", derive(Resource))]
-pub struct MapDescriptor {
-    pub size: u8,
-    pub topology: Topology,
 }
 
 /// The basic per-tile data, as per mapgen or file

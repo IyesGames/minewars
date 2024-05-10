@@ -1,0 +1,54 @@
+[package]
+name = "mw_app_gfx3d"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+dev = []
+release = []
+proprietary = []
+
+[dependencies.mw_common]
+path = "../mw_common"
+features = [ "bevy" ]
+
+[dependencies.mw_app_core]
+path = "../mw_app_core"
+
+[dependencies]
+
+[dependencies.serde]
+version = "1.0.196"
+features = [ "derive" ]
+
+[dependencies.bevy]
+version = "0.13.2"
+default-features = false
+# Bevy should inherit its features via `mw_app_core`
+
+[dependencies.bevy_common_assets]
+version = "0.10.0"
+features = [
+    "ron",
+    "toml",
+]
+
+[dependencies.bevy_asset_loader]
+version = "0.20"
+features = [
+    "progress_tracking",
+    "standard_dynamic_assets",
+]
+
+[dependencies.iyes_progress]
+version = "0.11.0"
+features = ["assets"]
+
+[dependencies.bevy_tweening]
+version = "0.10.0"
+
+[dependencies.iyes_bevy_extras]
+git = "https://github.com/IyesGames/iyes_bevy_extras"
+
+[dependencies.iyes_cli]
+git = "https://github.com/IyesGames/iyes_cli"

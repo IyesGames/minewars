@@ -6,26 +6,64 @@ license = "MIT OR Apache-2.0"
 publish = false
 
 [features]
-default = ["gfx2d_tilemap", "gfx3d", "buttplug"]
-dev = ["mw_engine/dev", "mw_app/dev", "mw_ui_desktop/dev", "mw_ui_mobile/dev"]
-release = ["mw_engine/release", "mw_app/release", "mw_ui_desktop/release", "mw_ui_mobile/release"]
-proprietary = ["mw_app/proprietary", "dep:mw_app_proprietary"]
-gfx2d = ["mw_app/gfx2d"]
-gfx2d_tilemap = ["mw_app/gfx2d_tilemap"]
-gfx3d = ["mw_app/gfx3d"]
+default = [
+    "gfx2d_tilemap",
+    "gfx3d",
+    "mw_ui_desktop",
+    "mw_ui_mobile",
+    "buttplug",
+]
+dev = [
+    "mw_app_core/dev",
+    "mw_app/dev",
+    "mw_app_gfx2d?/dev",
+    "mw_app_gfx3d?/dev",
+    "mw_ui_desktop?/dev",
+    "mw_ui_mobile?/dev",
+]
+release = [
+    "mw_app_core/release",
+    "mw_app/release",
+    "mw_app_gfx2d?/release",
+    "mw_app_gfx3d?/release",
+    "mw_ui_desktop?/release",
+    "mw_ui_mobile?/release",
+]
+proprietary = [
+    "dep:mw_app_proprietary",
+    "mw_app_core/proprietary",
+    "mw_app/proprietary",
+    "mw_app_gfx2d?/proprietary",
+    "mw_app_gfx3d?/proprietary",
+    "mw_ui_desktop?/proprietary",
+    "mw_ui_mobile?/proprietary",
+]
+gfx2d = ["mw_app_gfx2d"]
+gfx2d_tilemap = ["mw_app_gfx2d/tilemap"]
+gfx3d = ["mw_app_gfx3d"]
 buttplug = ["mw_app/buttplug"]
 
-[dependencies.mw_engine]
-path = "../lib/mw_engine"
+[dependencies.mw_app_core]
+path = "../lib/mw_app_core"
 
 [dependencies.mw_app]
 path = "../lib/mw_app"
 
-[dependencies.mw_ui_mobile]
-path = "../lib/mw_ui_mobile"
+[dependencies.mw_app_gfx2d]
+path = "../lib/mw_app_gfx2d"
+optional = true
+
+[dependencies.mw_app_gfx3d]
+path = "../lib/mw_app_gfx3d"
+optional = true
 
 [dependencies.mw_ui_desktop]
 path = "../lib/mw_ui_desktop"
+optional = true
+
+[dependencies.mw_ui_mobile]
+path = "../lib/mw_ui_mobile"
+optional = true
 
 [dependencies.mw_app_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"

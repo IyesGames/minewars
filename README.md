@@ -172,20 +172,27 @@ Given that this is a multiplayer game, and there are many parts to it
    - `mw_certgen`: CLI tool for generating encryption certificates
    - `mw_datatool`: CLI tool for working with the MineWars data format
  - `lib/`: supporting libraries:
-   - `mw_common`: common code for everything
-   - `mw_host`: the open-source part of the Host server
-   - `mw_auth`: the open-source part of the Auth server
-   - `mw_engine`: bespoke tech used by `mw_app`
-   - `mw_app`: the open-source part of the client
-   - `mw_ui_desktop`: the desktop UI of `mw_app`
-   - `mw_ui_mobile`: the mobile UI of `mw_app`
-   - `mw_dataformat`: co/dec for the format used for gameplay data
-     (both replay/scenario files and over-the-wire gameplay)
-   - `mw_proto_host`: protocol between the client/player and Host server
-   - `mw_proto_auth`: protocol between the client/player and Auth server
-   - `mw_proto_hostrpc`: RPC protocol for the Host server
-   - `mw_proto_hostauth`: protocol between Host and Auth
-   - `mw_game_minesweeper`: minimal FOSS Minesweeper game mode
+   - Client stuff (Bevy):
+     - `mw_app_core`: foundations and supporting tech of `mw_app`
+     - `mw_app`: the open-source part of the game client
+       (sans UI and graphics)
+     - `mw_app_gfx2d`: 2D graphics
+     - `mw_app_gfx3d`: 3D graphics
+     - `mw_ui_desktop`: the desktop UI
+     - `mw_ui_mobile`: the mobile UI
+   - Server stuff (tokio):
+     - `mw_host`: the open-source part of the Host server
+     - `mw_auth`: the open-source part of the Auth server
+   - Common stuff:
+     - `mw_common`: common code for everything
+     - `mw_game_minesweeper`: minimal open-source Minesweeper game mode
+   - Protocol Stuff:
+     - `mw_dataformat`: co/dec for the format used for gameplay data
+       (both replay/scenario files and over-the-wire gameplay)
+     - `mw_proto_host`: protocol between the client/player and Host server
+     - `mw_proto_auth`: protocol between the client/player and Auth server
+     - `mw_proto_hostrpc`: RPC protocol for the Host server
+     - `mw_proto_hostauth`: protocol between Host and Auth
  - `cfg/`: example config files and certificates for testing/development
 
 Crates from the Proprietary Repo (not publicly available, just stubbed):
@@ -198,18 +205,14 @@ All of the actual code for the client app lives in library crates.
 
 The top-level crate (`minewars`) just creates a single executable
 binary by combining:
+ - `mw_app_core`
  - `mw_app`
- - `mw_ui_desktop` (used by default)
- - `mw_ui_mobile` (available behind a setting)
+ - `mw_app_gfx{2d,3d}`
+ - `mw_ui_{desktop,mobile}`
  - `mw_app_proprietary` (optional, not in this repo)
 
 The `mobile` crate is very similar; it creates the mobile apps for
-iOS/Android by combining:
- - `mw_app`
- - `mw_ui_mobile` (used by default)
- - `mw_ui_desktop` (available behind a setting)
- - `mw_app_proprietary` (optional, not in this repo)
- - extra mobile-specific code within the `mobile` crate
+iOS/Android by including all of the above + extra mobile-specific stuff.
 
 Similarly, for the servers:
  - `mw_hostsrv` creates a binary out of `mw_host` and (optionally) `mw_host_proprietary`

@@ -9,17 +9,14 @@ edition = "2021"
 dev = []
 release = []
 proprietary = []
-gfx2d = ["iyes_bevy_extras/2d"]
-gfx2d_tilemap = ["gfx2d", "dep:bevy_ecs_tilemap"]
-gfx3d = []
 buttplug = ["dep:buttplug"]
 
 [dependencies.mw_common]
 path = "../mw_common"
 features = [ "bevy", "net" ]
 
-[dependencies.mw_engine]
-path = "../mw_engine"
+[dependencies.mw_app_core]
+path = "../mw_app_core"
 
 [dependencies.mw_game_minesweeper]
 path = "../mw_game_minesweeper"
@@ -37,7 +34,6 @@ derive_more = "0.99.17"
 directories = "5.0.1"
 enum-iterator = "1.5.0"
 enum-map = "2.7.3"
-fluent_content = "0.0.5"
 glam = "0.25.0"
 hashbrown = "0.14.3"
 iyes_perf_ui = "0.2.3"
@@ -51,7 +47,6 @@ ron = "0.8.1"
 thiserror = "1.0.57"
 toml = "0.8.10"
 tracing = "0.1.40"
-unic-langid = "0.9.4"
 
 [dependencies.serde]
 version = "1.0.196"
@@ -60,51 +55,11 @@ features = [ "derive" ]
 [dependencies.bevy]
 version = "0.13.2"
 default-features = false
-features = [
-    "animation",
-    "bevy_asset",
-    "bevy_audio",
-    "bevy_gilrs",
-    "bevy_scene",
-    "bevy_winit",
-    "bevy_core_pipeline",
-    "bevy_pbr",
-    "bevy_gltf",
-    "bevy_render",
-    "bevy_sprite",
-    "bevy_text",
-    "bevy_ui",
-    "multi-threaded",
-    "png",
-    "jpeg",
-    "webp",
-    "hdr",
-    "dds",
-    "ktx2",
-    "zstd",
-    "vorbis",
-    "flac",
-    "wav",
-    "x11",
-    "wayland",
-    "bevy_gizmos",
-    "android_shared_stdcxx",
-    "tonemapping_luts",
-    "default_font",
-    "serialize",
-]
+# Bevy should inherit its features via `mw_app_core`
 
 [dependencies.iyes_progress]
 version = "0.11.0"
 features = ["assets"]
-
-[dependencies.bevy_asset_loader]
-version = "0.20"
-features = [
-    "2d",
-    "progress_tracking",
-    "standard_dynamic_assets",
-]
 
 [dependencies.bevy_common_assets]
 version = "0.10.0"
@@ -113,16 +68,12 @@ features = [
     "toml",
 ]
 
-[dependencies.bevy_fluent]
-version = "0.9.0"
-features = []
-
-[dependencies.bevy_tweening]
-version = "0.10.0"
-
-[dependencies.bevy_ecs_tilemap]
-optional = true
-git = "https://github.com/StarArawn/bevy_ecs_tilemap"
+[dependencies.bevy_asset_loader]
+version = "0.20"
+features = [
+    "progress_tracking",
+    "standard_dynamic_assets",
+]
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
