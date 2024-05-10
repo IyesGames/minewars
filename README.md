@@ -180,6 +180,11 @@ Given that this is a multiplayer game, and there are many parts to it
      - `mw_app_gfx3d`: 3D graphics
      - `mw_ui_desktop`: the desktop UI
      - `mw_ui_mobile`: the mobile UI
+     - `mw_platform_windows`: Windows-specific features
+     - `mw_platform_macos`: MacOS-specific features
+     - `mw_platform_linux`: Linux-specific features
+     - `mw_platform_android`: Android-specific features
+     - `mw_platform_ios`: iOS-specific features
    - Server stuff (tokio):
      - `mw_host`: the open-source part of the Host server
      - `mw_auth`: the open-source part of the Auth server

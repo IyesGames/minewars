@@ -1,9 +1,7 @@
 [package]
-name = "mw_ui_mobile"
+name = "mw_platform_ios"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
 dev = []
@@ -23,12 +21,5 @@ path = "../mw_app_core"
 version = "0.13.2"
 default-features = false
 
-[dependencies.bevy_tweening]
-version = "0.10.0"
-
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
-
-[dependencies.iyes_ui]
-git = "https://github.com/IyesGames/iyes_ui"
-features = ["iyes_cli"]

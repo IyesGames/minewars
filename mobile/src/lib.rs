@@ -1,6 +1,5 @@
 use mw_app::prelude::*;
 
-mod haptic_android;
 mod ui;
 
 #[bevy_main]
@@ -19,8 +18,12 @@ fn main() {
     #[cfg(feature = "proprietary")]
     app.add_plugins(mw_app_proprietary::plugin);
 
+    #[cfg(target_os = "android")]
+    app.add_plugins(mw_platform_android::plugin);
+    #[cfg(target_os = "ios")]
+    app.add_plugins(mw_platform_ios::plugin);
+
     app.add_plugins((
-        crate::haptic_android::plugin,
         crate::ui::plugin,
     ));
 

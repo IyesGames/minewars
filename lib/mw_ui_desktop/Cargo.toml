@@ -17,47 +17,11 @@ features = [ "bevy" ]
 [dependencies.mw_app_core]
 path = "../mw_app_core"
 
-[dependencies.mw_app]
-path = "../mw_app"
-
 [dependencies]
 
 [dependencies.bevy]
 version = "0.13.2"
 default-features = false
-features = [
-    "animation",
-    "bevy_asset",
-    "bevy_audio",
-    "bevy_gilrs",
-    "bevy_scene",
-    "bevy_winit",
-    "bevy_core_pipeline",
-    "bevy_pbr",
-    "bevy_gltf",
-    "bevy_render",
-    "bevy_sprite",
-    "bevy_text",
-    "bevy_ui",
-    "multi-threaded",
-    "png",
-    "jpeg",
-    "webp",
-    "hdr",
-    "dds",
-    "ktx2",
-    "zstd",
-    "vorbis",
-    "flac",
-    "wav",
-    "x11",
-    "wayland",
-    "bevy_gizmos",
-    "android_shared_stdcxx",
-    "tonemapping_luts",
-    "default_font",
-    "serialize",
-]
 
 [dependencies.bevy_tweening]
 version = "0.10.0"

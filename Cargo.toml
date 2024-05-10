@@ -52,6 +52,11 @@ members = [
     "lib/mw_app_gfx3d", # 3D graphics for MineWars
     "lib/mw_ui_desktop", # Desktop UI of mw_app
     "lib/mw_ui_mobile",  # Mobile UI of mw_app
+    "lib/mw_platform_android", # Android-specific features
+    "lib/mw_platform_ios", # iOS-specific features
+    "lib/mw_platform_windows", # Windows-specific features
+    "lib/mw_platform_macos", # MacOS-specific features
+    "lib/mw_platform_linux", # Linux-specific features
     # gameplay for different game modes
     "lib/mw_game_minesweeper", # FOSS minesweeper mode
 ]
@@ -85,6 +90,9 @@ dev = [
     "mw_app_gfx3d?/dev",
     "mw_ui_desktop?/dev",
     "mw_ui_mobile?/dev",
+    "mw_platform_windows/dev",
+    "mw_platform_macos/dev",
+    "mw_platform_linux/dev",
 ]
 release = [
     "mw_app_core/release",
@@ -93,6 +101,9 @@ release = [
     "mw_app_gfx3d?/release",
     "mw_ui_desktop?/release",
     "mw_ui_mobile?/release",
+    "mw_platform_windows/release",
+    "mw_platform_macos/release",
+    "mw_platform_linux/release",
 ]
 proprietary = [
     "dep:mw_app_proprietary",
@@ -102,6 +113,9 @@ proprietary = [
     "mw_app_gfx3d?/proprietary",
     "mw_ui_desktop?/proprietary",
     "mw_ui_mobile?/proprietary",
+    "mw_platform_windows/proprietary",
+    "mw_platform_macos/proprietary",
+    "mw_platform_linux/proprietary",
 ]
 gfx2d = ["mw_app_gfx2d"]
 gfx2d_tilemap = ["mw_app_gfx2d/tilemap"]
@@ -129,6 +143,15 @@ optional = true
 [dependencies.mw_ui_mobile]
 path = "lib/mw_ui_mobile"
 optional = true
+
+[target.'cfg(target_os = "windows")'.dependencies.mw_platform_windows]
+path = "lib/mw_platform_windows"
+
+[target.'cfg(target_os = "macos")'.dependencies.mw_platform_macos]
+path = "lib/mw_platform_macos"
+
+[target.'cfg(target_os = "linux")'.dependencies.mw_platform_linux]
+path = "lib/mw_platform_linux"
 
 [dependencies.mw_app_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"

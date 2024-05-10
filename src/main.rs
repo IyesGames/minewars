@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "release", windows_subsystem = "windows")]
+
 use mw_app::prelude::*;
 
 mod ui;
@@ -17,6 +19,13 @@ fn main() {
     app.add_plugins(mw_ui_mobile::plugin);
     #[cfg(feature = "proprietary")]
     app.add_plugins(mw_app_proprietary::plugin);
+
+    #[cfg(target_os = "windows")]
+    app.add_plugins(mw_platform_windows::plugin);
+    #[cfg(target_os = "macos")]
+    app.add_plugins(mw_platform_macos::plugin);
+    #[cfg(target_os = "linux")]
+    app.add_plugins(mw_platform_linux::plugin);
 
     app.add_plugins((
         crate::ui::plugin,

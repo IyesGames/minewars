@@ -1,5 +1,5 @@
 pub mod prelude {
-    pub use mw_app::prelude::*;
+    pub use mw_app_core::prelude::*;
     pub use crate::PROPRIETARY;
 }
 
