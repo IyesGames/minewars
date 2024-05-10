@@ -37,6 +37,7 @@ features = [
 [dependencies.bevy_asset_loader]
 version = "0.20"
 features = [
+    "3d",
     "progress_tracking",
     "standard_dynamic_assets",
 ]

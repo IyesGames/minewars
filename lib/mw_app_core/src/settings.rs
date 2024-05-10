@@ -35,4 +35,7 @@ impl<'w, 's, T: QueryData + 'static, F: QueryFilter + 'static> Settings<'w, 's, 
     pub fn get_mut(&mut self) -> Option<T::Item<'_>> {
         self.query_settings.get_single_mut().ok()
     }
+    pub fn is_available(&self) -> bool {
+        !self.query_settings.is_empty()
+    }
 }

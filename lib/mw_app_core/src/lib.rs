@@ -20,6 +20,7 @@ pub mod assets;
 pub mod locale;
 pub mod map;
 pub mod player;
+pub mod serde;
 pub mod session;
 pub mod settings;
 pub mod ui;
