@@ -23,6 +23,7 @@ features = [ "bevy", "net" ]
 enum-iterator = "1.5.0"
 fluent_content = "0.0.5"
 unic-langid = "0.9.4"
+modular-bitfield = "0.11.2"
 
 [dependencies.serde]
 version = "1.0.196"

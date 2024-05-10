@@ -16,6 +16,7 @@ features = [ "bevy" ]
 path = "../mw_app_core"
 
 [dependencies]
+iyes_perf_ui = "0.2.3"
 
 [dependencies.serde]
 version = "1.0.196"

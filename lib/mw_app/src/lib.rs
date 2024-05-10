@@ -18,11 +18,15 @@ pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 use crate::prelude::*;
 
+mod net;
 mod splash;
+pub mod ui;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((
+        crate::net::plugin,
         crate::splash::plugin,
+        crate::ui::plugin,
     ));
 }
 

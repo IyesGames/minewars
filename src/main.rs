@@ -1,5 +1,7 @@
 use mw_app::prelude::*;
 
+mod ui;
+
 #[bevy_main]
 fn main() {
     let mut app = mw_app::setup_bevy_app();
@@ -15,5 +17,10 @@ fn main() {
     app.add_plugins(mw_ui_mobile::plugin);
     #[cfg(feature = "proprietary")]
     app.add_plugins(mw_app_proprietary::plugin);
+
+    app.add_plugins((
+        crate::ui::plugin,
+    ));
+
     app.run();
 }

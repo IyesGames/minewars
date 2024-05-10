@@ -7,6 +7,7 @@ pub mod prelude {
     pub use iyes_progress::prelude::*;
     pub use iyes_cli::prelude::*;
     pub use mw_common::prelude::*;
+    pub use modular_bitfield::prelude::*;
     pub use crate::apporg::*;
     pub use crate::settings::prelude::*;
     pub use crate::PROPRIETARY;
@@ -18,8 +19,10 @@ pub mod apporg;
 pub mod assets;
 pub mod locale;
 pub mod map;
+pub mod player;
 pub mod session;
 pub mod settings;
+pub mod ui;
 
 use crate::prelude::*;
 
@@ -35,7 +38,9 @@ pub fn plugin(app: &mut App) {
         crate::assets::plugin,
         crate::locale::plugin,
         crate::map::plugin,
+        crate::player::plugin,
         crate::session::plugin,
         crate::settings::plugin,
+        crate::ui::plugin,
     ));
 }

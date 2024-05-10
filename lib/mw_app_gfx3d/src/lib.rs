@@ -16,14 +16,28 @@ pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 use crate::prelude::*;
 
 pub(crate) mod assets;
+pub(crate) mod misc;
 pub(crate) mod settings;
 
+pub(crate) mod asset_resolver;
+pub(crate) mod map;
+
 pub(crate) mod camera;
+pub(crate) mod simple3d;
+pub(crate) mod bespoke3d;
+
+pub mod ui;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((
         crate::assets::plugin,
+        crate::misc::plugin,
         crate::settings::plugin,
+        crate::asset_resolver::plugin,
+        crate::map::plugin,
         crate::camera::plugin,
+        crate::simple3d::plugin,
+        crate::bespoke3d::plugin,
+        crate::ui::plugin,
     ));
 }
