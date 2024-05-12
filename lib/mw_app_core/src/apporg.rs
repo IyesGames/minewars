@@ -11,6 +11,14 @@ pub fn plugin(app: &mut App) {
             .continue_to(AppState::InGame),
     ));
     app.add_systems(
+        OnExit(AppState::StartupLoading),
+        despawn_all_recursive::<With<StartupLoadingCleanup>>
+    );
+    app.add_systems(
+        OnExit(AppState::Menu),
+        despawn_all_recursive::<With<MenuCleanup>>
+    );
+    app.add_systems(
         OnExit(AppState::GameLoading),
         despawn_all_recursive::<With<GameLoadingCleanup>>
     );

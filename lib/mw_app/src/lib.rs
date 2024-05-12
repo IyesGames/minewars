@@ -17,10 +17,11 @@ pub mod prelude {
 pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
 use mw_app_core::settings::SettingsStore;
-use settings::{EngineSetupSettings, WindowSettings};
+use settings::EngineSetupSettings;
 
 use crate::prelude::*;
 
+mod camera;
 mod cli;
 mod haptic;
 mod net;
@@ -33,12 +34,13 @@ mod dev;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((
-        crate::settings::plugin,
-        crate::net::plugin,
+        crate::camera::plugin,
+        crate::cli::plugin,
         crate::haptic::plugin,
+        crate::net::plugin,
+        crate::settings::plugin,
         crate::splash::plugin,
         crate::ui::plugin,
-        crate::cli::plugin,
     ));
     #[cfg(feature = "dev")]
     app.add_plugins((

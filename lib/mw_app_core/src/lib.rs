@@ -32,6 +32,7 @@ pub mod player;
 pub mod view;
 
 // support for client-side features
+pub mod camera;
 pub mod haptic;
 pub mod locale;
 
@@ -47,6 +48,7 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         crate::apporg::plugin,
         crate::assets::plugin,
+        crate::camera::plugin,
         crate::driver::plugin,
         crate::haptic::plugin,
         crate::locale::plugin,
