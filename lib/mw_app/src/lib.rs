@@ -21,17 +21,28 @@ use settings::{EngineSetupSettings, WindowSettings};
 
 use crate::prelude::*;
 
+mod cli;
+mod haptic;
 mod net;
 mod settings;
 mod splash;
 pub mod ui;
 
+#[cfg(feature = "dev")]
+mod dev;
+
 pub fn plugin(app: &mut App) {
     app.add_plugins((
         crate::settings::plugin,
         crate::net::plugin,
+        crate::haptic::plugin,
         crate::splash::plugin,
         crate::ui::plugin,
+        crate::cli::plugin,
+    ));
+    #[cfg(feature = "dev")]
+    app.add_plugins((
+        crate::dev::plugin,
     ));
 }
 

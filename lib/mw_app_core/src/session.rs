@@ -1,21 +1,34 @@
+//! The Session Governor
+//!
+//! The Session Governor is an entity that exists if the app is
+//! displaying some sort of MineWars game session.
+//!
+//! It carries information about players and the rules/features
+//! of the game. Different game modes can be implemented via
+//! additional/optional components on the Session Governor.
+//!
+//! If the session is actually live, there should also exist
+//! a Driver Governor, to process events.
+//!
+//! Normally there is also a Map Governor.
+
 use crate::prelude::*;
 
-use mw_common::{game::event::GameEvent, plid::{PlayerId, Plids}};
+use mw_common::plid::{PlayerId, Plids};
 
 pub fn plugin(app: &mut App) {
-    app.add_event::<GameEvent>();
-    app.configure_stage_set(Update, GameOutEventSS, on_event::<GameEvent>());
-    app.configure_stage_set_no_rc(Update, GameInEventSS);
+    app.configure_sets(Update, (
+        NeedsSessionGovernorSet
+            .run_if(any_with_component::<SessionGovernor>),
+    ));
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct GameInEventSS;
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-pub struct GameOutEventSS;
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub struct NeedsSessionGovernorSet;
 
 /// Bundle for setting up a new session (gameplay, any mode)
 #[derive(Bundle)]
-pub struct GameplaySessionGovernorBundle {
+pub struct SessionGovernorBundle {
     pub marker: SessionGovernor,
     pub playing_as: PlidPlayingAs,
     pub viewing: PlidViewing,

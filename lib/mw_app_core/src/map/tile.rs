@@ -1,10 +1,21 @@
+//! All the various things we keep track of for individual map tiles.
+//!
+//! Every tile has its own entity to represent it.
+//!
+//! To find the entity for a specific Pos, look it up via the
+//! `MapTileIndex` on the Map Governor.
+
 use mw_common::{game::{CitId, ItemKind, StructureKind, TileKind}, grid::Pos, plid::PlayerId};
 
-use crate::{player::view::VisibleInView, prelude::*};
+use crate::{view::VisibleInView, prelude::*};
 
 pub fn plugin(app: &mut App) {
     app.add_event::<RecomputeVisEvent>();
+    app.configure_stage_set_no_rc(Update, TileUpdateSS);
 }
+
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub struct TileUpdateSS;
 
 /// Trigger a recompute of `TileVisLevel`.
 ///
@@ -15,6 +26,7 @@ pub struct RecomputeVisEvent(pub Option<Pos>);
 /// Components common to all map tiles
 #[derive(Bundle)]
 pub struct MapTileBundle {
+    pub marker: MwMapTile,
     pub kind: TileKind,
     pub pos: MwTilePos,
 }
@@ -49,6 +61,10 @@ pub struct ExplosionBundle {
     pub explosion: TileExplosion,
     pub view: VisibleInView,
 }
+
+/// Marker for MineWars map tile entities
+#[derive(Component)]
+pub struct MwMapTile;
 
 /// Map coordinate of a given tile.
 ///

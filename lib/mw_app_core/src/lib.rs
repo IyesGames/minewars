@@ -17,15 +17,23 @@ pub mod prelude {
 
 pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
+// foundational
 pub mod apporg;
 pub mod assets;
-pub mod locale;
-pub mod map;
-pub mod player;
-pub mod session;
 pub mod settings;
 pub mod ui;
 pub mod value;
+
+// governors and game state
+pub mod driver;
+pub mod map;
+pub mod session;
+pub mod player;
+pub mod view;
+
+// support for client-side features
+pub mod haptic;
+pub mod locale;
 
 use crate::prelude::*;
 
@@ -38,13 +46,16 @@ pub fn plugin(app: &mut App) {
     // our plugins
     app.add_plugins((
         crate::apporg::plugin,
-        crate::value::plugin,
         crate::assets::plugin,
+        crate::driver::plugin,
+        crate::haptic::plugin,
         crate::locale::plugin,
         crate::map::plugin,
         crate::player::plugin,
         crate::session::plugin,
         crate::settings::plugin,
         crate::ui::plugin,
+        crate::value::plugin,
+        crate::view::plugin,
     ));
 }

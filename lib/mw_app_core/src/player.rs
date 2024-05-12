@@ -1,13 +1,30 @@
+//! Player Entities
+//!
+//! Player Entities represent everyone participating in a Session.
+//!
+//! A Session Governor must exist and its `PlayersIndex` should
+//! refer to these entities.
+//!
+//! There should be:
+//! - an entity per Plid (logical participant in a MineWars game,
+//!   i.e one territory/empire).
+//! - an entity per SubPlid (actual user controlling a Plid)
+//! - an entity for the Spectator Plid, if spectating a game.
+//!
+//! During a normal gameplay session, the client is only displaying
+//! the PoV of the Plid that the user is controlling (`PlidPlayingAs`
+//! on the Session Governor).
+//!
+//! If the client should be able to display multiple PoVs of different
+//! Plids, such as when spectating, then the Plid Entities should also
+//! have `view` components to enable view-switcing (`PlidViewing` on
+//! the Session Governor).
+
 use mw_common::plid::PlayerId;
 
 use crate::prelude::*;
 
-pub mod view;
-
 pub fn plugin(app: &mut App) {
-    app.add_plugins((
-        view::plugin,
-    ));
 }
 
 #[derive(Bundle)]

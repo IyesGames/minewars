@@ -1,3 +1,18 @@
+//! The Map Governor
+//!
+//! The Map Governor is an entity that exists if the app has known
+//! map data that it currently loaded into it.
+//!
+//! To implement a simple map viewer, or a map editor, it is enough
+//! to only have a Map Governor, no Session or Driver Governors.
+//!
+//! To implement a gameplay state, there should also be a Session
+//! Governor, and also a Driver Governor while gameplay is live.
+//!
+//! The Map Governor carries info about the loaded map, such as
+//! its properties, index of tile entities, current cursor position,
+//! and a copy of the initial "pristine" map data before any gameplay.
+
 use mw_common::grid::*;
 
 use crate::prelude::*;
@@ -11,6 +26,10 @@ pub fn plugin(app: &mut App) {
         tile::plugin,
     ));
     app.add_event::<TileUpdateEvent>();
+    app.configure_sets(Update, (
+        NeedsMapGovernorSet
+            .run_if(any_with_component::<MapGovernor>),
+    ));
     app.configure_stage_set(
         Update,
         GridCursorSS,
@@ -20,6 +39,9 @@ pub fn plugin(app: &mut App) {
         app.configure_sets(Update, MapTopologySet(topo).run_if(map_topology_is(topo)));
     }
 }
+
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
+pub struct NeedsMapGovernorSet;
 
 #[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
 pub struct GridCursorSS;

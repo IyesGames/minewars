@@ -1,3 +1,10 @@
+//! All the various things we keep track of for Cits on the map
+//!
+//! Every Cit has its own entity to represent it.
+//!
+//! To find the entity for a specific Cit, look it up via the
+//! `CitIndex` on the Map Governor.
+
 use mw_common::plid::PlayerId;
 
 use crate::prelude::*;

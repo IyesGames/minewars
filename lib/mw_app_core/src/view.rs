@@ -23,9 +23,7 @@
 //! The game state is stored compactly, using a bit-field representation per-tile.
 //! One entity per view.
 //!
-//! The currently active view is rendered by spawning an actual ECS representation
-//! of the map. See the [`map`][mw_common::map] module for that. Those are the entities
-//! that are used for actual gameplay and graphics purposes.
+//! The view-related components are inserted onto Plid entities (see `player`).
 
 use mw_common::{game::{ItemKind, StructureKind, TileKind}, grid::MapDataPos, plid::PlayerId};
 
