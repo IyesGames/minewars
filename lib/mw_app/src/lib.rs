@@ -19,11 +19,13 @@ pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 use crate::prelude::*;
 
 mod net;
+mod settings;
 mod splash;
 pub mod ui;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((
+        crate::settings::plugin,
         crate::net::plugin,
         crate::splash::plugin,
         crate::ui::plugin,
@@ -32,6 +34,10 @@ pub fn plugin(app: &mut App) {
 
 pub fn setup_bevy_app() -> App {
     let mut app = App::new();
+    crate::settings::register_engine_settings(&mut app);
+    mw_app_core::settings::early_load_settings(
+        &mut app, &[SETTINGS_ENGINE]
+    );
     app.insert_resource(ClearColor(Color::BLACK));
     let bevy_plugins = DefaultPlugins;
     let bevy_plugins = bevy_plugins.set(WindowPlugin {

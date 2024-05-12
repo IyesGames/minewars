@@ -31,5 +31,9 @@ fn main() {
         crate::ui::plugin,
     ));
 
+    mw_app_core::settings::early_load_settings(
+        &mut app, &[SETTINGS_APP, SETTINGS_USER, SETTINGS_LOCAL]
+    );
+
     app.run();
 }

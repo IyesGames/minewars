@@ -21,10 +21,12 @@ features = [ "bevy", "net" ]
 
 [dependencies]
 anyhow = "1.0.79"
+directories = "5.0.1"
 enum-iterator = "1.5.0"
 fluent_content = "0.0.5"
 unic-langid = "0.9.4"
 modular-bitfield = "0.11.2"
+ron = "0.8.1"
 
 [dependencies.serde]
 version = "1.0.196"

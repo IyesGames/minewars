@@ -1,3 +1,5 @@
+#![feature(trait_upcasting)]
+
 #![allow(unused_variables)]
 
 /// Convenience, to be imported in every file in the crate

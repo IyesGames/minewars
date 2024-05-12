@@ -31,7 +31,6 @@ path = "../mw_proto_auth"
 [dependencies]
 anyhow = "1.0.79"
 derive_more = "0.99.17"
-directories = "5.0.1"
 enum-iterator = "1.5.0"
 enum-map = "2.7.3"
 glam = "0.25.0"
