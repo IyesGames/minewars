@@ -1,14 +1,14 @@
-use mw_app_core::serde::Lch;
+use mw_app_core::value::Lch;
 
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
-    app.init_setting_entity::<DesktopUiSettings>(SETTINGS_USER.as_ref());
+    app.init_setting::<DesktopUiSettings>(SETTINGS_USER.as_ref());
 }
 
 /// General UI Settings
-#[derive(Component, Clone, PartialEq)]
-#[derive(Reflect)]
+#[derive(Component, Reflect, Clone, PartialEq)]
+#[reflect(Setting)]
 pub struct DesktopUiSettings {
     pub text_scale: f32,
     pub underscan_ratio: f32,
@@ -35,4 +35,4 @@ impl Default for DesktopUiSettings {
     }
 }
 
-impl GovernorSetting for DesktopUiSettings {}
+impl Setting for DesktopUiSettings {}

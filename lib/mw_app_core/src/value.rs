@@ -1,5 +1,9 @@
 use crate::prelude::*;
 
+pub fn plugin(app: &mut App) {
+    app.register_type::<Lch>();
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[derive(Reflect)]
 pub struct Lch(pub f32, pub f32, pub f32);

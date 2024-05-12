@@ -9,7 +9,7 @@ pub fn plugin(app: &mut App) {
 }
 
 fn ui_root_resize(
-    settings: Settings<&DesktopUiSettings>,
+    settings: Settings,
     mut q_root: Query<&mut Style, With<UiRoot>>,
     q_cam: Query<&Camera, With<UiCamera>>,
 ) {
@@ -19,7 +19,7 @@ fn ui_root_resize(
         return;
     };
 
-    let Some(settings) = settings.get() else {
+    let Some(settings) = settings.get::<DesktopUiSettings>() else {
         return;
     };
 
@@ -44,14 +44,10 @@ fn ui_root_resize(
 
 /// Run condition for `ui_root_resize`
 fn rc_ui_root_needs_resize(
-    settings: Settings<Ref<DesktopUiSettings>>,
+    settings: Settings,
     q_cam: Query<&Camera, With<UiCamera>>,
     mut last_size: Local<Option<Vec2>>,
 ) -> bool {
-    let Some(settings) = settings.get() else {
-        return false;
-    };
-
     let Ok(camera) = q_cam.get_single() else {
         return false;
     };
@@ -64,7 +60,7 @@ fn rc_ui_root_needs_resize(
     let size_changed = viewport_size != *last_size;
     *last_size = viewport_size;
 
-    let settings_changed = settings.is_changed();
+    let settings_changed = settings.is_changed::<DesktopUiSettings>();
 
     settings_changed || size_changed
 }

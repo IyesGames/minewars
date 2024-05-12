@@ -21,25 +21,25 @@ pub enum Gfx3dImplSet {
 }
 
 fn rc_gfx3d_any(
-    settings: Settings<&Gfx3dImpl>,
+    settings: Settings,
 ) -> bool {
-    settings.get().map(|s|
+    settings.get::<Gfx3dImpl>().map(|s|
         *s == Gfx3dImpl::Bespoke3D || *s == Gfx3dImpl::Simple3D
     ).unwrap_or(false)
 }
 
 fn rc_gfx3d_simple3d(
-    settings: Settings<&Gfx3dImpl>,
+    settings: Settings,
 ) -> bool {
-    settings.get().map(|s|
+    settings.get::<Gfx3dImpl>().map(|s|
         *s == Gfx3dImpl::Simple3D
     ).unwrap_or(false)
 }
 
 fn rc_gfx3d_bespoke3d(
-    settings: Settings<&Gfx3dImpl>,
+    settings: Settings,
 ) -> bool {
-    settings.get().map(|s|
+    settings.get::<Gfx3dImpl>().map(|s|
         *s == Gfx3dImpl::Bespoke3D
     ).unwrap_or(false)
 }

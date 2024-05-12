@@ -22,10 +22,10 @@ pub mod assets;
 pub mod locale;
 pub mod map;
 pub mod player;
-pub mod serde;
 pub mod session;
 pub mod settings;
 pub mod ui;
+pub mod value;
 
 use crate::prelude::*;
 
@@ -38,6 +38,7 @@ pub fn plugin(app: &mut App) {
     // our plugins
     app.add_plugins((
         crate::apporg::plugin,
+        crate::value::plugin,
         crate::assets::plugin,
         crate::locale::plugin,
         crate::map::plugin,

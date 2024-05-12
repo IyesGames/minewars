@@ -16,6 +16,9 @@ pub mod prelude {
 
 pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 
+use mw_app_core::settings::SettingsStore;
+use settings::{EngineSetupSettings, WindowSettings};
+
 use crate::prelude::*;
 
 mod net;
@@ -39,22 +42,13 @@ pub fn setup_bevy_app() -> App {
         &mut app, &[SETTINGS_ENGINE]
     );
     app.insert_resource(ClearColor(Color::BLACK));
+    let setup_settings = app.world.resource::<SettingsStore>()
+        .get::<EngineSetupSettings>().cloned().unwrap();
     let bevy_plugins = DefaultPlugins;
     let bevy_plugins = bevy_plugins.set(WindowPlugin {
         primary_window: Some(Window {
             title: "MineWars™ PRE-ALPHA".into(),
-            // present_mode: bevy::window::PresentMode::Fifo,
-            present_mode: bevy::window::PresentMode::AutoNoVsync,
-            // mode: bevy::window::WindowMode::Fullscreen,
             resizable: true,
-            resolution: bevy::window::WindowResolution::new(800.0, 600.0),
-            resize_constraints: WindowResizeConstraints {
-                min_width: 800.0,
-                min_height: 600.0,
-                max_width: f32::INFINITY,
-                max_height: f32::INFINITY,
-            },
-            // scale_factor_override: Some(1.0),
             ..Default::default()
         }),
         ..Default::default()
@@ -81,30 +75,15 @@ pub fn setup_bevy_app() -> App {
         }
     };
     let bevy_plugins = bevy_plugins.set(TaskPoolPlugin {
-        task_pool_options: TaskPoolOptions {
-            min_total_threads: 1,
-            max_total_threads: std::usize::MAX,
-            io: bevy::core::TaskPoolThreadAssignmentPolicy {
-                min_threads: 2,
-                max_threads: 4,
-                percent: 0.25,
-            },
-            async_compute: bevy::core::TaskPoolThreadAssignmentPolicy {
-                min_threads: 2,
-                max_threads: 4,
-                percent: 0.25,
-            },
-            compute: bevy::core::TaskPoolThreadAssignmentPolicy {
-                min_threads: compute_threads,
-                max_threads: std::usize::MAX,
-                percent: 1.0,
-            },
-        }
+        task_pool_options: TaskPoolOptions::from(&setup_settings),
     });
     app.add_plugins(
-        // bevy_plugins.build()
-        //     .disable::<bevy::render::pipelined_rendering::PipelinedRenderingPlugin>()
-        bevy_plugins
+        if setup_settings.pipelined_rendering {
+            bevy_plugins
+        } else {
+            bevy_plugins.build()
+                .disable::<bevy::render::pipelined_rendering::PipelinedRenderingPlugin>()
+        }
     );
     app.add_plugins((
         bevy::diagnostic::FrameTimeDiagnosticsPlugin,

@@ -41,26 +41,26 @@ pub struct ExplosionSprite {
 }
 
 fn rc_gfx2d_any(
-    settings: Settings<&Gfx2dImpl>,
+    settings: Settings,
 ) -> bool {
-    settings.get().map(|s|
+    settings.get::<Gfx2dImpl>().map(|s|
         *s == Gfx2dImpl::Tilemap || *s == Gfx2dImpl::Sprites
     ).unwrap_or(false)
 }
 
 fn rc_gfx2d_sprites(
-    settings: Settings<&Gfx2dImpl>,
+    settings: Settings,
 ) -> bool {
-    settings.get().map(|s|
+    settings.get::<Gfx2dImpl>().map(|s|
         *s == Gfx2dImpl::Sprites
     ).unwrap_or(false)
 }
 
 #[cfg(feature = "tilemap")]
 fn rc_gfx2d_tilemap(
-    settings: Settings<&Gfx2dImpl>,
+    settings: Settings,
 ) -> bool {
-    settings.get().map(|s|
+    settings.get::<Gfx2dImpl>().map(|s|
         *s == Gfx2dImpl::Tilemap
     ).unwrap_or(false)
 }

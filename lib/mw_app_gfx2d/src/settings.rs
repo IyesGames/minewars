@@ -1,11 +1,11 @@
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
-    app.init_setting_entity::<Gfx2dImpl>(SETTINGS_LOCAL.as_ref());
+    app.init_setting::<Gfx2dImpl>(SETTINGS_LOCAL.as_ref());
 }
 
-#[derive(Component, Default, Clone, PartialEq, Eq)]
-#[derive(Reflect)]
+#[derive(Component, Reflect, Default, Clone, PartialEq, Eq)]
+#[reflect(Setting)]
 pub enum Gfx2dImpl {
     #[cfg_attr(not(feature = "tilemap"), default)]
     Sprites,
@@ -14,4 +14,4 @@ pub enum Gfx2dImpl {
     Tilemap,
 }
 
-impl GovernorSetting for Gfx2dImpl {}
+impl Setting for Gfx2dImpl {}
