@@ -29,6 +29,7 @@ pub mod driver;
 pub mod map;
 pub mod session;
 pub mod player;
+pub mod user;
 pub mod view;
 
 // support for client-side features
@@ -57,6 +58,7 @@ pub fn plugin(app: &mut App) {
         crate::session::plugin,
         crate::settings::plugin,
         crate::ui::plugin,
+        crate::user::plugin,
         crate::value::plugin,
         crate::view::plugin,
     ));

@@ -19,6 +19,9 @@ proprietary = []
 path = "../mw_common"
 features = [ "bevy", "net" ]
 
+[dependencies.mw_dataformat]
+path = "../mw_dataformat"
+
 [dependencies]
 anyhow = "1.0.79"
 directories = "5.0.1"

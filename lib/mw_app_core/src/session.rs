@@ -29,6 +29,7 @@ pub struct NeedsSessionGovernorSet;
 /// Bundle for setting up a new session (gameplay, any mode)
 #[derive(Bundle)]
 pub struct SessionGovernorBundle {
+    pub cleanup: GameFullCleanup,
     pub marker: SessionGovernor,
     pub playing_as: PlidPlayingAs,
     pub viewing: PlidViewing,
@@ -54,4 +55,23 @@ pub struct PlayersIndex {
     pub plids: Plids,
     pub e_plid: Vec<Entity>,
     pub e_subplid: Vec<Vec<Entity>>,
+}
+
+impl SessionGovernorBundle {
+    pub fn new(my_plid: PlayerId, e_plid: &[Entity], e_subplid: &[&[Entity]]) -> Self {
+        let plidsmask = (1 << (e_plid.len() + 1)) - 1;
+        SessionGovernorBundle {
+            cleanup: GameFullCleanup,
+            marker: SessionGovernor,
+            playing_as: PlidPlayingAs(my_plid),
+            viewing: PlidViewing(my_plid),
+            players: PlayersIndex {
+                plids: Plids(plidsmask as u16),
+                e_plid: e_plid.to_owned(),
+                e_subplid: e_subplid.iter()
+                    .map(|x| Vec::from(*x))
+                    .collect(),
+            },
+        }
+    }
 }

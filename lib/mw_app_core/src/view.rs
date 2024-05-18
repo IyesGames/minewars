@@ -27,7 +27,7 @@
 
 use mw_common::{game::{ItemKind, StructureKind, TileKind}, grid::MapDataPos, plid::PlayerId};
 
-use crate::prelude::*;
+use crate::{map::NeedsMapGovernorSet, prelude::*, session::NeedsSessionGovernorSet};
 
 pub fn plugin(app: &mut App) {
     app.configure_stage_set_no_rc(
@@ -36,7 +36,16 @@ pub fn plugin(app: &mut App) {
     app.configure_stage_set_no_rc(
         Update, ViewSS::Switch, // TODO: RC
     );
+    app.configure_sets(
+        Update, MultiViewEnabledSet
+            .in_set(NeedsSessionGovernorSet)
+            .in_set(NeedsMapGovernorSet)
+            .run_if(any_with_component::<ViewMapData>)
+    );
 }
+
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct MultiViewEnabledSet;
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ViewSS {

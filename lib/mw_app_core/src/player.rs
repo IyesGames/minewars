@@ -22,13 +22,14 @@
 
 use mw_common::plid::PlayerId;
 
-use crate::prelude::*;
+use crate::{prelude::*, user::UserProfile};
 
 pub fn plugin(app: &mut App) {
 }
 
 #[derive(Bundle)]
 pub struct PlayerPlidBundle {
+    pub cleanup: GameFullCleanup,
     pub plid: Plid,
     pub color: PlidColor,
     pub state: PlidState,
@@ -38,11 +39,13 @@ pub struct PlayerPlidBundle {
 
 #[derive(Bundle)]
 pub struct SpectatorPlidBundle {
+    pub cleanup: GameFullCleanup,
     pub plid: Plid,
 }
 
 #[derive(Bundle)]
 pub struct SubPlidBundle {
+    pub cleanup: GameFullCleanup,
     pub subplid: SubPlid,
     pub user_profile: SubPlidUserProfile,
     pub net_info: SubPlidNetInfo,
@@ -56,7 +59,7 @@ pub struct PlidPlayable;
 #[derive(Component)]
 pub struct Plid(pub PlayerId);
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct PlidStats {
     pub kills: u32,
     pub deaths: u32,
@@ -87,11 +90,9 @@ pub struct PlidSubsIndex(pub Vec<Entity>);
 pub struct SubPlid(pub u8);
 
 #[derive(Component)]
-pub struct SubPlidUserProfile {
-    pub display_name: String,
-}
+pub struct SubPlidUserProfile(pub UserProfile);
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct SubPlidNetInfo {
     pub rtt: Duration,
 }
@@ -109,7 +110,34 @@ pub struct NLives {
 impl Default for SpectatorPlidBundle {
     fn default() -> Self {
         Self {
+            cleanup: GameFullCleanup,
             plid: Plid(PlayerId::Neutral),
+        }
+    }
+}
+
+impl SubPlidBundle {
+    pub fn new(subplid: u8, profile: &UserProfile) -> Self {
+        SubPlidBundle {
+            cleanup: GameFullCleanup,
+            subplid: SubPlid(subplid),
+            user_profile: SubPlidUserProfile(profile.clone()),
+            net_info: SubPlidNetInfo::default(),
+        }
+    }
+}
+
+impl PlayerPlidBundle {
+    pub fn new(plid: PlayerId, color: Color, subs: &[Entity]) -> Self {
+        PlayerPlidBundle {
+            cleanup: GameFullCleanup,
+            plid: Plid(plid),
+            color: PlidColor {
+                color,
+            },
+            state: PlidState::Alive,
+            stats: PlidStats::default(),
+            subs: PlidSubsIndex(subs.to_owned()),
         }
     }
 }

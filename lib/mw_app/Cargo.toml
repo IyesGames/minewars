@@ -18,6 +18,9 @@ features = [ "bevy", "net" ]
 [dependencies.mw_app_core]
 path = "../mw_app_core"
 
+[dependencies.mw_dataformat]
+path = "../mw_dataformat"
+
 [dependencies.mw_game_minesweeper]
 path = "../mw_game_minesweeper"
 features = [ "bevy" ]

@@ -4,7 +4,7 @@ pub fn plugin(app: &mut App) {
     app.init_setting::<Gfx3dImpl>(SETTINGS_LOCAL.as_ref());
 }
 
-#[derive(Component, Reflect, Default, Clone, PartialEq, Eq)]
+#[derive(Reflect, Default, Clone, PartialEq, Eq)]
 #[reflect(Setting)]
 pub enum Gfx3dImpl {
     Simple3D,

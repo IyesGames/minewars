@@ -49,5 +49,11 @@ pub struct GameInEventSS;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
 pub struct GameOutEventSS;
 
-#[derive(Component)]
+#[derive(Bundle, Default)]
+pub struct DriverGovernorBundle {
+    pub cleanup: GameFullCleanup,
+    pub marker: DriverGovernor,
+}
+
+#[derive(Component, Default)]
 pub struct DriverGovernor;

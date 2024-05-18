@@ -26,6 +26,7 @@ pub struct RecomputeVisEvent(pub Option<Pos>);
 /// Components common to all map tiles
 #[derive(Bundle)]
 pub struct MapTileBundle {
+    pub cleanup: GamePartialCleanup,
     pub marker: MwMapTile,
     pub kind: TileKind,
     pub pos: MwTilePos,

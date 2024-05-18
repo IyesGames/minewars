@@ -14,6 +14,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Bundle)]
 pub struct CitBundle {
+    pub cleanup: GamePartialCleanup,
     pub region: CitRegion,
     pub owner: CitOwner,
     pub economy: CitEconomy,

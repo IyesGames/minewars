@@ -7,7 +7,7 @@ pub fn plugin(app: &mut App) {
 }
 
 /// General UI Settings
-#[derive(Component, Reflect, Clone, PartialEq)]
+#[derive(Reflect, Clone, PartialEq)]
 #[reflect(Setting)]
 pub struct DesktopUiSettings {
     pub text_scale: f32,

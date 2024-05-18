@@ -5,7 +5,7 @@ pub fn plugin(app: &mut App) {
     app.init_resource::<ConsoleCommandHistory>();
     app.add_systems(
         Update,
-        (toggle_console, console_text_input),
+        (open_console, console_text_input),
     );
 }
 
@@ -19,7 +19,7 @@ struct UiConsolePromptHistoryEntry(Option<usize>);
 #[derive(Resource, Default)]
 struct ConsoleCommandHistory(Vec<String>);
 
-fn toggle_console(
+fn open_console(
     mut commands: Commands,
     kbd: Res<ButtonInput<KeyCode>>,
     query_existing: Query<Entity, With<UiConsole>>,
@@ -80,12 +80,6 @@ fn toggle_console(
                 .id();
             commands.entity(console).push_children(&[prompt]);
             debug!("Console spawned.");
-        } else {
-            // despawn console
-            for e in &query_existing {
-                commands.entity(e).despawn_recursive();
-            }
-            debug!("Console despawned.");
         }
     }
 }

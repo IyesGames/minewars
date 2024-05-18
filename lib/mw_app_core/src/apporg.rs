@@ -28,7 +28,10 @@ pub fn plugin(app: &mut App) {
     );
     app.add_systems(
         OnTransition { from: AppState::InGame, to: AppState::Menu },
-        despawn_all_recursive::<With<GameFullCleanup>>
+        (
+            despawn_all_recursive::<With<GamePartialCleanup>>,
+            despawn_all_recursive::<With<GameFullCleanup>>,
+        )
     );
 }
 
@@ -52,23 +55,23 @@ pub enum AppState {
 pub struct InStateSet<S: States>(pub S);
 
 /// Everything to despawn when exiting the startup loading state
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct StartupLoadingCleanup;
 
 /// Everything to despawn when exiting the menu state
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct MenuCleanup;
 
 /// Everything to despawn when exiting the game loading state
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct GameLoadingCleanup;
 
 /// Everything to despawn when exiting the in-game state
 /// (do not use for things that should be preserved if we
 /// immediately enter another session (game_loading->in_game))
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct GamePartialCleanup;
 
 /// Everything to despawn when exiting completely (no new session)
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct GameFullCleanup;

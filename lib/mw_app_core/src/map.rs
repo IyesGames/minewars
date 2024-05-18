@@ -13,7 +13,8 @@
 //! its properties, index of tile entities, current cursor position,
 //! and a copy of the initial "pristine" map data before any gameplay.
 
-use mw_common::grid::*;
+use mw_common::{game::{ItemKind, MapGenTileData, TileKind}, grid::*};
+use mw_dataformat::map::{MapTileDataIn, MapTileDataOut};
 
 use crate::prelude::*;
 
@@ -57,10 +58,10 @@ pub struct TileUpdateEvent {
 
 #[derive(Bundle)]
 pub struct MapGovernorBundle {
+    pub cleanup: GameFullCleanup,
     pub marker: MapGovernor,
     pub desc: MapDescriptor,
-    pub tile_index: MapTileIndex,
-    pub cit_index: CitIndex,
+    pub map_src: MapDataOrig,
     pub grid_cursor: GridCursor,
     pub grid_cursor_tile_entity: GridCursorTileEntity,
 }
@@ -84,11 +85,61 @@ pub struct CitIndex {
     pub by_id: Vec<Entity>,
 }
 
+#[derive(Component)]
+pub struct MapDataOrig {
+    pub map: MapDataPos<MapTileDataOrig>,
+    pub cits: Vec<Pos>,
+}
+
 #[derive(Component, Default)]
 pub struct GridCursor(pub Option<Pos>);
 
 #[derive(Component, Default)]
 pub struct GridCursorTileEntity(pub Option<Entity>);
+
+#[bitfield]
+#[derive(Clone, Copy, Default)]
+pub struct MapTileDataOrig {
+    pub kind: TileKind,
+    #[skip] __: B1,
+    pub item: ItemKind,
+    #[skip] __: B2,
+    pub region: u8,
+}
+
+impl From<MapGenTileData> for MapTileDataOrig {
+    fn from(value: MapGenTileData) -> Self {
+        let mut r = Self::default();
+        r.set_kind(value.kind());
+        r.set_item(value.item());
+        r.set_region(value.region());
+        r
+    }
+}
+
+impl MapTileDataOut for MapTileDataOrig {
+    fn kind(&self) -> TileKind {
+        MapTileDataOrig::kind(self)
+    }
+    fn item(&self) -> ItemKind {
+        MapTileDataOrig::item(self)
+    }
+    fn region(&self) -> u8 {
+        MapTileDataOrig::region(self)
+    }
+}
+
+impl MapTileDataIn for MapTileDataOrig {
+    fn set_kind(&mut self, kind: TileKind) {
+        MapTileDataOrig::set_kind(self, kind);
+    }
+    fn set_item(&mut self, kind: ItemKind) {
+        MapTileDataOrig::set_item(self, kind);
+    }
+    fn set_region(&mut self, region: u8) {
+        MapTileDataOrig::set_region(self, region);
+    }
+}
 
 pub fn map_topology_is(topo: Topology) -> impl FnMut(Query<&MapDescriptor>) -> bool {
     move |q: Query<&MapDescriptor>| {

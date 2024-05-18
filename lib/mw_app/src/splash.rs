@@ -18,6 +18,15 @@ pub fn plugin(app: &mut App) {
             .after(TrackedProgressSet)
             .run_if(in_state(AppState::StartupLoading)),
     );
+    app.add_systems(OnEnter(AppState::GameLoading), (
+        setup_gameloading_screen_layout,
+    ));
+    app.add_systems(
+        Last,
+        update_loading_pct
+            .after(TrackedProgressSet)
+            .run_if(in_state(AppState::GameLoading)),
+    );
 }
 
 #[derive(Resource)]
@@ -73,6 +82,65 @@ fn setup_splash_screen_layout(
     ));
     let root = commands.spawn((
         StartupLoadingCleanup,
+        NodeBundle {
+            style: Style {
+                height: Val::Px(64.0),
+                position_type: PositionType::Absolute,
+                top: Val::Auto,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..Default::default()
+            },
+            ..Default::default()
+        }
+    )).id();
+    let bar_outer = commands
+        .spawn((
+            LoadingProgressIndicatorOuter,
+            NodeBundle {
+                background_color: BackgroundColor(Color::DARK_GRAY),
+                style: Style {
+                    width: Val::Percent(75.0),
+                    height: Val::Percent(50.0),
+                    padding: UiRect::all(Val::Px(2.0)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ))
+        .id();
+    let bar_inner = commands
+        .spawn((
+            LoadingProgressIndicator,
+            NodeBundle {
+                background_color: BackgroundColor(Color::GRAY),
+                style: Style {
+                    width: Val::Percent(0.0),
+                    height: Val::Percent(100.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ))
+        .id();
+
+    commands.entity(bar_outer).push_children(&[bar_inner]);
+    commands.entity(root).push_children(&[bar_outer]);
+}
+
+fn setup_gameloading_screen_layout(
+    mut commands: Commands,
+) {
+    commands.spawn((
+        GameLoadingCleanup,
+        Camera2dBundle::default(),
+    ));
+    let root = commands.spawn((
+        GameLoadingCleanup,
         NodeBundle {
             style: Style {
                 height: Val::Px(64.0),

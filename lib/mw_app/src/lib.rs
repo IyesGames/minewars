@@ -21,13 +21,20 @@ use settings::EngineSetupSettings;
 
 use crate::prelude::*;
 
-mod camera;
-mod cli;
-mod haptic;
-mod net;
 mod settings;
-mod splash;
+mod net;
+mod user;
+
+mod camera;
+mod haptic;
+mod map;
+mod view;
+
 pub mod ui;
+
+mod splash;
+
+mod cli;
 
 #[cfg(feature = "dev")]
 mod dev;
@@ -37,10 +44,13 @@ pub fn plugin(app: &mut App) {
         crate::camera::plugin,
         crate::cli::plugin,
         crate::haptic::plugin,
+        crate::map::plugin,
         crate::net::plugin,
         crate::settings::plugin,
         crate::splash::plugin,
         crate::ui::plugin,
+        crate::user::plugin,
+        crate::view::plugin,
     ));
     #[cfg(feature = "dev")]
     app.add_plugins((

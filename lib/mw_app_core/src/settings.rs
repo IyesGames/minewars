@@ -32,10 +32,18 @@ pub fn plugin(app: &mut App) {
         SettingsSyncSS,
         resource_changed::<SettingsStore>,
     );
-    app.add_systems(Update,
-        sync_settings.in_set(SetStage::Provide(SettingsSyncSS))
+    app.configure_stage_set_no_rc(
+        Startup,
+        SettingsSyncSS,
     );
-    app.add_systems(Startup, apply_initial_settings);
+    app.add_systems(Update,
+        sync_settings
+            .in_set(SetStage::Provide(SettingsSyncSS))
+    );
+    app.add_systems(Startup,
+        apply_initial_settings
+            .in_set(SetStage::Provide(SettingsSyncSS))
+    );
 }
 
 /// StageSet for settings load/store
