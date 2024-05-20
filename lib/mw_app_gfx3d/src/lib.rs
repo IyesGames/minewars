@@ -23,8 +23,8 @@ pub(crate) mod asset_resolver;
 pub(crate) mod map;
 
 pub(crate) mod camera;
-pub(crate) mod simple3d;
-pub(crate) mod bespoke3d;
+pub(crate) mod simple;
+pub(crate) mod bespoke;
 
 pub mod ui;
 
@@ -36,8 +36,8 @@ pub fn plugin(app: &mut App) {
         crate::asset_resolver::plugin,
         crate::map::plugin,
         crate::camera::plugin,
-        crate::simple3d::plugin,
-        crate::bespoke3d::plugin,
+        crate::simple::plugin,
+        crate::bespoke::plugin,
         crate::ui::plugin,
     ));
 }

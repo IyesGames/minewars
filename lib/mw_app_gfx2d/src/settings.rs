@@ -7,10 +7,10 @@ pub fn plugin(app: &mut App) {
 #[derive(Reflect, Default, Clone, PartialEq, Eq)]
 #[reflect(Setting)]
 pub enum Gfx2dImpl {
-    #[cfg_attr(not(feature = "tilemap"), default)]
     Sprites,
+    #[default]
+    Bespoke,
     #[cfg(feature = "tilemap")]
-    #[cfg_attr(feature = "tilemap", default)]
     Tilemap,
 }
 

@@ -21,6 +21,7 @@ pub(crate) mod settings;
 
 pub(crate) mod camera;
 pub(crate) mod sprites;
+pub(crate) mod bespoke;
 #[cfg(feature = "tilemap")]
 pub(crate) mod tilemap;
 
@@ -35,6 +36,7 @@ pub fn plugin(app: &mut App) {
         crate::settings::plugin,
         crate::camera::plugin,
         crate::sprites::plugin,
+        crate::bespoke::plugin,
         #[cfg(feature = "tilemap")]
         crate::tilemap::plugin,
     ));

@@ -79,6 +79,7 @@ fn gen_simple_map(
 
 fn setup_tile_entities(
     mut commands: Commands,
+    spreader: Res<WorkSpreader>,
     q_map: Query<(Entity, &MapDataOrig, Has<MapTileIndex>), With<MapGovernor>>,
 ) -> Progress {
     let (e_map, map_src) = match q_map.get_single() {
@@ -86,6 +87,9 @@ fn setup_tile_entities(
         Ok((_, _, true)) => return true.into(),
         Ok((e, orig, false)) => (e, orig),
     };
+    if spreader.acquire() {
+        return false.into();
+    }
 
     let mut tile_index = MapTileIndex(
         MapDataPos::new(map_src.map.size(), Entity::PLACEHOLDER)
@@ -108,7 +112,8 @@ fn setup_tile_entities(
             if d.kind().is_land() {
                 commands.spawn(LandTileBundle {
                     tile: b_playable,
-                    digit: TileDigit(0, false),
+                    digit_external: TileDigitExternal(MwDigit { digit: 0, asterisk: false }),
+                    digit_internal: TileDigitInternal(MwDigit { digit: 0, asterisk: false }),
                     gent: TileGent::Empty,
                     roads: TileRoads(0),
                 }).id()
@@ -133,6 +138,7 @@ fn setup_tile_entities(
 
 fn setup_cit_entities(
     mut commands: Commands,
+    spreader: Res<WorkSpreader>,
     q_map: Query<(Entity, &MapDataOrig, &MapTileIndex, Has<CitIndex>), With<MapGovernor>>,
 ) -> Progress {
     let (e_map, map_src, tile_index) = match q_map.get_single() {
@@ -140,6 +146,9 @@ fn setup_cit_entities(
         Ok((_, _, _, true)) => return true.into(),
         Ok((e, orig, tile_index, false)) => (e, orig, tile_index),
     };
+    if spreader.acquire() {
+        return false.into();
+    }
 
     let mut cit_index = CitIndex {
         by_id: Vec::with_capacity(map_src.cits.len()),

@@ -5,23 +5,43 @@
 //! To find the entity for a specific Pos, look it up via the
 //! `MapTileIndex` on the Map Governor.
 
-use mw_common::{game::{CitId, ItemKind, StructureKind, TileKind}, grid::Pos, plid::PlayerId};
+use mw_common::{game::{CitId, ItemKind, MwDigit, StructureKind, TileKind}, grid::Pos, plid::PlayerId};
 
 use crate::{view::VisibleInView, prelude::*};
 
 pub fn plugin(app: &mut App) {
-    app.add_event::<RecomputeVisEvent>();
-    app.configure_stage_set_no_rc(Update, TileUpdateSS);
+    app.add_event::<TileUpdateEvent>();
+    app.configure_stage_set(Update, TileUpdateSS, on_event::<TileUpdateEvent>());
+    app.configure_sets(Update, (
+        TileUpdateSet::External
+            .in_set(SetStage::Provide(TileUpdateSS)),
+        TileUpdateSet::Internal
+            .after(TileUpdateSet::External)
+            .in_set(SetStage::Provide(TileUpdateSS)),
+    ));
 }
 
+/// Anything that updates components on map entities and sends TileUpdateEvents
 #[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct TileUpdateSS;
 
-/// Trigger a recompute of `TileVisLevel`.
+/// Sets to help organize systems that update components on map entities
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub enum TileUpdateSet {
+    /// Systems that handle updates based on incoming game events and other such "external" sources
+    External,
+    /// Systems that update tiles based on local / client-side features
+    Internal,
+}
+
+/// Should be sent whenever components on map entities are updated
 ///
-/// For a specific tile position, or for the whole map if None.
+/// (to avoid Bevy change detection overhead)
 #[derive(Event)]
-pub struct RecomputeVisEvent(pub Option<Pos>);
+pub enum TileUpdateEvent {
+    All,
+    One(Entity),
+}
 
 /// Components common to all map tiles
 #[derive(Bundle)]
@@ -45,7 +65,8 @@ pub struct PlayableTileBundle {
 #[derive(Bundle)]
 pub struct LandTileBundle {
     pub tile: PlayableTileBundle,
-    pub digit: TileDigit,
+    pub digit_internal: TileDigitInternal,
+    pub digit_external: TileDigitExternal,
     pub gent: TileGent,
     pub roads: TileRoads,
 }
@@ -87,12 +108,18 @@ pub struct TileRegion(pub u8);
 #[derive(Component)]
 pub struct TileOwner(pub PlayerId);
 
-/// Any minesweeper digit to be displayed on the tile.
+/// Any digit that we are told to display.
 ///
-/// The `u8` is the digit value (`0` means no digit).
-/// The `bool` is whether to display an asterisk.
+/// This comes from game updates.
 #[derive(Component)]
-pub struct TileDigit(pub u8, pub bool);
+pub struct TileDigitInternal(pub MwDigit);
+
+/// Any digit that we compute locally based on known item locations.
+///
+/// This is the "preview" of what digits are
+/// expected to look like for other players.
+#[derive(Component)]
+pub struct TileDigitExternal(pub MwDigit);
 
 /// Any Road connections to neighboring tiles.
 ///
@@ -132,4 +159,24 @@ pub enum TileVisLevel {
 pub struct TileExplosion {
     pub e: Entity,
     pub item: Option<ItemKind>,
+}
+
+pub fn coalesce_tile_update_events(
+    output: &mut HashSet<Entity>,
+    input: &mut EventReader<TileUpdateEvent>,
+) {
+    output.clear();
+    for ev in input.read() {
+        match ev {
+            TileUpdateEvent::All => {
+                output.clear();
+                output.insert(Entity::PLACEHOLDER);
+                input.clear();
+                return;
+            }
+            TileUpdateEvent::One(e) => {
+                output.insert(*e);
+            }
+        }
+    }
 }

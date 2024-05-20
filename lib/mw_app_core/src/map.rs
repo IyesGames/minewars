@@ -26,7 +26,6 @@ pub fn plugin(app: &mut App) {
         cit::plugin,
         tile::plugin,
     ));
-    app.add_event::<TileUpdateEvent>();
     app.configure_sets(Update, (
         NeedsMapGovernorSet
             .run_if(any_with_component::<MapGovernor>),
@@ -49,12 +48,6 @@ pub struct GridCursorSS;
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MapTopologySet(pub Topology);
-
-#[derive(Event)]
-pub struct TileUpdateEvent {
-    pub pos: Pos,
-    pub entity: Entity,
-}
 
 #[derive(Bundle)]
 pub struct MapGovernorBundle {

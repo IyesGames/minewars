@@ -21,8 +21,6 @@
 //!
 //! Normally there is also a Map Governor.
 
-use mw_common::game::event::GameEvent;
-
 use crate::{prelude::*, session::NeedsSessionGovernorSet};
 
 pub fn plugin(app: &mut App) {

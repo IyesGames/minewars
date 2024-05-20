@@ -45,7 +45,7 @@ proprietary = [
     "mw_platform_ios/proprietary",
 ]
 gfx2d = ["mw_app_gfx2d"]
-gfx2d_tilemap = ["mw_app_gfx2d/tilemap"]
+gfx2d_tilemap = ["gfx2d", "mw_app_gfx2d/tilemap"]
 gfx3d = ["mw_app_gfx3d"]
 buttplug = ["mw_app/buttplug"]
 

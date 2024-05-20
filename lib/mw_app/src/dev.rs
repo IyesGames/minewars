@@ -1,4 +1,3 @@
-use mw_common::game::event::GameEvent;
 use mw_app_core::haptic::HapticEvent;
 
 use crate::prelude::*;

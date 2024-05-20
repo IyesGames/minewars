@@ -1,6 +1,6 @@
 //! MineWars protocol message stream codec
 
-use mw_common::{game::{event::MwEv, ItemKind, StructureKind, TileKind}, grid::Pos, plid::PlayerId, time::MwDur};
+use mw_common::prelude::*;
 use thiserror::Error;
 use num_traits::FromPrimitive;
 
@@ -323,7 +323,7 @@ impl MsgWriter for MsgBinWrite {
                 }
                 n_msgs += tilecount as usize;
             },
-            MwEv::DigitCapture { pos, digit, asterisk } => {
+            MwEv::DigitCapture { pos, digit: MwDigit { digit, asterisk } } => {
                 n_bytes = 4;
                 let mut tilecount = 0;
                 for msg in msgs.iter().skip(1) {
@@ -370,7 +370,7 @@ impl MsgWriter for MsgBinWrite {
                     digbyte |= (*asterisk as u8) << 7;
                     digbyte |= (*digit & 0x07) << 4;
                     for msg in msgs.iter().skip(1).take(tilecount as usize) {
-                        let MwEv::DigitCapture { asterisk, digit, .. } = msg else {
+                        let MwEv::DigitCapture { digit: MwDigit { digit, asterisk }, .. } = msg else {
                             unreachable!();
                         };
                         if high {
@@ -733,7 +733,7 @@ impl MsgReader for MsgBinRead {
             pos.set_x(bytes[1] as i8);
             let asterisk = byte0 & 0b00001000 != 0;
             let digit = byte0 & 0b00000111;
-            out.push(MwEv::DigitCapture { pos, digit, asterisk });
+            out.push(MwEv::DigitCapture { pos, digit: MwDigit { digit, asterisk } });
             return Ok(1);
         }
         if byte0 & 0b11110000 == 0b00110000 {
@@ -769,7 +769,7 @@ impl MsgReader for MsgBinRead {
                         bytes[off_digit] & 0b00000111,
                     )
                 };
-                out.push(MwEv::DigitCapture { pos, digit, asterisk });
+                out.push(MwEv::DigitCapture { pos, digit: MwDigit { digit, asterisk } });
             }
             return Ok(n_tiles);
         }

@@ -1,31 +1,56 @@
 use bevy::window::{PresentMode, PrimaryWindow, WindowMode};
-use mw_app_core::{user::UserProfile, value::Lch};
+use mw_app_core::{graphics::GraphicsStyle, user::UserProfile, value::Lch};
 use mw_common::grid::Topology;
 
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<Topology>();
+    app.register_type::<Vec<Lch>>();
     app.init_setting::<MapGenSettings>(SETTINGS_APP.as_ref());
     app.init_setting::<WindowSettings>(SETTINGS_LOCAL.as_ref());
     app.init_setting::<UserProfileSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<PlidColorSettings>(SETTINGS_USER.as_ref());
+    app.init_setting::<GraphicsStyleSettings>(SETTINGS_LOCAL.as_ref());
 }
 
 pub fn register_engine_settings(app: &mut App) {
     app.init_setting::<EngineSetupSettings>(SETTINGS_ENGINE.as_ref());
 }
 
+#[derive(Component, Reflect, Debug, Clone)]
+#[reflect(Setting)]
+pub struct GraphicsStyleSettings {
+    pub game_enable_both_styles: bool,
+    pub game_preferred_style: GraphicsStyle,
+    pub editor_enable_both_styles: bool,
+    pub editor_preferred_style: GraphicsStyle,
+}
+
+impl Default for GraphicsStyleSettings {
+    fn default() -> Self {
+        GraphicsStyleSettings {
+            game_enable_both_styles: true,
+            game_preferred_style: GraphicsStyle::Gfx2d,
+            editor_enable_both_styles: true,
+            editor_preferred_style: GraphicsStyle::Gfx2d,
+        }
+    }
+}
+
+impl Setting for GraphicsStyleSettings {}
+
 #[derive(Reflect, Debug, Clone)]
 #[reflect(Setting)]
 pub struct PlidColorSettings {
-    pub colors: [Lch; 16],
+    pub colors: Vec<Lch>,
     pub fog: Lch,
 }
 
 impl Default for PlidColorSettings {
     fn default() -> Self {
         PlidColorSettings {
-            colors: [
+            colors: vec![
                 Lch(0.75, 0.0, 0.0),
                 Lch(0.5, 0.5, 0.0/15.0 * 360.0),
                 Lch(0.5, 0.5, 11.0/15.0 * 360.0),

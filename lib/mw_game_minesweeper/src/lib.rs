@@ -1,9 +1,5 @@
 use mw_common::prelude::*;
-use mw_common::grid::*;
-use mw_common::plid::*;
 use mw_common::algo::*;
-use mw_common::game::*;
-use mw_common::game::event::*;
 use mw_common::driver::*;
 
 use modular_bitfield::prelude::*;
@@ -413,7 +409,9 @@ impl<C: Coord> GameMinesweeper<C> {
     fn compute_send_digit<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) -> (u8, bool) {
         let (digit, asterisk) = self.compute_digit(plid, c);
         host.msg(Plids::from(plid), MwEv::DigitCapture {
-            digit, asterisk, pos: c.into(),
+            pos: c.into(), digit: MwDigit {
+                digit, asterisk,
+            },
         });
         (digit, asterisk)
     }

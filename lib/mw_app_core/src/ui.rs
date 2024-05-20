@@ -7,7 +7,7 @@ pub fn plugin(app: &mut App) {
 }
 
 /// Marker for the camera that displays our UI
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct UiCamera;
 
 /// Marker for UI root entities / top-level containers

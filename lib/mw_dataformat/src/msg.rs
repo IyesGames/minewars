@@ -1,6 +1,6 @@
 //! Working with individual Game Update Messages
 
-use mw_common::game::event::*;
+use mw_common::prelude::*;
 
 pub mod asm;
 pub mod bin;

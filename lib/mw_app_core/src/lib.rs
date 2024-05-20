@@ -30,12 +30,13 @@ pub mod map;
 pub mod session;
 pub mod player;
 pub mod user;
-pub mod view;
+pub mod graphics;
 
 // support for client-side features
 pub mod camera;
 pub mod haptic;
 pub mod locale;
+pub mod view;
 
 use crate::prelude::*;
 
@@ -51,6 +52,7 @@ pub fn plugin(app: &mut App) {
         crate::assets::plugin,
         crate::camera::plugin,
         crate::driver::plugin,
+        crate::graphics::plugin,
         crate::haptic::plugin,
         crate::locale::plugin,
         crate::map::plugin,

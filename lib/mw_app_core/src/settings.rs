@@ -216,12 +216,16 @@ impl SettingsStore {
         Ok(())
     }
     fn store_collection(&self, registry: &TypeRegistry, collection: &OsStr) -> AnyResult<()> {
+        use std::io::Write;
+
         let Some(dir) = &self.settings_root else {
             bail!("Don't know where config files should be saved!");
         };
         let path = dir.join(collection);
 
-        let mut output = vec![];
+        let mut output: Vec<u8> = vec![];
+        writeln!(&mut output, "// This file is not meant to be edited by hand! If you mistype anything,").ok();
+        writeln!(&mut output, "// some or all of your settings may be reset back to default values!").ok();
         let iter_reflect;
         if let Some((coll, _)) = self.collections.get(collection) {
             iter_reflect = coll.iter()

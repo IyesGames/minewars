@@ -3,7 +3,7 @@
 //! The idea is to help with debugging and development of the MineWars
 //! data stream by having a human-readable representation of the binary data.
 
-use mw_common::{game::{ItemKind, StructureKind, TileKind}, grid::Pos, plid::PlayerId, time::MwDur};
+use mw_common::prelude::*;
 use thiserror::Error;
 
 use crate::msg::*;
@@ -99,13 +99,13 @@ impl MsgWriter for MsgAsmWrite {
                 }
                 writeln!(&mut self.buf, "")?;
             },
-            MwEv::DigitCapture { pos, digit, asterisk } => {
+            MwEv::DigitCapture { pos, digit: MwDigit { digit, asterisk } } => {
                 write!(&mut self.buf, "DIGITS {}{}/{},{}", digit, if *asterisk { "*" } else { "" }, pos.y(), pos.x())?;
                 for (i, msg) in msgs[1..].iter().enumerate() {
                     if i >= 15 {
                         break;
                     }
-                    if let MwEv::DigitCapture { pos, digit, asterisk } = msg {
+                    if let MwEv::DigitCapture { pos, digit: MwDigit { digit, asterisk } } = msg {
                         write!(&mut self.buf, " {}{}/{},{}", digit, if *asterisk { "*" } else { "" }, pos.y(), pos.x())?;
                         n_msgs += 1;
                     } else {
@@ -476,7 +476,7 @@ impl MsgReader for MsgAsmRead {
                     };
                     let pos = parse_pos(arg_pos)?;
                     out.push(MwEv::DigitCapture {
-                        digit, pos, asterisk,
+                        pos, digit: MwDigit { digit, asterisk, },
                     });
                     n += 1;
                 }

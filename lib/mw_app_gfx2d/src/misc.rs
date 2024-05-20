@@ -1,19 +1,36 @@
+use mw_app_core::graphics::{Gfx2dEnabled, GraphicsGovernor};
 use mw_common::{game::TileKind, grid::*};
 
 use crate::{prelude::*, settings::Gfx2dImpl};
 
 pub fn plugin(app: &mut App) {
     app.configure_sets(Update, (
-        Gfx2dImplSet::Any.run_if(rc_gfx2d_any),
-        Gfx2dImplSet::Sprites.run_if(rc_gfx2d_sprites),
+        Gfx2dImplSet::Any
+            .run_if(any_filter::<(With<GraphicsGovernor>, With<Gfx2dEnabled>)>),
+        Gfx2dImplSet::Sprites
+            .in_set(Gfx2dImplSet::Any)
+            .run_if(rc_gfx2d_sprites),
+        Gfx2dImplSet::Bespoke
+            .in_set(Gfx2dImplSet::Any)
+            .run_if(rc_gfx2d_bespoke),
         #[cfg(feature = "tilemap")]
-        Gfx2dImplSet::Tilemap.run_if(rc_gfx2d_tilemap),
+        Gfx2dImplSet::Tilemap
+            .in_set(Gfx2dImplSet::Any)
+            .run_if(rc_gfx2d_tilemap),
     ));
     app.configure_sets(OnEnter(AppState::InGame), (
-        Gfx2dImplSet::Any.run_if(rc_gfx2d_any),
-        Gfx2dImplSet::Sprites.run_if(rc_gfx2d_sprites),
+        Gfx2dImplSet::Any
+            .run_if(any_filter::<(With<GraphicsGovernor>, With<Gfx2dEnabled>)>),
+        Gfx2dImplSet::Sprites
+            .in_set(Gfx2dImplSet::Any)
+            .run_if(rc_gfx2d_sprites),
+        Gfx2dImplSet::Bespoke
+            .in_set(Gfx2dImplSet::Any)
+            .run_if(rc_gfx2d_bespoke),
         #[cfg(feature = "tilemap")]
-        Gfx2dImplSet::Tilemap.run_if(rc_gfx2d_tilemap),
+        Gfx2dImplSet::Tilemap
+            .in_set(Gfx2dImplSet::Any)
+            .run_if(rc_gfx2d_tilemap),
     ));
 }
 
@@ -21,6 +38,7 @@ pub fn plugin(app: &mut App) {
 pub enum Gfx2dImplSet {
     Any,
     Sprites,
+    Bespoke,
     #[cfg(feature = "tilemap")]
     Tilemap,
 }
@@ -40,19 +58,19 @@ pub struct ExplosionSprite {
     pub timer: Timer,
 }
 
-fn rc_gfx2d_any(
-    settings: Settings,
-) -> bool {
-    settings.get::<Gfx2dImpl>().map(|s|
-        *s == Gfx2dImpl::Tilemap || *s == Gfx2dImpl::Sprites
-    ).unwrap_or(false)
-}
-
 fn rc_gfx2d_sprites(
     settings: Settings,
 ) -> bool {
     settings.get::<Gfx2dImpl>().map(|s|
         *s == Gfx2dImpl::Sprites
+    ).unwrap_or(false)
+}
+
+fn rc_gfx2d_bespoke(
+    settings: Settings,
+) -> bool {
+    settings.get::<Gfx2dImpl>().map(|s|
+        *s == Gfx2dImpl::Bespoke
     ).unwrap_or(false)
 }
 
@@ -146,7 +164,7 @@ pub mod sprite {
 }
 
 #[allow(dead_code)]
-mod zpos {
+pub mod zpos {
     pub const TILE: f32 = 1.0;
 
     pub const CURSOR: f32 = TILE + 10.0;

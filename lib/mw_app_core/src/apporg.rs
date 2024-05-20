@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
@@ -33,6 +35,8 @@ pub fn plugin(app: &mut App) {
             despawn_all_recursive::<With<GameFullCleanup>>,
         )
     );
+    app.init_resource::<WorkSpreader>();
+    app.add_systems(First, reset_work_spreader);
 }
 
 /// State type: Which "screen" is the app in?
@@ -75,3 +79,21 @@ pub struct GamePartialCleanup;
 /// Everything to despawn when exiting completely (no new session)
 #[derive(Component, Default)]
 pub struct GameFullCleanup;
+
+#[derive(Resource, Default)]
+pub struct WorkSpreader(AtomicBool);
+
+impl WorkSpreader {
+    pub fn reset(&self) {
+        self.0.store(false, Ordering::SeqCst);
+    }
+    pub fn acquire(&self) -> bool {
+        self.0.swap(true, Ordering::SeqCst)
+    }
+}
+
+fn reset_work_spreader(
+    spreader: Res<WorkSpreader>,
+) {
+    spreader.reset();
+}

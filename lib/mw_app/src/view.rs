@@ -1,5 +1,4 @@
 use mw_app_core::{driver::GameOutEventSS, session::{PlayersIndex, PlidViewing, SessionGovernor}, view::*};
-use mw_common::game::{event::{GameEvent, MwEv}, ItemKind};
 
 use crate::prelude::*;
 
@@ -77,7 +76,7 @@ fn view_update_from_gameevents(
                 let tile = &mut view.0[pos];
                 tile.set_owner(u8::from(plid));
             },
-            MwEv::DigitCapture { pos, digit, asterisk } => {
+            MwEv::DigitCapture { pos, digit: MwDigit { digit, asterisk } } => {
                 let tile = &mut view.0[pos];
                 tile.set_owner(u8::from(plid));
                 tile.set_digit(digit);

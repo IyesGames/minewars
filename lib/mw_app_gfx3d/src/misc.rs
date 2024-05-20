@@ -3,44 +3,44 @@ use crate::{prelude::*, map::Ass3dTileVariant, settings::Gfx3dImpl};
 pub fn plugin(app: &mut App) {
     app.configure_sets(Update, (
         Gfx3dImplSet::Any.run_if(rc_gfx3d_any),
-        Gfx3dImplSet::Simple3D.run_if(rc_gfx3d_simple3d),
-        Gfx3dImplSet::Bespoke3D.run_if(rc_gfx3d_bespoke3d),
+        Gfx3dImplSet::Simple.run_if(rc_gfx3d_simple),
+        Gfx3dImplSet::Bespoke.run_if(rc_gfx3d_bespoke),
     ));
     app.configure_sets(OnEnter(AppState::InGame), (
         Gfx3dImplSet::Any.run_if(rc_gfx3d_any),
-        Gfx3dImplSet::Simple3D.run_if(rc_gfx3d_simple3d),
-        Gfx3dImplSet::Bespoke3D.run_if(rc_gfx3d_bespoke3d),
+        Gfx3dImplSet::Simple.run_if(rc_gfx3d_simple),
+        Gfx3dImplSet::Bespoke.run_if(rc_gfx3d_bespoke),
     ));
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Gfx3dImplSet {
     Any,
-    Simple3D,
-    Bespoke3D,
+    Simple,
+    Bespoke,
 }
 
 fn rc_gfx3d_any(
     settings: Settings,
 ) -> bool {
     settings.get::<Gfx3dImpl>().map(|s|
-        *s == Gfx3dImpl::Bespoke3D || *s == Gfx3dImpl::Simple3D
+        *s == Gfx3dImpl::Bespoke || *s == Gfx3dImpl::Simple
     ).unwrap_or(false)
 }
 
-fn rc_gfx3d_simple3d(
+fn rc_gfx3d_simple(
     settings: Settings,
 ) -> bool {
     settings.get::<Gfx3dImpl>().map(|s|
-        *s == Gfx3dImpl::Simple3D
+        *s == Gfx3dImpl::Simple
     ).unwrap_or(false)
 }
 
-fn rc_gfx3d_bespoke3d(
+fn rc_gfx3d_bespoke(
     settings: Settings,
 ) -> bool {
     settings.get::<Gfx3dImpl>().map(|s|
-        *s == Gfx3dImpl::Bespoke3D
+        *s == Gfx3dImpl::Bespoke
     ).unwrap_or(false)
 }
 
