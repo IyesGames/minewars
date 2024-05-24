@@ -91,6 +91,7 @@ pub struct ViewTileData {
     pub structure: StructureKind,
     pub flag: B4,
     #[skip] __: B4,
+    pub region: u8,
 }
 
 impl ViewTileData {

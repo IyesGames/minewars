@@ -13,8 +13,9 @@ pub fn plugin(app: &mut App) {
 fn setup_game_camera(
     mut commands: Commands,
 ) {
+    let mut camera = Camera2dBundle::default();
     commands.spawn((
-        Camera2dBundle::default(),
+        camera,
         GameCameraBundle::default(),
     ));
 }

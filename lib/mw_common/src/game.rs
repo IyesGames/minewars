@@ -177,7 +177,7 @@ pub struct MapGenTileData {
 ///
 /// The `u8` is the digit value (`0` means no digit).
 /// The `bool` is whether to display an asterisk.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MwDigit {
     pub digit: u8,
     pub asterisk: bool,

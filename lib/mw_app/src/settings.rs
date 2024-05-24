@@ -11,12 +11,29 @@ pub fn plugin(app: &mut App) {
     app.init_setting::<WindowSettings>(SETTINGS_LOCAL.as_ref());
     app.init_setting::<UserProfileSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<PlidColorSettings>(SETTINGS_USER.as_ref());
+    app.init_setting::<GameViewSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<GraphicsStyleSettings>(SETTINGS_LOCAL.as_ref());
 }
 
 pub fn register_engine_settings(app: &mut App) {
     app.init_setting::<EngineSetupSettings>(SETTINGS_ENGINE.as_ref());
 }
+
+#[derive(Component, Reflect, Debug, Clone)]
+#[reflect(Setting)]
+pub struct GameViewSettings {
+    pub tile_alert_duration_ms: u32,
+}
+
+impl Default for GameViewSettings {
+    fn default() -> Self {
+        Self {
+            tile_alert_duration_ms: 1000,
+        }
+    }
+}
+
+impl Setting for GameViewSettings {}
 
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Setting)]

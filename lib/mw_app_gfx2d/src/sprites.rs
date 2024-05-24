@@ -1,4 +1,4 @@
-use mw_app_core::map::*;
+use mw_app_core::{map::{tile::{coalesce_tile_update_events, MwMapTile, MwTilePos, TileUpdateEvent, TileUpdateSS}, *}, session::{PlayersIndex, PlidViewing, SessionGovernor}};
 use mw_common::grid::*;
 
 use crate::{assets::Gfx2dAssets, misc::*, prelude::*};
@@ -8,13 +8,20 @@ pub fn plugin(app: &mut App) {
         setup_tile_entities
             .track_progress()
             .in_set(Gfx2dImplSet::Sprites)
-            .run_if(any_filter::<With<MapGovernor>>),
+            .in_set(NeedsMapGovernorSet),
     )
         .in_set(InStateSet(AppState::GameLoading)),
     );
     app.add_systems(OnEnter(AppState::InGame), (
         reveal_sprites_onenter_ingame,
     ));
+    app.add_systems(Update, (
+        update_sprite_tile_kind,
+    )
+        .in_set(SetStage::WantChanged(TileUpdateSS))
+        .in_set(Gfx2dImplSet::Sprites)
+        .in_set(NeedsMapGovernorSet)
+    );
 }
 
 #[derive(Component)]
@@ -52,8 +59,20 @@ fn setup_tile_entities(
 
     for (c, &e) in tile_index.0.iter() {
         let trans = match desc.topology {
-            Topology::Hex => Hex::from(c).translation(),
-            Topology::Sq => Sq::from(c).translation(),
+            Topology::Hex => {
+                let c = Hex::from(c);
+                if c.ring() > desc.size {
+                    continue;
+                }
+                c.translation()
+            },
+            Topology::Sq => {
+                let c = Sq::from(c);
+                if c.ring() > desc.size {
+                    continue;
+                }
+                c.translation()
+            },
         };
         let e = commands.spawn((
             BaseSprite,
@@ -80,6 +99,8 @@ fn setup_tile_entities(
     commands.entity(e_map)
         .insert(sprites_index);
 
+    debug!("Initialized map graphics using 2D Sprites.");
+
     false.into()
 }
 
@@ -88,5 +109,48 @@ fn reveal_sprites_onenter_ingame(
 ) {
     for mut vis in &mut q_sprite {
         *vis = Visibility::Visible;
+    }
+}
+
+fn update_sprite_tile_kind(
+    q_map: Query<(&MapDescriptor, &MapSpritesIndex), With<MapGovernor>>,
+    q_tile: Query<(&MwTilePos, &TileKind), With<MwMapTile>>,
+    mut q_sprite: Query<&mut TextureAtlas, With<BaseSprite>>,
+    mut evr: EventReader<TileUpdateEvent>,
+    mut coalesced_updates: Local<HashSet<Entity>>,
+) {
+    coalesce_tile_update_events(&mut coalesced_updates, &mut evr);
+    let (desc, sprindex) = q_map.single();
+    let i_base = match desc.topology {
+        Topology::Hex => sprite::TILES6,
+        Topology::Sq => sprite::TILES4,
+    };
+    let mut do_update = |e, kind| {
+        if let Ok(mut atlas) = q_sprite.get_mut(e) {
+            atlas.index = i_base + match kind {
+                TileKind::Water => sprite::TILE_WATER,
+                TileKind::FoundationRoad => sprite::TILE_FOUNDATION,
+                TileKind::FoundationStruct => sprite::TILE_FOUNDATION,
+                TileKind::Regular => sprite::TILE_LAND,
+                TileKind::Fertile => sprite::TILE_FERTILE,
+                TileKind::Forest => sprite::TILE_FOREST,
+                TileKind::Mountain => sprite::TILE_MTN,
+                TileKind::Destroyed => sprite::TILE_DEAD,
+            };
+        }
+    };
+    for e in coalesced_updates.drain() {
+        if e == Entity::PLACEHOLDER {
+            for (pos, kind) in &q_tile {
+                let e_spr = sprindex.0[pos.0];
+                do_update(e_spr, *kind);
+            }
+            break;
+        } else {
+            if let Ok((pos, kind)) = q_tile.get(e) {
+                let e_spr = sprindex.0[pos.0];
+                do_update(e_spr, *kind);
+            }
+        }
     }
 }

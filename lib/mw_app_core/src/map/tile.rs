@@ -55,16 +55,14 @@ pub struct MapTileBundle {
 /// Components common to all playable map tiles
 #[derive(Bundle)]
 pub struct PlayableTileBundle {
-    pub tile: MapTileBundle,
     pub region: TileRegion,
     pub owner: TileOwner,
     pub vis: TileVisLevel,
 }
 
 /// Components of land tiles
-#[derive(Bundle)]
+#[derive(Bundle, Default)]
 pub struct LandTileBundle {
-    pub tile: PlayableTileBundle,
     pub digit_internal: TileDigitInternal,
     pub digit_external: TileDigitExternal,
     pub gent: TileGent,
@@ -74,7 +72,6 @@ pub struct LandTileBundle {
 /// Components of resource clusters (mountain, forest)
 #[derive(Bundle)]
 pub struct ResClusterTileBundle {
-    pub tile: PlayableTileBundle,
 }
 
 #[derive(Bundle)]
@@ -111,14 +108,14 @@ pub struct TileOwner(pub PlayerId);
 /// Any digit that we are told to display.
 ///
 /// This comes from game updates.
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct TileDigitInternal(pub MwDigit);
 
 /// Any digit that we compute locally based on known item locations.
 ///
 /// This is the "preview" of what digits are
 /// expected to look like for other players.
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct TileDigitExternal(pub MwDigit);
 
 /// Any Road connections to neighboring tiles.
@@ -129,13 +126,14 @@ pub struct TileDigitExternal(pub MwDigit);
 /// each adjacent tile that also has a road.
 ///
 /// This representation allows efficiently rendering roads correctly.
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct TileRoads(pub u8);
 
 /// Is there any "game entity" on a land tile?
-#[derive(Component)]
+#[derive(Component, Default)]
 pub enum TileGent {
     /// Tile has nothing on it
+    #[default]
     Empty,
     /// Tile contains a City
     Cit(CitId),
