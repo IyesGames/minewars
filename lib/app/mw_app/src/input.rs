@@ -443,11 +443,30 @@ fn mouse_input(
         let e_action = mouse_map.action_btn.get(&ev.button);
         let e_motion = mouse_map.motion_btn.get(&ev.button);
         match (e_action, e_motion) {
-            (None, None) => {},
-            (Some(e_action), Some(e_motion)) => {
-                // ambiguous
-                let dur = Duration::from_millis(s_mouse.action_motion_disambiguate_ms as u64);
-                to_disambiguate.0.insert(ev.button, Timer::new(dur, TimerMode::Once));
+            (None, None) => continue,
+            (Some(&e_action), Some(&e_motion)) => {
+                match ev.state {
+                    ButtonState::Pressed => {
+                        // ambiguous
+                        let dur = Duration::from_millis(s_mouse.action_motion_disambiguate_ms as u64);
+                        to_disambiguate.0.insert(ev.button, Timer::new(dur, TimerMode::Once));
+                    }
+                    ButtonState::Released => {
+                        // if there is a pending disambiguation,
+                        // immediately process it as action
+                        if to_disambiguate.0.remove(&ev.button).is_some() {
+                            let Ok((callback,)) = q_action.get(e_action) else {
+                                continue;
+                            };
+                            if let Some(system) = callback.on_press {
+                                commands.run_system(system);
+                            }
+                            if let Some(system) = callback.on_release {
+                                commands.run_system(system);
+                            }
+                        }
+                    }
+                }
             },
             (Some(&e_action), None) => {
                 let Ok((callback,)) = q_action.get(e_action) else {
