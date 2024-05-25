@@ -171,33 +171,31 @@ Given that this is a multiplayer game, and there are many parts to it
    - `mw_authsrv`: server for non-gameplay multiplayer services (accounts, lobbies, matchmaking, etc.)
    - `mw_certgen`: CLI tool for generating encryption certificates
    - `mw_datatool`: CLI tool for working with the MineWars data format
- - `lib/`: supporting libraries:
-   - Client stuff (Bevy):
-     - `mw_app_core`: foundations and supporting tech of `mw_app`
-     - `mw_app`: the open-source part of the game client
-       (sans UI and graphics)
-     - `mw_app_gfx2d`: 2D graphics
-     - `mw_app_gfx3d`: 3D graphics
-     - `mw_ui_desktop`: the desktop UI
-     - `mw_ui_mobile`: the mobile UI
-     - `mw_platform_windows`: Windows-specific features
-     - `mw_platform_macos`: MacOS-specific features
-     - `mw_platform_linux`: Linux-specific features
-     - `mw_platform_android`: Android-specific features
-     - `mw_platform_ios`: iOS-specific features
-   - Server stuff (tokio):
-     - `mw_host`: the open-source part of the Host server
-     - `mw_auth`: the open-source part of the Auth server
-   - Common stuff:
-     - `mw_common`: common code for everything
-     - `mw_game_minesweeper`: minimal open-source Minesweeper game mode
-   - Protocol Stuff:
-     - `mw_dataformat`: co/dec for the format used for gameplay data
-       (both replay/scenario files and over-the-wire gameplay)
-     - `mw_proto_host`: protocol between the client/player and Host server
-     - `mw_proto_auth`: protocol between the client/player and Auth server
-     - `mw_proto_hostrpc`: RPC protocol for the Host server
-     - `mw_proto_hostauth`: protocol between Host and Auth
+ - `lib/srv`: library crates that form the Tokio-based servers:
+   - `mw_host`: the open-source part of the Host server
+   - `mw_auth`: the open-source part of the Auth server
+ - `lib/app`: library crates that form the Bevy-based client app:
+   - `mw_app_core`: foundations and supporting tech of `mw_app`
+   - `mw_app`: the open-source part of the game client
+     (sans UI and graphics)
+   - `mw_app_gfx2d`: 2D graphics
+   - `mw_app_gfx3d`: 3D graphics
+   - `mw_ui_desktop`: the desktop UI
+   - `mw_ui_mobile`: the mobile UI
+   - `mw_platform_windows`: Windows-specific features
+   - `mw_platform_macos`: MacOS-specific features
+   - `mw_platform_linux`: Linux-specific features
+   - `mw_platform_android`: Android-specific features
+   - `mw_platform_ios`: iOS-specific features
+ - `lib/common`: library crates used by both client and server:
+   - `mw_common`: common code for everything
+   - `mw_game_minesweeper`: minimal open-source Minesweeper game mode
+   - `mw_dataformat`: co/dec for the format used for gameplay data
+     (both replay/scenario files and over-the-wire gameplay)
+   - `mw_proto_host`: protocol between the client/player and Host server
+   - `mw_proto_auth`: protocol between the client/player and Auth server
+   - `mw_proto_hostrpc`: RPC protocol for the Host server
+   - `mw_proto_hostauth`: protocol between Host and Auth
  - `cfg/`: example config files and certificates for testing/development
 
 Crates from the Proprietary Repo (not publicly available, just stubbed):

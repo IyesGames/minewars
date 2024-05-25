@@ -1,5 +1,5 @@
 [package]
-name = "mw_platform_ios"
+name = "mw_platform_macos"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,7 +9,7 @@ release = []
 proprietary = []
 
 [dependencies.mw_common]
-path = "../mw_common"
+path = "../../common/mw_common"
 features = [ "bevy" ]
 
 [dependencies.mw_app_core]

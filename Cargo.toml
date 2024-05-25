@@ -19,6 +19,7 @@ iyes_ui = { path = "../../engine/iyes_ui" }
 mw_app_proprietary = { path = "../minewars-proprietary/lib/mw_app_proprietary" }
 mw_host_proprietary = { path = "../minewars-proprietary/lib/mw_host_proprietary" }
 mw_auth_proprietary = { path = "../minewars-proprietary/lib/mw_auth_proprietary" }
+mw_game_minewars = { path = "../minewars-proprietary/lib/mw_game_minewars"}
 
 # [patch.crates-io]
 # bevy_ecs_tilemap = { path = "../../../src/bevy_ecs_tilemap"}
@@ -35,30 +36,30 @@ members = [
     "bin/mw_datatool", # CLI for mw_dataformat
     "bin/mw_hostrpc", # CLI for controlling Host
     # foundational
-    "lib/mw_common", # Common code for everything
-    "lib/mw_dataformat", # Dataformat codec
+    "lib/common/mw_common", # Common code for everything
+    "lib/common/mw_dataformat", # Dataformat codec
     # protocols
-    "lib/mw_proto_auth", # Client <> Auth
-    "lib/mw_proto_host", # Client <> Host
-    "lib/mw_proto_hostrpc", # HostRPC <> Host
-    "lib/mw_proto_hostauth", # Host <> Auth
+    "lib/common/mw_proto_auth", # Client <> Auth
+    "lib/common/mw_proto_host", # Client <> Host
+    "lib/common/mw_proto_hostrpc", # HostRPC <> Host
+    "lib/common/mw_proto_hostauth", # Host <> Auth
     # server stuff
-    "lib/mw_host", # FOSS part of Host Server
-    "lib/mw_auth", # FOSS part of Auth Server
+    "lib/srv/mw_host", # FOSS part of Host Server
+    "lib/srv/mw_auth", # FOSS part of Auth Server
     # client stuff
-    "lib/mw_app_core", # The foundations and supporting tech of `mw_app`
-    "lib/mw_app", # FOSS part of the game client, sans UI and Graphics
-    "lib/mw_app_gfx2d", # 2D graphics for MineWars
-    "lib/mw_app_gfx3d", # 3D graphics for MineWars
-    "lib/mw_ui_desktop", # Desktop UI of mw_app
-    "lib/mw_ui_mobile",  # Mobile UI of mw_app
-    "lib/mw_platform_android", # Android-specific features
-    "lib/mw_platform_ios", # iOS-specific features
-    "lib/mw_platform_windows", # Windows-specific features
-    "lib/mw_platform_macos", # MacOS-specific features
-    "lib/mw_platform_linux", # Linux-specific features
+    "lib/app/mw_app_core", # The foundations and supporting tech of `mw_app`
+    "lib/app/mw_app", # FOSS part of the game client, sans UI and Graphics
+    "lib/app/mw_app_gfx2d", # 2D graphics for MineWars
+    "lib/app/mw_app_gfx3d", # 3D graphics for MineWars
+    "lib/app/mw_ui_desktop", # Desktop UI of mw_app
+    "lib/app/mw_ui_mobile",  # Mobile UI of mw_app
+    "lib/app/mw_platform_android", # Android-specific features
+    "lib/app/mw_platform_ios", # iOS-specific features
+    "lib/app/mw_platform_windows", # Windows-specific features
+    "lib/app/mw_platform_macos", # MacOS-specific features
+    "lib/app/mw_platform_linux", # Linux-specific features
     # gameplay for different game modes
-    "lib/mw_game_minesweeper", # FOSS minesweeper mode
+    "lib/common/mw_game_minesweeper", # FOSS minesweeper mode
 ]
 
 # dev: no LTO, some optimization,
@@ -125,35 +126,35 @@ gfx3d = ["mw_app_gfx3d"]
 buttplug = ["mw_app/buttplug"]
 
 [dependencies.mw_app_core]
-path = "lib/mw_app_core"
+path = "lib/app/mw_app_core"
 
 [dependencies.mw_app]
-path = "lib/mw_app"
+path = "lib/app/mw_app"
 
 [dependencies.mw_app_gfx2d]
-path = "lib/mw_app_gfx2d"
+path = "lib/app/mw_app_gfx2d"
 optional = true
 
 [dependencies.mw_app_gfx3d]
-path = "lib/mw_app_gfx3d"
+path = "lib/app/mw_app_gfx3d"
 optional = true
 
 [dependencies.mw_ui_desktop]
-path = "lib/mw_ui_desktop"
+path = "lib/app/mw_ui_desktop"
 optional = true
 
 [dependencies.mw_ui_mobile]
-path = "lib/mw_ui_mobile"
+path = "lib/app/mw_ui_mobile"
 optional = true
 
 [target.'cfg(target_os = "windows")'.dependencies.mw_platform_windows]
-path = "lib/mw_platform_windows"
+path = "lib/app/mw_platform_windows"
 
 [target.'cfg(target_os = "macos")'.dependencies.mw_platform_macos]
-path = "lib/mw_platform_macos"
+path = "lib/app/mw_platform_macos"
 
 [target.'cfg(target_os = "linux")'.dependencies.mw_platform_linux]
-path = "lib/mw_platform_linux"
+path = "lib/app/mw_platform_linux"
 
 [dependencies.mw_app_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"

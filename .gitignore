@@ -10,5 +10,5 @@ Cargo.lock
 /cfg/cert
 /bin/*/proprietary
 /bin/*/lib
-/lib/*/proprietary
-/lib/mw_game_minewars
+/lib/*/*proprietary
+/lib/common/mw_game_minewars

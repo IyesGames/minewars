@@ -14,6 +14,7 @@ fn setup_game_camera(
     mut commands: Commands,
 ) {
     let mut camera = Camera2dBundle::default();
+    camera.projection.scale = 8.0;
     commands.spawn((
         camera,
         GameCameraBundle::default(),

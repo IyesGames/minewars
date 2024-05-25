@@ -10,7 +10,7 @@ proprietary = []
 tilemap = ["dep:bevy_ecs_tilemap"]
 
 [dependencies.mw_common]
-path = "../mw_common"
+path = "../../common/mw_common"
 features = [ "bevy" ]
 
 [dependencies.mw_app_core]

@@ -9,7 +9,7 @@ edition = "2021"
 proprietary = ["mw_host/proprietary", "dep:mw_host_proprietary"]
 
 [dependencies]
-mw_host = { path = "../../lib/mw_host" }
+mw_host = { path = "../../lib/srv/mw_host" }
 
 [dependencies.mw_host_proprietary]
 git = "https://github.com/IyesGames/minewars-proprietary-shim"

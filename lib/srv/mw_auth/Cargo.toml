@@ -9,15 +9,15 @@ edition = "2021"
 proprietary = []
 
 [dependencies]
-mw_dataformat = { path = "../mw_dataformat" }
-mw_proto_auth = { path = "../mw_proto_auth" }
-mw_proto_hostauth = { path = "../mw_proto_hostauth" }
+mw_dataformat = { path = "../../common/mw_dataformat" }
+mw_proto_auth = { path = "../../common/mw_proto_auth" }
+mw_proto_hostauth = { path = "../../common/mw_proto_hostauth" }
 toml = "0.8.10"
 anyhow = "1.0.79"
 ron = "0.8.1"
 
 [dependencies.mw_common]
-path = "../mw_common"
+path = "../../common/mw_common"
 features = [ "net" ]
 
 [dependencies.serde]

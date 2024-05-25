@@ -16,11 +16,11 @@ release = []
 proprietary = []
 
 [dependencies.mw_common]
-path = "../mw_common"
+path = "../../common/mw_common"
 features = [ "bevy", "net" ]
 
 [dependencies.mw_dataformat]
-path = "../mw_dataformat"
+path = "../../common/mw_dataformat"
 
 [dependencies]
 anyhow = "1.0.79"
