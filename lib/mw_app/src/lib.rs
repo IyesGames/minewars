@@ -27,6 +27,7 @@ mod user;
 
 mod camera;
 mod haptic;
+mod input;
 mod map;
 mod view;
 
@@ -44,6 +45,7 @@ pub fn plugin(app: &mut App) {
         crate::camera::plugin,
         crate::cli::plugin,
         crate::haptic::plugin,
+        crate::input::plugin,
         crate::map::plugin,
         crate::net::plugin,
         crate::settings::plugin,

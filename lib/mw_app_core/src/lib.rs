@@ -30,6 +30,7 @@ pub mod map;
 pub mod session;
 pub mod player;
 pub mod user;
+pub mod input;
 pub mod graphics;
 
 // support for client-side features
@@ -50,18 +51,21 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         crate::apporg::plugin,
         crate::assets::plugin,
+        crate::settings::plugin,
+        crate::ui::plugin,
+        crate::value::plugin,
+    ));
+    app.add_plugins((
         crate::camera::plugin,
         crate::driver::plugin,
         crate::graphics::plugin,
         crate::haptic::plugin,
+        crate::input::plugin,
         crate::locale::plugin,
         crate::map::plugin,
         crate::player::plugin,
         crate::session::plugin,
-        crate::settings::plugin,
-        crate::ui::plugin,
         crate::user::plugin,
-        crate::value::plugin,
         crate::view::plugin,
     ));
 }
