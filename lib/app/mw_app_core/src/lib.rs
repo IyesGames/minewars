@@ -11,7 +11,7 @@ pub mod prelude {
     pub use mw_common::prelude::*;
     pub use modular_bitfield::prelude::*;
     pub use crate::apporg::*;
-    pub use crate::settings::prelude::*;
+    pub use crate::settings_manager::prelude::*;
     pub use crate::PROPRIETARY;
 }
 
@@ -20,7 +20,7 @@ pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 // foundational
 pub mod apporg;
 pub mod assets;
-pub mod settings;
+pub mod settings_manager;
 pub mod ui;
 pub mod value;
 
@@ -38,6 +38,7 @@ pub mod camera;
 pub mod haptic;
 pub mod locale;
 pub mod view;
+pub mod settings;
 
 use crate::prelude::*;
 
@@ -51,7 +52,7 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         crate::apporg::plugin,
         crate::assets::plugin,
-        crate::settings::plugin,
+        crate::settings_manager::plugin,
         crate::ui::plugin,
         crate::value::plugin,
     ));
@@ -67,5 +68,6 @@ pub fn plugin(app: &mut App) {
         crate::session::plugin,
         crate::user::plugin,
         crate::view::plugin,
+        crate::settings::plugin,
     ));
 }

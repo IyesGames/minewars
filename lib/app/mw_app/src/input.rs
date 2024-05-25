@@ -396,8 +396,8 @@ fn keyboard_analogs(
 pub struct MouseToDisambiguate(HashMap<MouseButton, Timer>);
 
 fn rc_mouse_input(
-    mut evr_button: EventReader<MouseButtonInput>,
-    mut evr_motion: EventReader<MouseMotion>,
+    evr_button: EventReader<MouseButtonInput>,
+    evr_motion: EventReader<MouseMotion>,
     q_input: Query<(
         &MouseToDisambiguate,
     ), (

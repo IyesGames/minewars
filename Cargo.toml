@@ -59,7 +59,8 @@ members = [
     "lib/app/mw_platform_macos", # MacOS-specific features
     "lib/app/mw_platform_linux", # Linux-specific features
     # gameplay for different game modes
-    "lib/common/mw_game_minesweeper", # FOSS minesweeper mode
+    "lib/common/mw_game_minesweeper", # FOSS minesweeper mode (gameplay impl)
+    "lib/app/mw_app_game_minesweeper", # FOSS minesweeper mode (app integration)
 ]
 
 # dev: no LTO, some optimization,
@@ -130,6 +131,9 @@ path = "lib/app/mw_app_core"
 
 [dependencies.mw_app]
 path = "lib/app/mw_app"
+
+[dependencies.mw_app_game_minesweeper]
+path = "lib/app/mw_app_game_minesweeper"
 
 [dependencies.mw_app_gfx2d]
 path = "lib/app/mw_app_gfx2d"

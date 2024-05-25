@@ -55,6 +55,9 @@ path = "../lib/app/mw_app_core"
 [dependencies.mw_app]
 path = "../lib/app/mw_app"
 
+[dependencies.mw_app_game_minesweeper]
+path = "../lib/app/mw_app_game_minesweeper"
+
 [dependencies.mw_app_gfx2d]
 path = "../lib/app/mw_app_gfx2d"
 optional = true

@@ -1,0 +1,22 @@
+[package]
+name = "mw_app_game_minesweeper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dependencies.mw_common]
+path = "../../common/mw_common"
+features = [ "bevy" ]
+
+[dependencies.mw_game_minesweeper]
+path = "../../common/mw_game_minesweeper"
+features = [ "bevy" ]
+
+[dependencies.mw_app_core]
+path = "../mw_app_core"
+
+[dependencies.bevy]
+version = "0.13.2"
+default-features = false
+# Bevy should inherit its features via `mw_app_core`

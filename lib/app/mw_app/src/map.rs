@@ -13,18 +13,13 @@ pub fn plugin(app: &mut App) {
         send_tileupdate_all_event,
     );
     app.add_systems(Update, (
-        gen_simple_map
-            .track_progress()
-            .run_if(any_filter::<(With<SimpleMapGenerator>, With<DriverGovernor>)>),
-        (
-            setup_tile_entities
-                .track_progress(),
-            setup_cit_entities
-                .track_progress(),
-        )
-            .in_set(NeedsMapGovernorSet),
+        setup_tile_entities
+            .track_progress(),
+        setup_cit_entities
+            .track_progress(),
     )
-        .in_set(InStateSet(AppState::GameLoading)),
+        .in_set(InStateSet(AppState::GameLoading))
+        .in_set(NeedsMapGovernorSet),
     );
     app.add_systems(Update, (
         (
@@ -37,6 +32,7 @@ pub fn plugin(app: &mut App) {
                 .after(update_tiles_from_gameevents_gents),
         ),
     )
+        .in_set(InStateSet(AppState::InGame))
         .in_set(SetStage::WantChanged(GameOutEventSS))
         .in_set(SetStage::Provide(TileUpdateSS))
         .in_set(NeedsGameplaySessionSet)
@@ -50,60 +46,9 @@ pub fn plugin(app: &mut App) {
             .in_set(NeedsMapGovernorSet),
         alert_timer
             .run_if(any_with_component::<TileAlert>),
-    ));
-}
-
-/// Add this onto the Driver Governor to generate a simple
-/// flat map for a local/offline session.
-///
-/// During the GameLoading state, this will
-/// enable a system that sets up the Map Governor.
-#[derive(Component)]
-pub struct SimpleMapGenerator {
-    pub topology: Topology,
-    pub size: u8,
-}
-
-fn gen_simple_map(
-    mut commands: Commands,
-    q_map: Query<(), With<MapGovernor>>,
-    q_driver: Query<&SimpleMapGenerator, With<DriverGovernor>>,
-) -> Progress {
-    if !q_map.is_empty() {
-        return true.into();
-    }
-    let gen = q_driver.single();
-    let mut empty_tile = MapTileDataOrig::default();
-    empty_tile.set_kind(TileKind::Regular);
-    empty_tile.set_item(ItemKind::Safe);
-    empty_tile.set_region(0);
-    let map_src = MapDataPos::new(gen.size, empty_tile);
-
-    commands.spawn((
-        MapGovernorBundle {
-            cleanup: GameFullCleanup,
-            marker: MapGovernor,
-            desc: MapDescriptor {
-                size: gen.size,
-                topology: gen.topology,
-            },
-            map_src: MapDataOrig {
-                map: map_src,
-                cits: vec![],
-            },
-            grid_cursor: default(),
-            grid_cursor_tile_entity: default(),
-        },
-    ));
-
-    // for the sake of the progress bar not appearing like it is
-    // going backwards (there will be new systems on the next frame
-    // after we have spawned the Map Governor),
-    // return a fake large total amount
-    Progress {
-        done: 1,
-        total: 8,
-    }
+    )
+        .in_set(InStateSet(AppState::InGame))
+    );
 }
 
 fn setup_tile_entities(

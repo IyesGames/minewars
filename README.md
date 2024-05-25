@@ -187,6 +187,7 @@ Given that this is a multiplayer game, and there are many parts to it
    - `mw_platform_linux`: Linux-specific features
    - `mw_platform_android`: Android-specific features
    - `mw_platform_ios`: iOS-specific features
+   - `mw_app_game_minesweeper`: App integration for `mw_game_minesweeper`
  - `lib/common`: library crates used by both client and server:
    - `mw_common`: common code for everything
    - `mw_game_minesweeper`: minimal open-source Minesweeper game mode

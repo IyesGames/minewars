@@ -6,18 +6,13 @@ use crate::{input::{ActionNameMap, AnalogNameMap, KeyActionMap, KeyAnalogMap, Mo
 
 pub fn plugin(app: &mut App) {
     app.register_type::<Topology>();
-    app.register_type::<Vec<Lch>>();
     app.register_type::<HashMap<KeyCode, InputActionName>>();
-    app.init_setting::<MapGenSettings>(SETTINGS_APP.as_ref());
     app.init_setting::<WindowSettings>(SETTINGS_LOCAL.as_ref());
-    app.init_setting::<UserProfileSettings>(SETTINGS_USER.as_ref());
-    app.init_setting::<PlidColorSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<GameViewSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<KeyboardMapSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<MouseMapSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<KeyboardInputSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<MouseInputSettings>(SETTINGS_USER.as_ref());
-    app.init_setting::<GraphicsStyleSettings>(SETTINGS_LOCAL.as_ref());
 }
 
 pub fn register_engine_settings(app: &mut App) {
@@ -209,99 +204,6 @@ impl Default for GameViewSettings {
 }
 
 impl Setting for GameViewSettings {}
-
-#[derive(Component, Reflect, Debug, Clone)]
-#[reflect(Setting)]
-pub struct GraphicsStyleSettings {
-    pub game_enable_both_styles: bool,
-    pub game_preferred_style: GraphicsStyle,
-    pub editor_enable_both_styles: bool,
-    pub editor_preferred_style: GraphicsStyle,
-}
-
-impl Default for GraphicsStyleSettings {
-    fn default() -> Self {
-        GraphicsStyleSettings {
-            game_enable_both_styles: true,
-            game_preferred_style: GraphicsStyle::Gfx2d,
-            editor_enable_both_styles: true,
-            editor_preferred_style: GraphicsStyle::Gfx2d,
-        }
-    }
-}
-
-impl Setting for GraphicsStyleSettings {}
-
-#[derive(Reflect, Debug, Clone)]
-#[reflect(Setting)]
-pub struct PlidColorSettings {
-    pub colors: Vec<Lch>,
-    pub fog: Lch,
-}
-
-impl Default for PlidColorSettings {
-    fn default() -> Self {
-        PlidColorSettings {
-            colors: vec![
-                Lch(0.75, 0.0, 0.0),
-                Lch(0.5, 0.5, 0.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 11.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 6.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 3.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 13.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 8.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 2.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 12.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 4.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 14.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 7.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 1.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 9.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 5.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 10.0/15.0 * 360.0),
-            ],
-            fog: Lch(0.25, 0.0, 0.0),
-        }
-    }
-}
-
-impl Setting for PlidColorSettings {}
-
-#[derive(Reflect, Debug, Clone)]
-#[reflect(Setting)]
-pub struct MapGenSettings {
-    pub topology: Topology,
-    pub size: u8,
-}
-
-impl Default for MapGenSettings {
-    fn default() -> Self {
-        MapGenSettings { topology: Topology::Hex, size: 24 }
-    }
-}
-
-impl Setting for MapGenSettings {}
-
-#[derive(Reflect, Debug, Clone)]
-#[reflect(Setting)]
-pub struct UserProfileSettings(pub UserProfile);
-
-impl Setting for UserProfileSettings {
-    fn apply(&self, world: &mut World) {
-        use mw_app_core::user::*;
-        let mut q = world.query_filtered::<&mut MyUserProfile, With<UserGovernor>>();
-        let mut profile = q.single_mut(world);
-        profile.0 = self.0.clone();
-    }
-}
-
-impl Default for UserProfileSettings {
-    fn default() -> Self {
-        UserProfileSettings(UserProfile {
-            display_name: "New Player".into(),
-        })
-    }
-}
 
 #[derive(Reflect, Clone, PartialEq)]
 #[reflect(Setting)]

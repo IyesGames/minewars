@@ -7,6 +7,7 @@ fn main() {
     let mut app = mw_app::setup_bevy_app();
     app.add_plugins(mw_app_core::plugin);
     app.add_plugins(mw_app::plugin);
+    app.add_plugins(mw_app_game_minesweeper::plugin);
     #[cfg(feature = "gfx2d")]
     app.add_plugins(mw_app_gfx2d::plugin);
     #[cfg(feature = "gfx3d")]

@@ -3,20 +3,12 @@
 /// Convenience, to be imported in every file in the crate
 /// (and in proprietary)
 pub mod prelude {
-    pub use bevy::utils::{Duration, Instant};
-    pub use bevy_asset_loader::prelude::*;
-    pub use iyes_bevy_extras::prelude::*;
-    pub use iyes_progress::prelude::*;
-    pub use iyes_cli::prelude::*;
-    pub use iyes_ui::prelude::*;
-    pub use mw_common::prelude::*;
     pub use mw_app_core::prelude::*;
-    pub use crate::PROPRIETARY;
+    pub use iyes_ui::prelude::*;
+    pub use bevy_asset_loader::prelude::*;
 }
 
-pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
-
-use mw_app_core::settings::SettingsStore;
+use mw_app_core::settings_manager::SettingsStore;
 use settings::EngineSetupSettings;
 
 use crate::prelude::*;
@@ -63,7 +55,7 @@ pub fn plugin(app: &mut App) {
 pub fn setup_bevy_app() -> App {
     let mut app = App::new();
     crate::settings::register_engine_settings(&mut app);
-    mw_app_core::settings::early_load_settings(
+    mw_app_core::settings_manager::early_load_settings(
         &mut app, &[SETTINGS_ENGINE]
     );
     app.insert_resource(ClearColor(Color::BLACK));

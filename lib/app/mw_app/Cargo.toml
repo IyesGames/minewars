@@ -18,10 +18,6 @@ features = [ "bevy", "net" ]
 [dependencies.mw_dataformat]
 path = "../../common/mw_dataformat"
 
-[dependencies.mw_game_minesweeper]
-path = "../../common/mw_game_minesweeper"
-features = [ "bevy" ]
-
 [dependencies.mw_proto_host]
 path = "../../common/mw_proto_host"
 
