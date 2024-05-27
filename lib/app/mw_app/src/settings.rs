@@ -6,7 +6,10 @@ use crate::{input::{ActionNameMap, AnalogNameMap, KeyActionMap, KeyAnalogMap, Mo
 
 pub fn plugin(app: &mut App) {
     app.register_type::<Topology>();
-    app.register_type::<HashMap<KeyCode, InputActionName>>();
+    app.register_type::<HashMap<String, KeyCode>>();
+    app.register_type::<HashMap<String, KeyCode>>();
+    app.register_type::<HashMap<String, MouseButton>>();
+    app.register_type::<HashMap<String, MouseButton>>();
     app.init_setting::<WindowSettings>(SETTINGS_LOCAL.as_ref());
     app.init_setting::<GameViewSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<KeyboardMapSettings>(SETTINGS_USER.as_ref());
@@ -52,16 +55,28 @@ impl Setting for MouseInputSettings {}
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Setting)]
 pub struct KeyboardMapSettings {
-    pub actions: HashMap<InputActionName, KeyCode>,
-    pub mouse_motion: HashMap<InputAnalogName, KeyCode>,
-    pub mouse_scroll: HashMap<InputAnalogName, KeyCode>,
+    pub actions: HashMap<String, KeyCode>,
+    pub mouse_motion: HashMap<String, KeyCode>,
+    pub mouse_scroll: HashMap<String, KeyCode>,
 }
 
 impl Default for KeyboardMapSettings {
     fn default() -> Self {
-        let mut actions = Default::default();
-        let mut mouse_motion = Default::default();
-        let mut mouse_scroll = Default::default();
+        let mut actions = HashMap::default();
+        let mut mouse_motion = HashMap::default();
+        let mut mouse_scroll = HashMap::default();
+        mouse_motion.insert(
+            mw_app_core::camera::input::ANALOG_PAN.into(),
+            KeyCode::ControlLeft
+        );
+        mouse_motion.insert(
+            mw_app_core::camera::input::ANALOG_ROTATE.into(),
+            KeyCode::AltLeft
+        );
+        mouse_motion.insert(
+            mw_app_core::camera::input::ANALOG_ZOOM.into(),
+            KeyCode::ShiftLeft
+        );
         Self {
             actions,
             mouse_motion,
@@ -97,6 +112,8 @@ impl Setting for KeyboardMapSettings {
                 }
                 key_action_map.map_key.insert(*key, *e);
                 key_action_map.map_entity.insert(*e, *key);
+            } else {
+                warn!("No Action Input with name {:?} found!", name);
             }
         }
         for (name, key) in self.mouse_motion.iter() {
@@ -110,6 +127,8 @@ impl Setting for KeyboardMapSettings {
                 }
                 key_analog_map.motion_key.insert(*key, *e);
                 key_analog_map.motion_entity.insert(*e, *key);
+            } else {
+                warn!("No Analog Input with name {:?} found!", name);
             }
         }
         for (name, key) in self.mouse_scroll.iter() {
@@ -123,6 +142,8 @@ impl Setting for KeyboardMapSettings {
                 }
                 key_analog_map.scroll_key.insert(*key, *e);
                 key_analog_map.scroll_entity.insert(*e, *key);
+            } else {
+                warn!("No Analog Input with name {:?} found!", name);
             }
         }
     }
@@ -131,8 +152,8 @@ impl Setting for KeyboardMapSettings {
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Setting)]
 pub struct MouseMapSettings {
-    pub actions: HashMap<InputActionName, MouseButton>,
-    pub mouse_motion: HashMap<InputAnalogName, MouseButton>,
+    pub actions: HashMap<String, MouseButton>,
+    pub mouse_motion: HashMap<String, MouseButton>,
 }
 
 impl Default for MouseMapSettings {
@@ -171,6 +192,8 @@ impl Setting for MouseMapSettings {
                 }
                 mouse_map.action_btn.insert(*btn, *e);
                 mouse_map.action_entity.insert(*e, *btn);
+            } else {
+                warn!("No Action Input with name {:?} found!", name);
             }
         }
         for (name, btn) in self.mouse_motion.iter() {
@@ -184,6 +207,8 @@ impl Setting for MouseMapSettings {
                 }
                 mouse_map.motion_btn.insert(*btn, *e);
                 mouse_map.motion_entity.insert(*e, *btn);
+            } else {
+                warn!("No Analog Input with name {:?} found!", name);
             }
         }
     }

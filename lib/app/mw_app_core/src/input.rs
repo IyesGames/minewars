@@ -1,17 +1,25 @@
-use bevy::ecs::system::SystemId;
+use bevy::ecs::{schedule::ScheduleLabel, system::SystemId};
 
-use crate::{locale::L10nKey, prelude::*};
+use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<InputActionName>();
 }
+
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct InputActionOnPress(pub InputActionName);
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct InputActionOnRelease(pub InputActionName);
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct InputAnalogOnStart(pub InputAnalogName);
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct InputAnalogOnStop(pub InputAnalogName);
 
 /// Stage Sets related to input handling
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum GameInputSS {
-    Detect,
-    Manage,
-    Handle,
+    Setup, // in Startup
+    Detect, // in Update
+    Handle, // in Update
 }
 
 /// System Sets for each class of input device.
@@ -107,8 +115,6 @@ pub struct ToolCallback {
 pub struct InputActionBundle {
     pub marker: InputAction,
     pub name: InputActionName,
-    pub callback: InputActionCallback,
-    pub ui: InputActionUi,
 }
 
 /// Marker for input actions
@@ -126,38 +132,19 @@ pub struct InputActionActive;
 /// Internal ID for the input action.
 ///
 /// Used to enable use cases like storing settings.
-#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct InputActionName(pub &'static str);
-
-/// How to represent this action in UIs
-#[derive(Component)]
-pub struct InputActionUi {
-    pub l10n_name: L10nKey,
-    pub l10n_tooltip: L10nKey,
-    pub icon_bg: Option<Handle<Image>>,
-    pub icon_fg: Option<Handle<Image>>,
-}
-
-/// Systems to run for a given action
-#[derive(Component)]
-pub struct InputActionCallback {
-    /// When the key/button that triggers the action is just pressed
-    pub on_press: Option<SystemId>,
-    /// When the key/button that triggers the action is just released
-    pub on_release: Option<SystemId>,
-}
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct InputActionName(pub String);
 
 /// Bundle for entities representing Analog Controls
 ///
 /// When an analog action is being performed, an
-/// `InputAnalogActive` component will be inserted,
+/// `AnalogSource*` component will be inserted,
 /// indicating the source of the analog values
 /// (which input device is performing the action).
 #[derive(Bundle)]
 pub struct InputAnalogBundle {
     pub marker: InputAnalog,
     pub name: InputAnalogName,
-    pub callback: InputAnalogCallback,
 }
 
 /// Marker for Analog Inputs
@@ -171,40 +158,69 @@ pub struct InputAnalogEnabled;
 /// Internal ID for the analog input.
 ///
 /// Used to enable use cases like storing settings.
-#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct InputAnalogName(pub &'static str);
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct InputAnalogName(pub String);
 
-/// Is the analog action currently being performed?
-/// What device is controlling/performing it?
+/// Action currently performed by mouse motion or pointer/cursor position.
+/// Which is more appropriate is an implementation detail.
 #[derive(Component)]
-pub struct InputAnalogActive {
-    pub source: AnalogSource,
+pub struct AnalogSourceMouseMotion;
+
+/// Action currently performed by mouse scrolling / wheel
+#[derive(Component)]
+pub struct AnalogSourceMouseScroll;
+
+/// Action currently performed by gamepad joystick
+#[derive(Component)]
+pub struct AnalogSourceGamepadStick {
+    pub gamepad: Gamepad,
+    pub left: bool,
+    pub right: bool,
 }
 
-/// Systems to run for a given analog
+/// Action currently performed by gamepad Z axis / trigger
 #[derive(Component)]
-pub struct InputAnalogCallback {
-    /// When the analog is initiated
-    pub on_start: Option<SystemId>,
-    /// When the analog is completed
-    pub on_stop: Option<SystemId>,
+pub struct AnalogSourceGamepadZ {
+    pub gamepad: Gamepad,
+    pub left: bool,
+    pub right: bool,
 }
 
-/// Where does analog data come from?
-///
-/// Some of these are 2D (X/Y), some 1D. It is up the
-/// implementations of different input mechanics to
-/// decide how to deal with that.
-#[derive(Reflect, Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub enum AnalogSource {
-    /// Either relative mouse motion, or pointer/cursor position,
-    /// whichever is more appropriate is an implementation detail.
-    MouseMotion,
-    /// Scrolling / mouse wheel
-    MouseScroll,
-    GamepadLeftStick(Gamepad),
-    GamepadRightStick(Gamepad),
-    GamepadAnyStick(Gamepad),
-    GamepadLeftZ(Gamepad),
-    GamepadRightZ(Gamepad),
+/// Useful for cleanup, to remove any possible analog source
+#[derive(Bundle)]
+pub struct AnalogSourcesBundle {
+    motion: AnalogSourceMouseMotion,
+    scroll: AnalogSourceMouseScroll,
+    stick: AnalogSourceGamepadStick,
+    z: AnalogSourceGamepadZ,
+}
+
+impl<'a> From<&'a str> for InputActionName {
+    fn from(value: &'a str) -> Self {
+        Self(value.to_owned())
+    }
+}
+
+impl<'a> From<&'a str> for InputAnalogName {
+    fn from(value: &'a str) -> Self {
+        Self(value.to_owned())
+    }
+}
+
+impl<'a> From<&'a str> for InputActionBundle {
+    fn from(value: &'a str) -> Self {
+        Self {
+            marker: InputAction,
+            name: value.into(),
+        }
+    }
+}
+
+impl<'a> From<&'a str> for InputAnalogBundle {
+    fn from(value: &'a str) -> Self {
+        Self {
+            marker: InputAnalog,
+            name: value.into(),
+        }
+    }
 }

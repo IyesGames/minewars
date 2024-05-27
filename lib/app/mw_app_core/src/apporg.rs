@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::prelude::*;
+use crate::{input::*, prelude::*};
 
 pub fn plugin(app: &mut App) {
     app.init_state::<AppState>();
@@ -25,13 +25,18 @@ pub fn plugin(app: &mut App) {
         despawn_all_recursive::<With<GameLoadingCleanup>>
     );
     app.add_systems(
-        OnTransition { from: AppState::InGame, to: AppState::GameLoading },
-        despawn_all_recursive::<With<GamePartialCleanup>>
+        OnExit(AppState::InGame),
+        (
+            despawn_all_recursive::<With<GamePartialCleanup>>,
+            remove_from_all::<InputActionEnabled, With<InputAction>>,
+            remove_from_all::<InputActionActive, With<InputAction>>,
+            remove_from_all::<InputAnalogEnabled, With<InputAnalog>>,
+            remove_from_all::<AnalogSourcesBundle, With<InputAnalog>>,
+        )
     );
     app.add_systems(
         OnTransition { from: AppState::InGame, to: AppState::Menu },
         (
-            despawn_all_recursive::<With<GamePartialCleanup>>,
             despawn_all_recursive::<With<GameFullCleanup>>,
         )
     );

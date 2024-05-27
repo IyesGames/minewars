@@ -1,26 +1,18 @@
 use bevy::input::{gamepad::GamepadEvent, keyboard::KeyboardInput, mouse::{MouseButtonInput, MouseMotion}, ButtonState};
 use mw_app_core::input::*;
 
-use crate::{prelude::*, settings::{KeyboardMapSettings, MouseInputSettings, MouseMapSettings}};
+use crate::{prelude::*, settings::MouseInputSettings};
 
 pub fn plugin(app: &mut App) {
     app.configure_stage_set(
         Update, GameInputSS::Detect,
         any_filter::<(With<InputGovernor>, Changed<DetectedInputDevices>)>
     );
-    app.configure_stage_set(
-        Update, GameInputSS::Manage,
-        any_filter::<(With<InputGovernor>, Or<(
-            Changed<ActionNameMap>,
-            Changed<AnalogNameMap>,
-        )>)>
-    );
-    app.configure_stage_set(
+    app.configure_stage_set_no_rc(
         Update, GameInputSS::Handle,
-        any_filter::<Or<(
-            With<InputActionActive>,
-            With<InputAnalogActive>,
-        )>>
+    );
+    app.configure_stage_set_no_rc(
+        Startup, GameInputSS::Setup,
     );
     app.configure_sets(Update, (
         GameInputSet
@@ -40,14 +32,10 @@ pub fn plugin(app: &mut App) {
             .in_set(SetStage::Want(GameInputSS::Detect))
             .run_if(rc_input_device(InputDeviceSet::Gamepad)),
     ));
-    app.add_systems(Startup, setup_input);
     app.add_systems(Update, (
         detect_input_devices
             .run_if(rc_detect_input_devices)
             .in_set(SetStage::Provide(GameInputSS::Detect)),
-        manage_inputs
-            .in_set(SetStage::Prepare(SettingsSyncSS))
-            .in_set(SetStage::Provide(GameInputSS::Manage)),
         (
             (
                 keyboard_actions,
@@ -62,10 +50,19 @@ pub fn plugin(app: &mut App) {
                 .run_if(rc_mouse_input),
         )
             .in_set(GameInputSet)
-            .in_set(SetStage::Want(GameInputSS::Detect))
-            .in_set(SetStage::Want(GameInputSS::Manage))
             .in_set(SetStage::Provide(GameInputSS::Handle)),
     ));
+    app.add_systems(Startup, (
+        setup_input
+            .in_set(SetStage::Prepare(GameInputSS::Setup)),
+        manage_inputs
+            .in_set(SetStage::Want(GameInputSS::Setup))
+            .in_set(SetStage::Prepare(SettingsSyncSS)),
+    ));
+}
+
+fn setup_input(mut commands: Commands) {
+    commands.spawn(InputGovernorBundle::default());
 }
 
 #[derive(Bundle, Default)]
@@ -81,14 +78,14 @@ pub struct InputGovernorBundle {
 
 #[derive(Component, Default)]
 pub struct ActionNameMap {
-    pub map_name: HashMap<InputActionName, Entity>,
-    pub map_entity: HashMap<Entity, InputActionName>,
+    pub map_name: HashMap<String, Entity>,
+    pub map_entity: HashMap<Entity, String>,
 }
 
 #[derive(Component, Default)]
 pub struct AnalogNameMap {
-    pub map_name: HashMap<InputAnalogName, Entity>,
-    pub map_entity: HashMap<Entity, InputAnalogName>,
+    pub map_name: HashMap<String, Entity>,
+    pub map_entity: HashMap<Entity, String>,
 }
 
 #[derive(Component, Default)]
@@ -111,12 +108,6 @@ pub struct MouseMap {
     pub action_entity: HashMap<Entity, MouseButton>,
     pub motion_btn: HashMap<MouseButton, Entity>,
     pub motion_entity: HashMap<Entity, MouseButton>,
-}
-
-fn setup_input(
-    mut commands: Commands,
-) {
-    commands.spawn(InputGovernorBundle::default());
 }
 
 fn rc_accepting_game_input(
@@ -189,117 +180,38 @@ fn detect_input_devices(
 }
 
 fn manage_inputs(
-    settings: Settings,
     mut q_input: Query<(
         &mut ActionNameMap,
         &mut AnalogNameMap,
-        &mut KeyActionMap,
-        &mut KeyAnalogMap,
-        &mut MouseMap,
     ), With<InputGovernor>>,
-    q_action: Query<(Entity, &InputActionName), Added<InputActionEnabled>>,
-    q_analog: Query<(Entity, &InputAnalogName), Added<InputAnalogEnabled>>,
-    mut removed_action: RemovedComponents<InputActionEnabled>,
-    mut removed_analog: RemovedComponents<InputAnalogEnabled>,
+    q_action: Query<(Entity, &InputActionName), Added<InputAction>>,
+    q_analog: Query<(Entity, &InputAnalogName), Added<InputAnalog>>,
+    mut removed_action: RemovedComponents<InputAction>,
+    mut removed_analog: RemovedComponents<InputAnalog>,
 ) {
-    let s_keymap = settings.get::<KeyboardMapSettings>().unwrap();
-    let s_mousemap = settings.get::<MouseMapSettings>().unwrap();
     let (
         mut action_name_map,
         mut analog_name_map,
-        mut key_action_map,
-        mut key_analog_map,
-        mut mouse_map,
     ) = q_input.single_mut();
 
     for e in removed_action.read() {
         if let Some(name) = action_name_map.map_entity.remove(&e) {
             action_name_map.map_name.remove(&name);
         }
-        if let Some(key) = key_action_map.map_entity.remove(&e) {
-            key_action_map.map_key.remove(&key);
-        }
-        if let Some(btn) = mouse_map.action_entity.remove(&e) {
-            mouse_map.action_btn.remove(&btn);
-        }
     }
     for (e, name) in &q_action {
-        action_name_map.map_name.insert(*name, e);
-        action_name_map.map_entity.insert(e, *name);
-        if let Some(key) = s_keymap.actions.get(name) {
-            let key_action_map = &mut *key_action_map;
-            if let Some(e) = key_action_map.map_key.get(key) {
-                key_action_map.map_entity.remove(e);
-            }
-            if let Some(key) = key_action_map.map_entity.get(&e) {
-                key_action_map.map_key.remove(key);
-            }
-            key_action_map.map_key.insert(*key, e);
-            key_action_map.map_entity.insert(e, *key);
-        }
-        if let Some(btn) = s_mousemap.actions.get(name) {
-            let mouse_map = &mut *mouse_map;
-            if let Some(e) = mouse_map.action_btn.get(btn) {
-                mouse_map.action_entity.remove(e);
-            }
-            if let Some(key) = mouse_map.action_entity.get(&e) {
-                mouse_map.action_btn.remove(key);
-            }
-            mouse_map.action_btn.insert(*btn, e);
-            mouse_map.action_entity.insert(e, *btn);
-        }
+        action_name_map.map_name.insert(name.0.clone(), e);
+        action_name_map.map_entity.insert(e, name.0.clone());
     }
 
     for e in removed_analog.read() {
         if let Some(name) = analog_name_map.map_entity.remove(&e) {
             analog_name_map.map_name.remove(&name);
         }
-        if let Some(key) = key_analog_map.motion_entity.remove(&e) {
-            key_analog_map.motion_key.remove(&key);
-        }
-        if let Some(key) = key_analog_map.scroll_entity.remove(&e) {
-            key_analog_map.scroll_key.remove(&key);
-        }
-        if let Some(btn) = mouse_map.motion_entity.remove(&e) {
-            mouse_map.motion_btn.remove(&btn);
-        }
     }
     for (e, name) in &q_analog {
-        analog_name_map.map_name.insert(*name, e);
-        analog_name_map.map_entity.insert(e, *name);
-        if let Some(key) = s_keymap.mouse_motion.get(name) {
-            let key_analog_map = &mut *key_analog_map;
-            if let Some(e) = key_analog_map.motion_key.get(key) {
-                key_analog_map.motion_entity.remove(e);
-            }
-            if let Some(key) = key_analog_map.motion_entity.get(&e) {
-                key_analog_map.motion_key.remove(key);
-            }
-            key_analog_map.motion_key.insert(*key, e);
-            key_analog_map.motion_entity.insert(e, *key);
-        }
-        if let Some(key) = s_keymap.mouse_scroll.get(name) {
-            let key_analog_map = &mut *key_analog_map;
-            if let Some(e) = key_analog_map.scroll_key.get(key) {
-                key_analog_map.scroll_entity.remove(e);
-            }
-            if let Some(key) = key_analog_map.scroll_entity.get(&e) {
-                key_analog_map.scroll_key.remove(key);
-            }
-            key_analog_map.scroll_key.insert(*key, e);
-            key_analog_map.scroll_entity.insert(e, *key);
-        }
-        if let Some(btn) = s_mousemap.mouse_motion.get(name) {
-            let mouse_map = &mut *mouse_map;
-            if let Some(e) = mouse_map.motion_btn.get(btn) {
-                mouse_map.motion_entity.remove(e);
-            }
-            if let Some(key) = mouse_map.motion_entity.get(&e) {
-                mouse_map.motion_btn.remove(key);
-            }
-            mouse_map.motion_btn.insert(*btn, e);
-            mouse_map.motion_entity.insert(e, *btn);
-        }
+        analog_name_map.map_name.insert(name.0.clone(), e);
+        analog_name_map.map_entity.insert(e, name.0.clone());
     }
 }
 
@@ -312,7 +224,7 @@ fn keyboard_actions(
         With<InputGovernor>,
     )>,
     q_action: Query<(
-        &InputActionCallback,
+        &InputActionName,
     ), (
         With<InputAction>,
         With<InputActionEnabled>,
@@ -323,23 +235,24 @@ fn keyboard_actions(
         let Some(&e) = key_action_map.map_key.get(&ev.key_code) else {
             continue;
         };
-        let Ok((callback,)) = q_action.get(e) else {
+        let Ok((name,)) = q_action.get(e) else {
             continue;
         };
+        let name = name.clone();
         match ev.state {
             ButtonState::Pressed => {
                 commands.entity(e)
                     .insert(InputActionActive);
-                if let Some(system) = callback.on_press {
-                    commands.run_system(system);
-                }
+                commands.add(move |world: &mut World| {
+                    world.try_run_schedule(InputActionOnPress(name)).ok();
+                });
             }
             ButtonState::Released => {
                 commands.entity(e)
                     .remove::<InputActionActive>();
-                if let Some(system) = callback.on_release {
-                    commands.run_system(system);
-                }
+                commands.add(move |world: &mut World| {
+                    world.try_run_schedule(InputActionOnRelease(name)).ok();
+                });
             }
         }
     }
@@ -354,7 +267,7 @@ fn keyboard_analogs(
         With<InputGovernor>,
     )>,
     q_analog: Query<(
-        &InputAnalogCallback,
+        &InputAnalogName,
     ), (
         With<InputAnalog>,
         With<InputAnalogEnabled>,
@@ -362,30 +275,43 @@ fn keyboard_analogs(
 ) {
     let (key_analog_map,) = q_input.single();
     for ev in evr.read() {
-        let Some((&e, source)) = key_analog_map.motion_key.get(&ev.key_code)
-            .map(|e| (e, AnalogSource::MouseMotion))
-            .or_else(|| key_analog_map.scroll_key.get(&ev.key_code)
-                .map(|e| (e, AnalogSource::MouseScroll)))
-        else {
-            continue;
-        };
-        let Ok((callback,)) = q_analog.get(e) else {
-            continue;
-        };
-        match ev.state {
-            ButtonState::Pressed => {
-                commands.entity(e).insert(InputAnalogActive {
-                    source,
-                });
-                if let Some(system) = callback.on_start {
-                    commands.run_system(system);
+        if let Some(&e) = key_analog_map.motion_key.get(&ev.key_code) {
+            if let Ok((name,)) = q_analog.get(e) {
+                let name = name.clone();
+                match ev.state {
+                    ButtonState::Pressed => {
+                        commands.entity(e).insert(AnalogSourceMouseMotion);
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputAnalogOnStart(name)).ok();
+                        });
+                    }
+                    ButtonState::Released => {
+                        commands.entity(e)
+                            .remove::<AnalogSourceMouseMotion>();
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputAnalogOnStop(name)).ok();
+                        });
+                    }
                 }
             }
-            ButtonState::Released => {
-                commands.entity(e)
-                    .remove::<InputAnalogActive>();
-                if let Some(system) = callback.on_stop {
-                    commands.run_system(system);
+        }
+        if let Some(&e) = key_analog_map.scroll_key.get(&ev.key_code) {
+            if let Ok((name,)) = q_analog.get(e) {
+                let name = name.clone();
+                match ev.state {
+                    ButtonState::Pressed => {
+                        commands.entity(e).insert(AnalogSourceMouseScroll);
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputAnalogOnStart(name)).ok();
+                        });
+                    }
+                    ButtonState::Released => {
+                        commands.entity(e)
+                            .remove::<AnalogSourceMouseScroll>();
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputAnalogOnStop(name)).ok();
+                        });
+                    }
                 }
             }
         }
@@ -424,13 +350,13 @@ fn mouse_input(
         With<InputGovernor>,
     )>,
     q_action: Query<(
-        &InputActionCallback,
+        &InputActionName,
     ), (
         With<InputAction>,
         With<InputActionEnabled>,
     )>,
     q_analog: Query<(
-        &InputAnalogCallback,
+        &InputAnalogName,
     ), (
         With<InputAnalog>,
         With<InputAnalogEnabled>,
@@ -455,59 +381,58 @@ fn mouse_input(
                         // if there is a pending disambiguation,
                         // immediately process it as action
                         if to_disambiguate.0.remove(&ev.button).is_some() {
-                            let Ok((callback,)) = q_action.get(e_action) else {
+                            let Ok((name,)) = q_action.get(e_action) else {
                                 continue;
                             };
-                            if let Some(system) = callback.on_press {
-                                commands.run_system(system);
-                            }
-                            if let Some(system) = callback.on_release {
-                                commands.run_system(system);
-                            }
+                            let name = name.clone();
+                            commands.add(move |world: &mut World| {
+                                world.try_run_schedule(InputActionOnPress(name.clone())).ok();
+                                world.try_run_schedule(InputActionOnRelease(name)).ok();
+                            });
                         }
                     }
                 }
             },
             (Some(&e_action), None) => {
-                let Ok((callback,)) = q_action.get(e_action) else {
+                let Ok((name,)) = q_action.get(e_action) else {
                     continue;
                 };
+                let name = name.clone();
                 match ev.state {
                     ButtonState::Pressed => {
                         commands.entity(e_action)
                             .insert(InputActionActive);
-                        if let Some(system) = callback.on_press {
-                            commands.run_system(system);
-                        }
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputActionOnPress(name)).ok();
+                        });
                     }
                     ButtonState::Released => {
                         commands.entity(e_action)
                             .remove::<InputActionActive>();
-                        if let Some(system) = callback.on_release {
-                            commands.run_system(system);
-                        }
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputActionOnRelease(name)).ok();
+                        });
                     }
                 }
             },
             (None, Some(&e_motion)) => {
-                let Ok((callback,)) = q_analog.get(e_motion) else {
+                let Ok((name,)) = q_analog.get(e_motion) else {
                     continue;
                 };
+                let name = name.clone();
                 match ev.state {
                     ButtonState::Pressed => {
-                        commands.entity(e_motion).insert(InputAnalogActive {
-                            source: AnalogSource::MouseMotion,
+                        commands.entity(e_motion).insert(AnalogSourceMouseMotion);
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputAnalogOnStart(name)).ok();
                         });
-                        if let Some(system) = callback.on_start {
-                            commands.run_system(system);
-                        }
                     }
                     ButtonState::Released => {
                         commands.entity(e_motion)
-                            .remove::<InputAnalogActive>();
-                        if let Some(system) = callback.on_stop {
-                            commands.run_system(system);
-                        }
+                            .remove::<AnalogSourceMouseMotion>();
+                        commands.add(move |world: &mut World| {
+                            world.try_run_schedule(InputAnalogOnStop(name)).ok();
+                        });
                     }
                 }
             },
@@ -522,15 +447,14 @@ fn mouse_input(
             let Some(&e) = mouse_map.motion_btn.get(&btn) else {
                 continue;
             };
-            let Ok((callback,)) = q_analog.get(e) else {
+            commands.entity(e).insert(AnalogSourceMouseMotion);
+            let Ok((name,)) = q_analog.get(e) else {
                 continue;
             };
-            commands.entity(e).insert(InputAnalogActive {
-                source: AnalogSource::MouseMotion,
+            let name = name.clone();
+            commands.add(move |world: &mut World| {
+                world.try_run_schedule(InputAnalogOnStart(name)).ok();
             });
-            if let Some(system) = callback.on_start {
-                commands.run_system(system);
-            }
         }
     }
 
@@ -543,13 +467,14 @@ fn mouse_input(
         let Some(&e) = mouse_map.action_btn.get(&btn) else {
             continue;
         };
-        let Ok((callback,)) = q_action.get(e) else {
-            continue;
-        };
         commands.entity(e)
             .insert(InputActionActive);
-        if let Some(system) = callback.on_press {
-            commands.run_system(system);
-        }
+        let Ok((name,)) = q_action.get(e) else {
+            continue;
+        };
+        let name = name.clone();
+        commands.add(move |world: &mut World| {
+            world.try_run_schedule(InputActionOnPress(name)).ok();
+        });
     }
 }

@@ -1,4 +1,4 @@
-use mw_app_core::{camera::GameCameraBundle, graphics::{Gfx3dEnabled, GraphicsGovernor}};
+use mw_app_core::{camera::{CameraInput, GameCameraBundle}, graphics::{Gfx3dEnabled, GraphicsGovernor}, input::{InputAction, InputActionEnabled, InputAnalog, InputAnalogEnabled}};
 
 use crate::{prelude::*, settings::Camera3dSettings};
 
@@ -13,6 +13,8 @@ pub fn plugin(app: &mut App) {
 fn setup_game_camera(
     mut commands: Commands,
     settings: Settings,
+    q_actions: Query<Entity, (With<CameraInput>, With<InputAction>)>,
+    q_analogs: Query<Entity, (With<CameraInput>, With<InputAnalog>)>,
 ) {
     let s_cam = settings.get::<Camera3dSettings>().unwrap();
 
@@ -27,4 +29,11 @@ fn setup_game_camera(
         camera,
         GameCameraBundle::default(),
     ));
+
+    for e in &q_actions {
+        commands.entity(e).insert(InputActionEnabled);
+    }
+    for e in &q_analogs {
+        commands.entity(e).insert(InputAnalogEnabled);
+    }
 }
