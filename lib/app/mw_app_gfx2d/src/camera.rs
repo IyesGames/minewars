@@ -27,6 +27,9 @@ pub fn plugin(app: &mut App) {
         input_analog_rotate_stop
     );
     app.add_systems(Update, (
+        input_pan_edge
+            // edge panning only when no other panning is active
+            .run_if(any_filter::<(With<AnalogPan>, Without<InputAnalogActive>)>),
         input_analog_pan_motion
             .in_set(OnMouseMotionEventSet)
             .run_if(any_filter::<(With<AnalogPan>, With<InputAnalogActive>, With<AnalogSourceMouseMotion>)>),
@@ -122,9 +125,11 @@ fn input_analog_pan_motion(
         let Some(start_cursor) = pan.start_cursor else {
             continue;
         };
-        let delta = (cursor - start_cursor) * proj.scale;
+        let mut delta = cursor - start_cursor;
+        delta.y = -delta.y;
+        let delta = (xf.rotation * delta.extend(0.0)).truncate() * proj.scale;
         xf.translation.x = pan.start_translation.x - delta.x;
-        xf.translation.y = pan.start_translation.y + delta.y;
+        xf.translation.y = pan.start_translation.y - delta.y;
     }
 }
 
@@ -171,11 +176,59 @@ fn input_analog_pan_scroll(
     if delta == Vec2::ZERO {
         return;
     }
+    delta.y = -delta.y;
     for (mut pan, mut xf, proj) in &mut q_camera {
-        xf.translation.x -= delta.x * proj.scale;
-        xf.translation.y -= -delta.y * proj.scale;
-        pan.start_translation.x -= delta.x * proj.scale;
-        pan.start_translation.y -= -delta.y * proj.scale;
+        let delta = (xf.rotation * delta.extend(0.0)).truncate() * proj.scale;
+        xf.translation.x -= delta.x;
+        xf.translation.y -= delta.y;
+        pan.start_translation.x -= delta.x;
+        pan.start_translation.y -= delta.y;
+    }
+}
+
+fn input_pan_edge(
+    settings: Settings,
+    time: Res<Time>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    mut q_camera: Query<(
+        &mut Transform, &OrthographicProjection,
+    ), With<ActiveGameCamera>>,
+    mut needs_rounding: Local<bool>,
+) {
+    let s_input = settings.get::<Camera2dInputSettings>().unwrap();
+    let Ok(window) = q_window.get_single() else {
+        return;
+    };
+    let mut dir = Vec2::ZERO;
+    if let Some(cursor) = window.cursor_position() {
+        if cursor.x < s_input.edge_pan_margin {
+            dir.x -= 1.0;
+        }
+        if cursor.x >= window.width() - s_input.edge_pan_margin {
+            dir.x += 1.0;
+        }
+        if cursor.y < s_input.edge_pan_margin {
+            dir.y += 1.0;
+        }
+        if cursor.y >= window.height() - s_input.edge_pan_margin {
+            dir.y -= 1.0;
+        }
+        dir = dir.normalize_or_zero();
+    };
+    if dir != Vec2::ZERO {
+        *needs_rounding = true;
+        for (mut xf, proj) in &mut q_camera {
+            let dir = (xf.rotation * dir.extend(0.0)).truncate();
+            let delta = dir * s_input.edge_pan_speed * proj.scale * time.delta_seconds();
+            xf.translation.x += delta.x;
+            xf.translation.y += delta.y;
+        }
+    } else if *needs_rounding {
+        *needs_rounding = false;
+        for (mut xf, proj) in &mut q_camera {
+            xf.translation.x = (xf.translation.x / proj.scale).round() * proj.scale;
+            xf.translation.y = (xf.translation.y / proj.scale).round() * proj.scale;
+        }
     }
 }
 
@@ -278,6 +331,7 @@ fn input_analog_rotate_scroll(
     if delta == 0.0 {
         return;
     }
+    delta = delta.to_radians();
     if s_input.scroll_rotate_invert_leftside {
         let window = q_window.single();
         if let Some(cursor) = window.cursor_position() {
