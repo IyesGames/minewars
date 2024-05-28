@@ -564,7 +564,7 @@ fn mouse_input(
     }
 
     // activate/deactivate idle defaults as necessary
-    if !evr_button.is_empty() || !evr_kbd.is_empty() {
+    if !evr_button.is_empty() || !evr_kbd.is_empty() || state.is_changed() {
         for (mut stack,) in &mut q.p2() {
             if stack.0.contains(&ActivationSource::IdleDefault) {
                 stack.0.remove(&ActivationSource::IdleDefault);

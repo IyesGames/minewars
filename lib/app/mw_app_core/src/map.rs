@@ -59,6 +59,7 @@ pub struct MapGovernorBundle {
     pub map_src: MapDataOrig,
     pub grid_cursor: GridCursor,
     pub grid_cursor_tile_entity: GridCursorTileEntity,
+    pub grid_cursor_tile_translation: GridCursorTileTranslation,
     pub tuq: TileUpdateQueue,
 }
 
@@ -92,6 +93,9 @@ pub struct GridCursor(pub Option<Pos>);
 
 #[derive(Component, Default)]
 pub struct GridCursorTileEntity(pub Option<Entity>);
+
+#[derive(Component, Default)]
+pub struct GridCursorTileTranslation(pub Option<Vec3>);
 
 #[bitfield]
 #[derive(Clone, Copy, Default)]
@@ -138,17 +142,18 @@ impl MapTileDataIn for MapTileDataOrig {
 }
 
 impl MapGovernorBundle {
-    pub fn from_map_src(topo: Topology, map_src: MapDataOrig) -> Self {
+    pub fn from_map_src(topology: Topology, map_src: MapDataOrig) -> Self {
         MapGovernorBundle {
             cleanup: GameFullCleanup,
             marker: MapGovernor,
             desc: MapDescriptor {
                 size: map_src.map.size(),
-                topology: topo,
+                topology,
             },
             map_src,
             grid_cursor: default(),
             grid_cursor_tile_entity: default(),
+            grid_cursor_tile_translation: default(),
             tuq: default(),
         }
     }

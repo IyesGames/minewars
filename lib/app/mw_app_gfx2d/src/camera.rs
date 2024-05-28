@@ -1,7 +1,7 @@
-use bevy::{input::mouse::{MouseMotion, MouseScrollUnit, MouseWheel}, render::camera::RenderTarget, window::PrimaryWindow};
-use mw_app_core::{camera::{input::{AnalogPan, AnalogRotate, ANALOG_PAN, ANALOG_ROTATE}, ActiveGameCamera, CameraInput, GameCamera, GameCameraBundle}, graphics::{Gfx2dEnabled, GraphicsGovernor}, input::*, map::{MapDescriptor, MapGovernor}};
+use bevy::{input::mouse::{MouseScrollUnit, MouseWheel}, window::PrimaryWindow};
+use mw_app_core::{camera::{input::*, *}, graphics::{Gfx2dEnabled, GraphicsGovernor}, input::*, map::*};
 
-use crate::{prelude::*, settings::Camera2dInputSettings};
+use crate::{prelude::*, settings::Camera2dControlSettings};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -9,6 +9,13 @@ pub fn plugin(app: &mut App) {
         setup_game_camera
             .run_if(any_filter::<(With<GraphicsGovernor>, With<Gfx2dEnabled>)>)
     );
+    app.add_systems(Update, (
+        jump_tween_start
+            .in_set(SetStage::WantChanged(CameraJumpSS)),
+        jump_tween
+            .run_if(rc_jump_tween)
+            .in_set(SetStage::Provide(CameraControlSS)),
+    ).chain());
     // inputs
     app.add_systems(
         InputAnalogOnStart(ANALOG_PAN.into()),
@@ -42,10 +49,24 @@ pub fn plugin(app: &mut App) {
         input_analog_rotate_scroll
             .in_set(OnMouseScrollEventSet)
             .run_if(any_filter::<(With<AnalogRotate>, With<InputAnalogActive>, With<AnalogSourceMouseScroll>)>),
+        input_analog_grid_cursor_motion
+            .in_set(OnMouseMotionEventSet)
+            .run_if(any_filter::<(With<AnalogGridCursor>, With<InputAnalogActive>, With<AnalogSourceMouseMotion>)>),
     )
         .in_set(GameInputSet)
+        .in_set(SetStage::Provide(CameraControlSS))
         .in_set(SetStage::Want(GameInputSS::Handle))
     );
+}
+
+#[derive(Bundle, Default)]
+struct Active2dCameraBundle {
+    camera: Camera2dBundle,
+    game: GameCameraBundle,
+    active: ActiveGameCamera,
+    pan: CameraPanState,
+    rotate: CameraRotateState,
+    jump: CameraJumpTweenState,
 }
 
 fn setup_game_camera(
@@ -55,13 +76,10 @@ fn setup_game_camera(
 ) {
     let mut camera = Camera2dBundle::default();
     camera.projection.scale = 8.0;
-    commands.spawn((
+    commands.spawn(Active2dCameraBundle {
         camera,
-        GameCameraBundle::default(),
-        ActiveGameCamera,
-        CameraPanState::default(),
-        CameraRotateState::default(),
-    ));
+        ..Default::default()
+    });
 
     for e in &q_actions {
         commands.entity(e).insert(InputActionEnabled);
@@ -69,6 +87,14 @@ fn setup_game_camera(
     for e in &q_analogs {
         commands.entity(e).insert(InputAnalogEnabled);
     }
+}
+
+#[derive(Component, Default)]
+struct CameraJumpTweenState {
+    timer: Option<Timer>,
+    curve: CubicSegment<Vec2>,
+    start_translation: Vec2,
+    end_translation: Vec2,
 }
 
 #[derive(Component, Default)]
@@ -84,22 +110,162 @@ struct CameraRotateState {
     angle_start: f32,
 }
 
+fn input_analog_grid_cursor_motion(
+    mut q_map: Query<(
+        &mut GridCursor, &mut GridCursorTileEntity, &mut GridCursorTileTranslation,
+        &MapDescriptor, &MapTileIndex,
+    ), With<MapGovernor>>,
+    q_camera: Query<(
+        &Transform, &Camera,
+    ), With<ActiveGameCamera>>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+) {
+    let (mut crs, mut gcte, mut gctt, desc, index) = q_map.single_mut();
+    let Ok((xf_camera, camera)) = q_camera.get_single() else {
+        return;
+    };
+    let Ok(window) = q_window.get_single() else {
+        return;
+    };
+    // assuming camera not affected by hierarchy
+    let gxf_camera = GlobalTransform::from(*xf_camera);
+    let Some(cursor) = window.cursor_position()
+        .and_then(|pos| camera.viewport_to_world(&gxf_camera, pos))
+        .map(|ray| ray.origin.truncate())
+    else {
+        crs.0 = None;
+        gcte.0 = None;
+        gctt.0 = None;
+        return;
+    };
+    match desc.topology {
+        Topology::Hex => {
+            let tdim = Vec2::new(crate::misc::sprite::WIDTH6, crate::misc::sprite::HEIGHT6);
+            let conv = bevy::math::Mat2::from_cols_array(
+                &[tdim.x, 0.0, tdim.x * 0.5, tdim.y * 0.75]
+            ).inverse();
+            let adj = conv * cursor;
+            let new = Hex::from_f32_clamped(adj.into());
+            if new.ring() <= desc.size {
+                let new_pos = Pos::from(new);
+                if crs.0 != Some(new_pos) {
+                    crs.0 = Some(new_pos);
+                    gctt.0 = Some((new.translation() * tdim).extend(0.0));
+                    if let Some(&new_e) = index.0.get(new_pos) {
+                        gcte.0 = Some(new_e);
+                    }
+                }
+            } else {
+                crs.0 = None;
+                gcte.0 = None;
+                gctt.0 = None;
+            }
+        }
+        Topology::Sq => {
+            let tdim = Vec2::new(crate::misc::sprite::WIDTH4, crate::misc::sprite::HEIGHT4);
+            let adj = cursor / tdim;
+            let new = Sq::from_f32_clamped(adj.into());
+            if new.ring() <= desc.size {
+                let new_pos = Pos::from(new);
+                if crs.0 != Some(new_pos) {
+                    crs.0 = Some(new_pos);
+                    gctt.0 = Some((new.translation() * tdim).extend(0.0));
+                    if let Some(&new_e) = index.0.get(new_pos) {
+                        gcte.0 = Some(new_e);
+                    }
+                }
+            } else {
+                crs.0 = None;
+                gcte.0 = None;
+                gctt.0 = None;
+            }
+        }
+    }
+}
+
+fn jump_tween_start(
+    settings: Settings,
+    mut evr_jump: EventReader<CameraJumpTo>,
+    q_map: Query<&MapDescriptor, With<MapGovernor>>,
+    mut q_camera: Query<(
+        &mut CameraJumpTweenState, &Transform,
+    ), With<ActiveGameCamera>>,
+) {
+    let s_input = settings.get::<Camera2dControlSettings>().unwrap();
+    let desc = q_map.single();
+    if let Some(ev) = evr_jump.read().last() {
+        let pos_translation = match desc.topology {
+            Topology::Hex => {
+                let tdim = Vec2::new(crate::misc::sprite::WIDTH6, crate::misc::sprite::HEIGHT6);
+                Hex::from(ev.0).translation() * tdim
+            },
+            Topology::Sq => {
+                let tdim = Vec2::new(crate::misc::sprite::WIDTH4, crate::misc::sprite::HEIGHT4);
+                Sq::from(ev.0).translation() * tdim
+            },
+        };
+        for (mut tween, xf) in &mut q_camera {
+            tween.start_translation = xf.translation.truncate();
+            tween.end_translation = pos_translation;
+            tween.timer = Some(Timer::new(
+                Duration::from_secs_f32(s_input.jump_tween_duration),
+                TimerMode::Once
+            ));
+            tween.curve = CubicSegment::new_bezier(
+                s_input.jump_tween_curve.0,
+                s_input.jump_tween_curve.1,
+            );
+        }
+    }
+}
+
+fn rc_jump_tween(
+    q_camera: Query<&CameraJumpTweenState, With<ActiveGameCamera>>,
+) -> bool {
+    q_camera.iter().any(|tween| tween.timer.is_some())
+}
+
+fn jump_tween(
+    time: Res<Time>,
+    mut q_camera: Query<(
+        &mut CameraJumpTweenState, &mut Transform,
+    ), With<ActiveGameCamera>>,
+) {
+    for (mut tween, mut xf) in &mut q_camera {
+        let tween = &mut *tween;
+        let Some(timer) = &mut tween.timer else {
+            continue;
+        };
+        if timer.finished() {
+            tween.timer = None;
+            continue;
+        }
+        let fraction = timer.fraction();
+        let t = tween.curve.ease(fraction);
+        let translation = tween.start_translation.lerp(tween.end_translation, t);
+        xf.translation.x = translation.x;
+        xf.translation.y = translation.y;
+        timer.tick(time.delta());
+    }
+}
+
 fn input_analog_pan_start(
     q_window: Query<&Window, With<PrimaryWindow>>,
     mut q_camera: Query<(
-        &mut CameraPanState, &Transform
+        &mut CameraPanState, &Transform, &mut CameraJumpTweenState,
     ), With<ActiveGameCamera>>,
 ) {
     let window = q_window.single();
-    for (mut pan, xf) in &mut q_camera {
+    for (mut pan, xf, mut jump) in &mut q_camera {
         pan.start_cursor = window.cursor_position();
         pan.start_translation = xf.translation.truncate();
+        jump.timer = None;
     }
 }
 
 fn input_analog_pan_stop( 
     mut q_camera: Query<(
-        &mut CameraPanState, &mut Transform, &OrthographicProjection
+        &mut CameraPanState, &mut Transform, &OrthographicProjection,
     ), With<ActiveGameCamera>>,
 ) {
     for (mut pan, mut xf, proj) in &mut q_camera {
@@ -140,7 +306,7 @@ fn input_analog_pan_scroll(
         &mut CameraPanState, &mut Transform, &OrthographicProjection,
     ), With<ActiveGameCamera>>,
 ) {
-    let s_input = settings.get::<Camera2dInputSettings>().unwrap();
+    let s_input = settings.get::<Camera2dControlSettings>().unwrap();
     let mut delta = Vec2::ZERO;
     for ev in evr_scroll.read() {
         delta += match ev.unit {
@@ -195,7 +361,7 @@ fn input_pan_edge(
     ), With<ActiveGameCamera>>,
     mut needs_rounding: Local<bool>,
 ) {
-    let s_input = settings.get::<Camera2dInputSettings>().unwrap();
+    let s_input = settings.get::<Camera2dControlSettings>().unwrap();
     let Ok(window) = q_window.get_single() else {
         return;
     };
@@ -235,13 +401,14 @@ fn input_pan_edge(
 fn input_analog_rotate_start(
     q_window: Query<&Window, With<PrimaryWindow>>,
     mut q_camera: Query<(
-        &mut CameraRotateState,
+        &mut CameraRotateState, &mut CameraJumpTweenState,
     ), With<ActiveGameCamera>>,
 ) {
     let window = q_window.single();
-    for (mut rotate,) in &mut q_camera {
+    for (mut rotate, mut jump) in &mut q_camera {
         rotate.start_cursor = window.cursor_position();
         rotate.angle_start = rotate.angle;
+        jump.timer = None;
     }
 }
 
@@ -263,7 +430,7 @@ fn input_analog_rotate_motion(
         &mut CameraRotateState, &mut Transform,
     ), With<ActiveGameCamera>>,
 ) {
-    let s_input = settings.get::<Camera2dInputSettings>().unwrap();
+    let s_input = settings.get::<Camera2dControlSettings>().unwrap();
     let window = q_window.single();
     let Some(cursor) = window.cursor_position() else {
         return;
@@ -306,7 +473,7 @@ fn input_analog_rotate_scroll(
         &mut CameraRotateState, &mut Transform,
     ), With<ActiveGameCamera>>,
 ) {
-    let s_input = settings.get::<Camera2dInputSettings>().unwrap();
+    let s_input = settings.get::<Camera2dControlSettings>().unwrap();
     let desc = q_map.single();
     let mut delta = 0.0;
     for ev in evr_scroll.read() {

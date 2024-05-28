@@ -1,4 +1,4 @@
-use mw_app_core::{camera::{ActiveGameCamera, GameCamera}, graphics::*, ui::UiCamera};
+use mw_app_core::{camera::{input::ACTION_CENTER, ActiveGameCamera, CameraJumpTo, GameCamera}, graphics::*, input::InputActionOnPress, map::{GridCursor, MapGovernor}, ui::UiCamera};
 
 use crate::prelude::*;
 
@@ -16,6 +16,10 @@ pub fn plugin(app: &mut App) {
             With<Gfx2dEnabled>,
             With<Gfx3dEnabled>,
         )>),
+    );
+    app.add_systems(
+        InputActionOnPress(ACTION_CENTER.into()),
+        input_action_center,
     );
 }
 
@@ -87,5 +91,15 @@ fn switch_graphics_style(
             cam.order = 0;
             commands.entity(e).remove::<ActiveGameCamera>();
         }
+    }
+}
+
+fn input_action_center(
+    mut evw: EventWriter<CameraJumpTo>,
+    q_map: Query<&GridCursor, With<MapGovernor>>,
+) {
+    let crs = q_map.single();
+    if let Some(pos) = crs.0 {
+        evw.send(CameraJumpTo(pos));
     }
 }

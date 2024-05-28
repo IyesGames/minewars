@@ -114,9 +114,13 @@ impl Default for KeyboardMouseMappings {
         let key_actions = hash_map! {
         };
         let mouse_actions = hash_map! {
+            None => hash_map! {
+                MouseButton::Middle => mw_app_core::camera::input::ACTION_CENTER.into(),
+            },
         };
         let mouse_motion = hash_map! {
             None => hash_map! {
+                None => mw_app_core::camera::input::ANALOG_GRID_CURSOR.into(),
             },
             Some(KeyCode::ControlLeft) => hash_map! {
                 None => mw_app_core::camera::input::ANALOG_PAN.into(),
