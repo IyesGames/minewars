@@ -1,4 +1,4 @@
-use mw_app_core::{driver::{DriverGovernor, GameOutEventSS, NeedsGameplaySessionSet}, map::{cit::*, tile::*, *}, session::{PlayersIndex, PlidViewing, SessionGovernor}, view::VisibleInView};
+use mw_app_core::{driver::{GameOutEventSS, NeedsGameplaySessionSet}, map::{cit::*, tile::*, *}, session::{PlidViewing, SessionGovernor}, view::VisibleInView};
 use mw_common::{game::*, grid::*, plid::PlayerId};
 
 use crate::{prelude::*, settings::GameViewSettings};
@@ -8,9 +8,10 @@ pub fn plugin(app: &mut App) {
         OnTransition { from: AppState::InGame, to: AppState::GameLoading },
         cleanup_mapgov,
     );
-    app.add_systems(
-        OnEnter(AppState::InGame),
-        send_tileupdate_all_event,
+    app.add_systems(Update,
+        clear_tuq
+            .in_set(NeedsMapGovernorSet)
+            .in_set(SetStage::Prepare(TileUpdateSS))
     );
     app.add_systems(Update, (
         setup_tile_entities
@@ -49,6 +50,13 @@ pub fn plugin(app: &mut App) {
     )
         .in_set(InStateSet(AppState::InGame))
     );
+}
+
+fn clear_tuq(
+    mut q_map: Query<&mut TileUpdateQueue, With<MapGovernor>>,
+) {
+    let mut tuq = q_map.single_mut();
+    tuq.clear();
 }
 
 fn setup_tile_entities(
@@ -169,22 +177,15 @@ fn cleanup_mapgov(
         .remove::<CitIndex>();
 }
 
-fn send_tileupdate_all_event(
-    mut evw: EventWriter<TileUpdateEvent>,
-) {
-    evw.send(TileUpdateEvent::All);
-}
-
 fn update_tiles_from_gameevents_kind(
     mut commands: Commands,
     mut evr: EventReader<GameEvent>,
-    mut evw: EventWriter<TileUpdateEvent>,
     q_session: Query<&PlidViewing, With<SessionGovernor>>,
-    q_map: Query<&MapTileIndex, With<MapGovernor>>,
+    mut q_map: Query<(&mut TileUpdateQueue, &MapTileIndex), With<MapGovernor>>,
     mut q_tile: Query<(Entity, &mut TileKind), With<MwMapTile>>,
 ) {
     let viewing = q_session.single();
-    let index = q_map.single();
+    let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
         // Ignore if it is not our event
         if ev.plid != viewing.0 {
@@ -223,7 +224,7 @@ fn update_tiles_from_gameevents_kind(
                     error!("Tile at {:?} went from kind {:?} to kind {:?}. Don't know how to handle non-playable tiles becoming playable!", pos, tilekind, kind);
                 }
                 *tilekind = kind;
-                evw.send(TileUpdateEvent::One(e));
+                tuq.queue_one(e);
             },
             _ => {}
         }
@@ -232,13 +233,12 @@ fn update_tiles_from_gameevents_kind(
 
 fn update_tiles_from_gameevents_owner_digit(
     mut evr: EventReader<GameEvent>,
-    mut evw: EventWriter<TileUpdateEvent>,
     q_session: Query<&PlidViewing, With<SessionGovernor>>,
-    q_map: Query<&MapTileIndex, With<MapGovernor>>,
+    mut q_map: Query<(&mut TileUpdateQueue, &MapTileIndex), With<MapGovernor>>,
     mut q_tile: Query<(Entity, &mut TileOwner, &mut TileDigitExternal), With<MwMapTile>>,
 ) {
     let viewing = q_session.single();
-    let index = q_map.single();
+    let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
         // Ignore if it is not our event
         if ev.plid != viewing.0 {
@@ -251,7 +251,7 @@ fn update_tiles_from_gameevents_owner_digit(
                 };
                 owner.0 = viewing.0;
                 dig.0 = digit;
-                evw.send(TileUpdateEvent::One(e));
+                tuq.queue_one(e);
             },
             MwEv::TileOwner { pos, plid } => {
                 let Ok((e, mut owner, mut dig)) = q_tile.get_mut(index.0[pos]) else {
@@ -261,7 +261,7 @@ fn update_tiles_from_gameevents_owner_digit(
                 if plid != viewing.0 {
                     dig.0 = MwDigit::default();
                 }
-                evw.send(TileUpdateEvent::One(e));
+                tuq.queue_one(e);
             }
             _ => {}
         }
@@ -270,13 +270,12 @@ fn update_tiles_from_gameevents_owner_digit(
 
 fn update_tiles_from_gameevents_gents(
     mut evr: EventReader<GameEvent>,
-    mut evw: EventWriter<TileUpdateEvent>,
     q_session: Query<&PlidViewing, With<SessionGovernor>>,
-    q_map: Query<&MapTileIndex, With<MapGovernor>>,
+    mut q_map: Query<(&mut TileUpdateQueue, &MapTileIndex), With<MapGovernor>>,
     mut q_tile: Query<(Entity, &mut TileGent), With<MwMapTile>>,
 ) {
     let viewing = q_session.single();
-    let index = q_map.single();
+    let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
         // Ignore if it is not our event
         if ev.plid != viewing.0 {
@@ -303,20 +302,19 @@ fn update_tiles_from_gameevents_gents(
             continue;
         }
         *gent = newgent;
-        evw.send(TileUpdateEvent::One(e));
+        tuq.queue_one(e);
     }
 }
 
 fn handle_gameevent_explosions(
     mut commands: Commands,
     mut evr: EventReader<GameEvent>,
-    mut evw: EventWriter<TileUpdateEvent>,
     q_session: Query<&PlidViewing, With<SessionGovernor>>,
-    q_map: Query<&MapTileIndex, With<MapGovernor>>,
+    mut q_map: Query<(&mut TileUpdateQueue, &MapTileIndex), With<MapGovernor>>,
     mut q_tile: Query<(Entity, &mut TileGent), With<MwMapTile>>,
 ) {
     let viewing = q_session.single();
-    let index = q_map.single();
+    let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
         if ev.plid != viewing.0 {
             continue;
@@ -342,7 +340,7 @@ fn handle_gameevent_explosions(
                     view: VisibleInView(viewing.0),
                 },
             ));
-            evw.send(TileUpdateEvent::One(e));
+            tuq.queue_one(e);
         }
     }
 }

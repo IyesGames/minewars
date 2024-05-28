@@ -9,9 +9,10 @@ use mw_common::{game::{CitId, ItemKind, MwDigit, StructureKind, TileKind}, grid:
 
 use crate::{view::VisibleInView, prelude::*};
 
+use super::MapGovernor;
+
 pub fn plugin(app: &mut App) {
-    app.add_event::<TileUpdateEvent>();
-    app.configure_stage_set(Update, TileUpdateSS, on_event::<TileUpdateEvent>());
+    app.configure_stage_set(Update, TileUpdateSS, rc_updated_tiles);
     app.configure_sets(Update, (
         TileUpdateSet::External
             .in_set(SetStage::Provide(TileUpdateSS)),
@@ -21,7 +22,7 @@ pub fn plugin(app: &mut App) {
     ));
 }
 
-/// Anything that updates components on map entities and sends TileUpdateEvents
+/// Anything that updates components on map entities
 #[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct TileUpdateSS;
 
@@ -34,13 +35,13 @@ pub enum TileUpdateSet {
     Internal,
 }
 
-/// Should be sent whenever components on map entities are updated
-///
-/// (to avoid Bevy change detection overhead)
-#[derive(Event)]
-pub enum TileUpdateEvent {
+/// Used to avoid Bevy change detection overhead.
+#[derive(Component, Default)]
+pub struct TileUpdateQueue(pub Option<TilesToUpdate>);
+
+pub enum TilesToUpdate {
     All,
-    One(Entity),
+    Specific(Vec<Entity>),
 }
 
 /// Components common to all map tiles
@@ -159,22 +160,30 @@ pub struct TileExplosion {
     pub item: Option<ItemKind>,
 }
 
-pub fn coalesce_tile_update_events(
-    output: &mut HashSet<Entity>,
-    input: &mut EventReader<TileUpdateEvent>,
-) {
-    output.clear();
-    for ev in input.read() {
-        match ev {
-            TileUpdateEvent::All => {
-                output.clear();
-                output.insert(Entity::PLACEHOLDER);
-                input.clear();
-                return;
+fn rc_updated_tiles(
+    q_map: Query<&TileUpdateQueue, With<MapGovernor>>,
+) -> bool {
+    q_map.get_single()
+        .map(|tuq| tuq.0.is_some())
+        .unwrap_or(false)
+}
+
+impl TileUpdateQueue {
+    pub fn queue_one(&mut self, e: Entity) {
+        match &mut self.0 {
+            None => {
+                self.0 = Some(TilesToUpdate::Specific(vec![e]));
             }
-            TileUpdateEvent::One(e) => {
-                output.insert(*e);
+            Some(TilesToUpdate::All) => {},
+            Some(TilesToUpdate::Specific(vec)) => {
+                vec.push(e);
             }
         }
+    }
+    pub fn queue_all(&mut self) {
+        self.0 = Some(TilesToUpdate::All);
+    }
+    pub fn clear(&mut self) {
+        self.0 = None;
     }
 }

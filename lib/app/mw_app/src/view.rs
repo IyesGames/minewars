@@ -56,9 +56,8 @@ fn switch_view_showhide(
 fn switch_view_update_map(
     world: &mut World,
     ss: &mut SystemState<(
-        EventWriter<TileUpdateEvent>,
         Query<(&PlayersIndex, &PlidViewing), With<SessionGovernor>>,
-        Query<(&MapTileIndex, &MapDescriptor), With<MapGovernor>>,
+        Query<(&mut TileUpdateQueue, &MapTileIndex, &MapDescriptor), With<MapGovernor>>,
         Query<&ViewMapData>,
     )>,
     mut temp_data: Local<Option<ViewMapData>>,
@@ -66,10 +65,10 @@ fn switch_view_update_map(
 ) {
     let topology;
     {
-        let (mut evw, q_session, q_map, q_plid) = ss.get_mut(world);
-        evw.send(TileUpdateEvent::All);
+        let (q_session, mut q_map, q_plid) = ss.get_mut(world);
         let (players, viewing) = q_session.single();
-        let (mapindex, mapdesc) = q_map.single();
+        let (mut tuq, mapindex, mapdesc) = q_map.single_mut();
+        tuq.queue_all();
         let Ok(viewdata) = q_plid.get(players.e_plid[viewing.0.i()]) else {
             error!("View for {:?} does not exist!", viewing.0);
             return;

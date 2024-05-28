@@ -37,23 +37,14 @@ fn gen_simple_map(
     empty_tile.set_item(ItemKind::Safe);
     empty_tile.set_region(0);
     let map_src = MapDataPos::new(gen.size, empty_tile);
+    let map_src = MapDataOrig {
+        map: map_src,
+        cits: vec![],
+    };
 
-    commands.spawn((
-        MapGovernorBundle {
-            cleanup: GameFullCleanup,
-            marker: MapGovernor,
-            desc: MapDescriptor {
-                size: gen.size,
-                topology: gen.topology,
-            },
-            map_src: MapDataOrig {
-                map: map_src,
-                cits: vec![],
-            },
-            grid_cursor: default(),
-            grid_cursor_tile_entity: default(),
-        },
-    ));
+    commands.spawn(
+        MapGovernorBundle::from_map_src(gen.topology, map_src)
+    );
 
     // for the sake of the progress bar not appearing like it is
     // going backwards (there will be new systems on the next frame

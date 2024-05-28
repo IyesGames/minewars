@@ -18,6 +18,8 @@ use mw_dataformat::map::{MapTileDataIn, MapTileDataOut};
 
 use crate::prelude::*;
 
+use self::tile::TileUpdateQueue;
+
 pub mod cit;
 pub mod tile;
 
@@ -57,6 +59,7 @@ pub struct MapGovernorBundle {
     pub map_src: MapDataOrig,
     pub grid_cursor: GridCursor,
     pub grid_cursor_tile_entity: GridCursorTileEntity,
+    pub tuq: TileUpdateQueue,
 }
 
 /// Marker component for the map governor entity
@@ -131,6 +134,23 @@ impl MapTileDataIn for MapTileDataOrig {
     }
     fn set_region(&mut self, region: u8) {
         MapTileDataOrig::set_region(self, region);
+    }
+}
+
+impl MapGovernorBundle {
+    pub fn from_map_src(topo: Topology, map_src: MapDataOrig) -> Self {
+        MapGovernorBundle {
+            cleanup: GameFullCleanup,
+            marker: MapGovernor,
+            desc: MapDescriptor {
+                size: map_src.map.size(),
+                topology: topo,
+            },
+            map_src,
+            grid_cursor: default(),
+            grid_cursor_tile_entity: default(),
+            tuq: default(),
+        }
     }
 }
 
