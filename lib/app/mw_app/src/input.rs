@@ -1,4 +1,4 @@
-use bevy::input::{gamepad::GamepadEvent, keyboard::KeyboardInput, mouse::{MouseButtonInput, MouseMotion}, ButtonState};
+use bevy::input::{gamepad::GamepadEvent, keyboard::KeyboardInput, mouse::{MouseButtonInput, MouseMotion, MouseWheel}, ButtonState};
 use mw_app_core::input::*;
 
 use crate::{prelude::*, settings::{KeyboardMouseMappings, MouseInputSettings}};
@@ -17,6 +17,14 @@ pub fn plugin(app: &mut App) {
     app.configure_sets(Update, (
         GameInputSet
             .run_if(rc_accepting_game_input),
+        OnKeyboardEventSet
+            .run_if(on_event::<KeyboardInput>()),
+        OnMouseButtonEventSet
+            .run_if(on_event::<MouseButtonInput>()),
+        OnMouseScrollEventSet
+            .run_if(on_event::<MouseWheel>()),
+        OnMouseMotionEventSet
+            .run_if(rc_on_mouse_motion_or_cursor_event),
     ));
     app.configure_sets(Update, (
         InputDeviceSet::Keyboard
@@ -47,7 +55,7 @@ pub fn plugin(app: &mut App) {
             (
                 keyboard_actions
                     .in_set(InputDeviceSet::Keyboard)
-                    .run_if(on_event::<KeyboardInput>()),
+                    .in_set(OnKeyboardEventSet),
                 mouse_input
                     .in_set(InputDeviceSet::Mouse)
                     .run_if(rc_mouse_input),
@@ -151,6 +159,14 @@ pub struct AnalogDisableCleanup {
     sources: AnalogSourcesCleanup,
 }
 
+fn rc_on_mouse_motion_or_cursor_event(
+    mut evr_mouse: EventReader<MouseMotion>,
+    mut evr_cursor: EventReader<CursorMoved>,
+) -> bool {
+    evr_mouse.read().count() > 0 ||
+    evr_cursor.read().count() > 0
+}
+
 fn rc_accepting_game_input(
     q_inhibit: Query<(), With<InhibitGameInput>>,
     q_ui_interaction: Query<&Interaction>,
@@ -186,36 +202,36 @@ fn rc_input_device(device: InputDeviceSet)
 }
 
 fn rc_detect_input_devices(
-    evr_mouse: Res<Events<MouseMotion>>,
-    evr_kbd: Res<Events<KeyboardInput>>,
-    evr_touch: Res<Events<TouchInput>>,
-    evr_gamepad: Res<Events<GamepadEvent>>,
+    mut evr_mouse: EventReader<MouseMotion>,
+    mut evr_kbd: EventReader<KeyboardInput>,
+    mut evr_touch: EventReader<TouchInput>,
+    mut evr_gamepad: EventReader<GamepadEvent>,
 ) -> bool {
-    !evr_mouse.is_empty() ||
-    !evr_kbd.is_empty() ||
-    !evr_touch.is_empty() ||
-    !evr_gamepad.is_empty()
+    evr_mouse.read().count() > 0 ||
+    evr_kbd.read().count() > 0 ||
+    evr_touch.read().count() > 0 ||
+    evr_gamepad.read().count() > 0
 }
 
 fn detect_input_devices(
-    evr_mouse: Res<Events<MouseMotion>>,
-    evr_kbd: Res<Events<KeyboardInput>>,
-    evr_touch: Res<Events<TouchInput>>,
-    evr_gamepad: Res<Events<GamepadEvent>>,
+    mut evr_mouse: EventReader<MouseMotion>,
+    mut evr_kbd: EventReader<KeyboardInput>,
+    mut evr_touch: EventReader<TouchInput>,
+    mut evr_gamepad: EventReader<GamepadEvent>,
     gamepads: Res<Gamepads>,
     mut q_input: Query<&mut DetectedInputDevices, With<InputGovernor>>,
 ) {
     let mut detected = q_input.single_mut();
-    if !detected.mouse && !evr_mouse.is_empty() {
+    if !detected.mouse && evr_mouse.read().count() > 0 {
         detected.mouse = true;
     }
-    if !detected.kbd && !evr_kbd.is_empty() {
+    if !detected.kbd && evr_kbd.read().count() > 0 {
         detected.kbd = true;
     }
-    if !detected.touch && !evr_touch.is_empty() {
+    if !detected.touch && evr_touch.read().count() > 0 {
         detected.touch = true;
     }
-    if !evr_gamepad.is_empty() {
+    if evr_gamepad.read().count() > 0 {
         detected.gamepad = gamepads.iter().count() != 0;
     }
 }
@@ -409,16 +425,18 @@ fn keyboard_actions(
 }
 
 fn rc_mouse_input(
-    evr_button: EventReader<MouseButtonInput>,
-    evr_motion: EventReader<MouseMotion>,
-    evr_kbd: EventReader<KeyboardInput>,
+    mut evr_button: EventReader<MouseButtonInput>,
+    mut evr_motion: EventReader<MouseMotion>,
+    mut evr_kbd: EventReader<KeyboardInput>,
     q_input: Query<(
         &MouseState,
     ), (
         With<InputGovernor>,
     )>,
 ) -> bool {
-    let r = !evr_button.is_empty() || !evr_motion.is_empty() || !evr_kbd.is_empty();
+    let r = evr_button.read().count() > 0 ||
+        evr_motion.read().count() > 0 ||
+        evr_kbd.read().count() > 0;
     let Ok((state,)) = q_input.get_single() else {
         return r;
     };

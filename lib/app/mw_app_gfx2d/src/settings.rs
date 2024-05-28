@@ -25,8 +25,13 @@ pub struct Camera2dInputSettings {
     pub scroll_pan_per_line: f32,
     pub scroll_pan_per_pixel: f32,
     pub scroll_pan_allow_fractional_lines: bool,
-    pub scroll_pan_invert_x: bool,
-    pub scroll_pan_invert_y: bool,
+    pub rotate_snap_threshold: f32,
+    pub rotate_hex_snap_interval: f32,
+    pub rotate_sq_snap_interval: f32,
+    pub scroll_rotate_per_line: f32,
+    pub scroll_rotate_per_pixel: f32,
+    pub scroll_rotate_allow_fractional_lines: bool,
+    pub scroll_rotate_invert_leftside: bool,
 }
 
 impl Default for Camera2dInputSettings {
@@ -37,8 +42,13 @@ impl Default for Camera2dInputSettings {
             scroll_pan_per_line: 24.0,
             scroll_pan_per_pixel: 1.0,
             scroll_pan_allow_fractional_lines: true,
-            scroll_pan_invert_x: false,
-            scroll_pan_invert_y: false,
+            rotate_snap_threshold: 3.0,
+            rotate_hex_snap_interval: 30.0,
+            rotate_sq_snap_interval: 90.0,
+            scroll_rotate_per_line: 3.0,
+            scroll_rotate_per_pixel: 0.25,
+            scroll_rotate_allow_fractional_lines: true,
+            scroll_rotate_invert_leftside: true,
         }
     }
 }

@@ -35,6 +35,22 @@ pub enum InputDeviceSet {
     Gamepad,
 }
 
+/// System Set to run on Bevy keyboard input events.
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct OnKeyboardEventSet;
+
+/// System Set to run on Bevy mouse scroll events.
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct OnMouseScrollEventSet;
+
+/// System Set to run on Bevy mouse button events.
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct OnMouseButtonEventSet;
+
+/// System Set to run on Bevy mouse motion or cursor moved events.
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct OnMouseMotionEventSet;
+
 /// System Set for anything that can be considered "gameplay input"
 ///
 /// Allows easily disabling all of that, using a RC.

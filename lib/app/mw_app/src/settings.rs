@@ -7,7 +7,11 @@ use crate::{input::*, prelude::*};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<Topology>();
+    app.register_type::<Option<KeyCode>>();
+    app.register_type::<Option<MouseButton>>();
     app.register_type::<HashMap<KeyCode, InputActionName>>();
+    app.register_type::<HashMap<MouseButton, InputActionName>>();
+    app.register_type::<HashMap<Option<MouseButton>, InputActionName>>();
     app.register_type::<HashMap<Option<KeyCode>, HashMap<MouseButton, InputActionName>>>();
     app.register_type::<HashMap<Option<KeyCode>, HashMap<Option<MouseButton>, InputAnalogName>>>();
     app.init_setting::<WindowSettings>(SETTINGS_LOCAL.as_ref());
