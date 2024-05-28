@@ -3,6 +3,8 @@ use bevy::ecs::{schedule::ScheduleLabel, system::SystemId};
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<InputActionName>();
+    app.register_type::<InputAnalogName>();
 }
 
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash)]
@@ -132,14 +134,14 @@ pub struct InputActionActive;
 /// Internal ID for the input action.
 ///
 /// Used to enable use cases like storing settings.
-#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Reflect, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InputActionName(pub String);
 
 /// Bundle for entities representing Analog Controls
 ///
 /// When an analog action is being performed, an
-/// `AnalogSource*` component will be inserted,
-/// indicating the source of the analog values
+/// `InputAnalogActive` and an `AnalogSource*` component
+/// will be inserted, indicating the source of the analog values
 /// (which input device is performing the action).
 #[derive(Bundle)]
 pub struct InputAnalogBundle {
@@ -155,23 +157,30 @@ pub struct InputAnalog;
 #[derive(Component)]
 pub struct InputAnalogEnabled;
 
+/// Is the analog currently in operation?
+///
+/// There should also be an `AnalogSource*` component
+/// to indicate what device is operating it.
+#[derive(Component)]
+pub struct InputAnalogActive;
+
 /// Internal ID for the analog input.
 ///
 /// Used to enable use cases like storing settings.
-#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Reflect, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InputAnalogName(pub String);
 
 /// Action currently performed by mouse motion or pointer/cursor position.
 /// Which is more appropriate is an implementation detail.
-#[derive(Component)]
+#[derive(Component, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceMouseMotion;
 
 /// Action currently performed by mouse scrolling / wheel
-#[derive(Component)]
+#[derive(Component, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceMouseScroll;
 
 /// Action currently performed by gamepad joystick
-#[derive(Component)]
+#[derive(Component, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceGamepadStick {
     pub gamepad: Gamepad,
     pub left: bool,
@@ -179,16 +188,24 @@ pub struct AnalogSourceGamepadStick {
 }
 
 /// Action currently performed by gamepad Z axis / trigger
-#[derive(Component)]
+#[derive(Component, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceGamepadZ {
     pub gamepad: Gamepad,
     pub left: bool,
     pub right: bool,
 }
 
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub enum AnalogSource {
+    MouseMotion(AnalogSourceMouseMotion),
+    MouseScroll(AnalogSourceMouseScroll),
+    GamepadStick(AnalogSourceGamepadStick),
+    GamepadZ(AnalogSourceGamepadZ),
+}
+
 /// Useful for cleanup, to remove any possible analog source
 #[derive(Bundle)]
-pub struct AnalogSourcesBundle {
+pub struct AnalogSourcesCleanup {
     motion: AnalogSourceMouseMotion,
     scroll: AnalogSourceMouseScroll,
     stick: AnalogSourceGamepadStick,

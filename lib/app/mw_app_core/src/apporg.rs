@@ -28,10 +28,6 @@ pub fn plugin(app: &mut App) {
         OnExit(AppState::InGame),
         (
             despawn_all_recursive::<With<GamePartialCleanup>>,
-            remove_from_all::<InputActionEnabled, With<InputAction>>,
-            remove_from_all::<InputActionActive, With<InputAction>>,
-            remove_from_all::<InputAnalogEnabled, With<InputAnalog>>,
-            remove_from_all::<AnalogSourcesBundle, With<InputAnalog>>,
         )
     );
     app.add_systems(
