@@ -74,7 +74,7 @@ pub struct InputGovernorBundle {
     core: InputGovernorCoreBundle,
     action_name_map: ActionNameMap,
     analog_name_map: AnalogNameMap,
-    mouse_state: MouseState,
+    mouse_state: KeyboardMouseInputState,
 }
 
 #[derive(Component, Default)]
@@ -87,11 +87,6 @@ pub struct ActionNameMap {
 pub struct AnalogNameMap {
     pub map_name: HashMap<InputAnalogName, Entity>,
     pub map_entity: HashMap<Entity, InputAnalogName>,
-}
-
-#[derive(Component, Default)]
-struct MouseState {
-    to_disambiguate: Vec<(InputActionName, InputAnalogName, Timer, bool)>,
 }
 
 #[derive(Bundle)]
@@ -231,23 +226,67 @@ fn manage_inputs(
     }
 }
 
+#[derive(Component, Default)]
+struct KeyboardMouseInputState {
+    to_disambiguate: Vec<(InputActionName, InputAnalogName, Timer, bool)>,
+    queue_key_action: Vec<InputActionName>,
+    queue_btn_action: Vec<InputActionName>,
+    queue_motion: Vec<InputAnalogName>,
+    queue_scroll: Vec<InputAnalogName>,
+    queue_immediate: Vec<InputActionName>,
+    temp_btns: Vec<(Vec<MouseButton>, String)>,
+}
+
+type QueryActionActive<'w: 's, 's> = Query<'w, 's, (
+    Entity,
+    &'w InputActionName,
+), (
+    With<InputAction>,
+    Without<InputAnalog>,
+    With<InputActionEnabled>,
+    With<InputActionActive>,
+)>;
+type QueryAnalogActive<'w: 's, 's> = Query<'w, 's, (
+    Entity,
+    &'w InputAnalogName,
+    Has<AnalogSourceMouseMotion>,
+    Has<AnalogSourceMouseScroll>,
+), (
+    With<InputAnalog>,
+    Without<InputAction>,
+    With<InputAnalogEnabled>,
+    With<InputAnalogActive>,
+)>;
+type QueryActionInactive<'w: 's, 's> = Query<'w, 's, (), (
+    With<InputAction>,
+    Without<InputAnalog>,
+    With<InputActionEnabled>,
+    Without<InputActionActive>,
+)>;
+type QueryAnalogInactive<'w: 's, 's> = Query<'w, 's, (), (
+    With<InputAnalog>,
+    Without<InputAction>,
+    With<InputAnalogEnabled>,
+    Without<InputAnalogActive>,
+)>;
+
 fn rc_keyboard_mouse_input(
     mut evr_button: EventReader<MouseButtonInput>,
     mut evr_motion: EventReader<MouseMotion>,
     mut evr_kbd: EventReader<KeyboardInput>,
     q_input: Query<(
-        &MouseState,
+        &KeyboardMouseInputState,
     ), (
         With<InputGovernor>,
     )>,
 ) -> bool {
-    let r = evr_button.read().count() > 0 ||
-        evr_motion.read().count() > 0 ||
-        evr_kbd.read().count() > 0;
     let Ok((state,)) = q_input.get_single() else {
-        return r;
+        return false;
     };
-    r || !state.to_disambiguate.is_empty()
+    !state.to_disambiguate.is_empty() ||
+        evr_button.read().count() > 0 ||
+        evr_motion.read().count() > 0 ||
+        evr_kbd.read().count() > 0
 }
 
 fn keyboard_mouse_input(
@@ -260,64 +299,314 @@ fn keyboard_mouse_input(
     mut q_input: Query<(
         &ActionNameMap,
         &AnalogNameMap,
-        &mut MouseState,
+        &mut KeyboardMouseInputState,
     ), (
         With<InputGovernor>,
     )>,
-    q_action_active: Query<(
-        Entity,
-        &InputActionName,
-    ), (
-        With<InputAction>,
-        Without<InputAnalog>,
-        With<InputActionEnabled>,
-        With<InputActionActive>,
-    )>,
-    q_analog_active: Query<(
-        Entity,
-        &InputAnalogName,
-        Has<AnalogSourceMouseMotion>,
-        Has<AnalogSourceMouseScroll>,
-    ), (
-        With<InputAnalog>,
-        Without<InputAction>,
-        With<InputAnalogEnabled>,
-        With<InputAnalogActive>,
-    )>,
-    q_action_inactive: Query<(), (
-        With<InputAction>,
-        Without<InputAnalog>,
-        With<InputActionEnabled>,
-        Without<InputActionActive>,
-    )>,
-    q_analog_inactive: Query<(), (
-        With<InputAnalog>,
-        Without<InputAction>,
-        With<InputAnalogEnabled>,
-        Without<InputAnalogActive>,
-    )>,
-    mut queue_key_action: Local<Vec<InputActionName>>,
-    mut queue_btn_action: Local<Vec<InputActionName>>,
-    mut queue_motion: Local<Vec<InputAnalogName>>,
-    mut queue_scroll: Local<Vec<InputAnalogName>>,
-    mut queue_immediate: Local<Vec<InputActionName>>,
+    mut q_action_active: QueryActionActive,
+    mut q_analog_active: QueryAnalogActive,
+    mut q_action_inactive: QueryActionInactive,
+    mut q_analog_inactive: QueryAnalogInactive,
 ) {
     let s_mouse = settings.get::<MouseInputSettings>().unwrap();
     let s_map = settings.get::<KeyboardMouseMappings>().unwrap();
     let (action_map, analog_map, mut state) = q_input.single_mut();
 
-    if in_key.is_changed() || in_btn.is_changed() {
-        let mut btns_triggered: Vec<(Vec<MouseButton>, String)> = default();
-        queue_key_action.clear();
-        queue_btn_action.clear();
-        queue_motion.clear();
-        queue_scroll.clear();
+    state.refresh_state_from_inputs(s_map, s_mouse, &in_key, &in_btn);
+
+    state.do_immediate_actions(&mut commands, action_map, &mut q_action_inactive, &mut q_action_active);
+
+    if !evr_motion.is_empty() {
+        evr_motion.clear();
+        state.do_disambiguate_by_motion(&mut commands, analog_map, &mut q_analog_inactive, &mut q_analog_active);
+    }
+
+    state.do_disambiguate_by_timer(&mut commands, action_map, &mut q_action_inactive, time.delta());
+
+    state.do_keyboard_action_activations(&mut commands, action_map, &mut q_action_inactive);
+    state.do_mouse_action_activations(&mut commands, action_map, &mut q_action_inactive);
+    state.do_mouse_motion_activations(&mut commands, analog_map, &mut q_analog_inactive, &mut q_analog_active);
+    state.do_mouse_scroll_activations(&mut commands, analog_map, &mut q_analog_inactive, &mut q_analog_active);
+
+    state.do_action_deactivations(&mut commands, &mut q_action_active);
+    state.do_analog_deactivations(&mut commands, &mut q_analog_active);
+}
+
+impl KeyboardMouseInputState {
+    fn activate_action(commands: &mut Commands, e: Entity, name: &InputActionName) {
+        let name = name.clone();
+        commands.entity(e).insert(InputActionActive);
+        commands.add(move |world: &mut World| {
+            world.try_run_schedule(InputActionOnPress(name)).ok();
+        });
+    }
+    fn activate_analog<S: Component>(commands: &mut Commands, e: Entity, name: &InputAnalogName, source: S) {
+        let name = name.clone();
+        commands.entity(e).insert((InputAnalogActive, source));
+        commands.add(move |world: &mut World| {
+            world.try_run_schedule(InputAnalogOnStart(name)).ok();
+        });
+    }
+    fn deactivate_action(commands: &mut Commands, e: Entity, name: &InputActionName) {
+        let name = name.clone();
+        commands.entity(e).remove::<ActionDeactivateCleanup>();
+        commands.add(move |world: &mut World| {
+            world.try_run_schedule(InputActionOnRelease(name)).ok();
+        });
+    }
+    fn deactivate_analog(commands: &mut Commands, e: Entity, name: &InputAnalogName) {
+        let name = name.clone();
+        commands.entity(e).remove::<AnalogDeactivateCleanup>();
+        commands.add(move |world: &mut World| {
+            world.try_run_schedule(InputAnalogOnStop(name)).ok();
+        });
+    }
+    fn do_disambiguate_by_motion(
+        &mut self,
+        commands: &mut Commands,
+        analog_map: &AnalogNameMap,
+        q_analog_inactive: &mut QueryAnalogInactive,
+        q_analog_active: &mut QueryAnalogActive,
+    ) {
+        for (_, name, _, ran) in self.to_disambiguate.iter_mut() {
+            if *ran { continue; }
+            *ran = true;
+            if let Some(&e) = analog_map.map_name.get(name) {
+                if q_analog_inactive.get(e).is_ok() {
+                    debug!("Mouse disambiguated by motion. Activate InputAnalog {:?} (MouseMotion).", name.0);
+                    Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                }
+                if let Ok((_, _, has_motion, _)) = q_analog_active.get(e) {
+                    if !has_motion {
+                        debug!("Mouse disambiguated by motion. Add MouseMotion to active InputAnalog {:?}.", name.0);
+                        Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                    }
+                }
+            }
+        }
+    }
+    fn do_disambiguate_by_timer(
+        &mut self,
+        commands: &mut Commands,
+        action_map: &ActionNameMap,
+        q_action_inactive: &mut QueryActionInactive,
+        dt: Duration,
+    ) {
+        for (name, _, timer, ran) in self.to_disambiguate.iter_mut() {
+            if *ran { continue; }
+            timer.tick(dt);
+            if timer.finished() {
+                *ran = true;
+                if let Some(&e) = action_map.map_name.get(name) {
+                    if q_action_inactive.get(e).is_ok() {
+                        debug!("Mouse disambiguation timeout. Activate InputAction {:?}.", name.0);
+                        Self::activate_action(commands, e, name);
+                    }
+                }
+            }
+        }
+    }
+    fn do_immediate_actions(
+        &mut self,
+        commands: &mut Commands,
+        action_map: &ActionNameMap,
+        q_action_inactive: &mut QueryActionInactive,
+        q_action_active: &mut QueryActionActive,
+    ) {
+        for ref name in self.queue_immediate.drain(..) {
+            if let Some(&e) = action_map.map_name.get(name) {
+                if q_action_inactive.get(e).is_ok() {
+                    debug!("Mouse disambiguated. Immediate trigger InputAction {:?}.", name.0);
+                    Self::activate_action(commands, e, name);
+                    Self::deactivate_action(commands, e, name);
+                }
+                if q_action_active.get(e).is_ok() {
+                    debug!("Mouse disambiguated. Immediate restart InputAction {:?}.", name.0);
+                    Self::deactivate_action(commands, e, name);
+                    Self::activate_action(commands, e, name);
+                }
+            }
+        }
+    }
+    fn do_keyboard_action_activations(
+        &self,
+        commands: &mut Commands,
+        action_map: &ActionNameMap,
+        q_action_inactive: &mut QueryActionInactive,
+    ) {
+        for name in self.queue_key_action.iter() {
+            if let Some(&e) = action_map.map_name.get(name) {
+                if q_action_inactive.get(e).is_ok() {
+                    debug!("Activate InputAction {:?} (Keyboard).", name.0);
+                    Self::activate_action(commands, e, name);
+                }
+            }
+        }
+    }
+    fn do_mouse_action_activations(
+        &self,
+        commands: &mut Commands,
+        action_map: &ActionNameMap,
+        q_action_inactive: &mut QueryActionInactive,
+    ) {
+        for name in self.queue_btn_action.iter() {
+            if self.to_disambiguate.iter().find(|(n, _, _, _)| n == name).is_some() {
+                continue;
+            }
+            if let Some(&e) = action_map.map_name.get(name) {
+                if q_action_inactive.get(e).is_ok() {
+                    debug!("Activate InputAction {:?} (MouseButton).", name.0);
+                    Self::activate_action(commands, e, name);
+                }
+            }
+        }
+    }
+    fn do_mouse_motion_activations(
+        &self,
+        commands: &mut Commands,
+        analog_map: &AnalogNameMap,
+        q_analog_inactive: &mut QueryAnalogInactive,
+        q_analog_active: &mut QueryAnalogActive,
+    ) {
+        for name in self.queue_motion.iter() {
+            if self.to_disambiguate.iter().find(|(_, n, _, _)| n == name).is_some() {
+                continue;
+            }
+            if let Some(&e) = analog_map.map_name.get(name) {
+                if q_analog_inactive.get(e).is_ok() {
+                    debug!("Activate InputAnalog {:?} (MouseMotion).", name.0);
+                    Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                }
+                if let Ok((_, _, has_motion, _)) = q_analog_active.get(e) {
+                    if !has_motion {
+                        debug!("Add MouseMotion to active InputAnalog {:?}.", name.0);
+                        Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                    }
+                }
+            }
+        }
+    }
+    fn do_mouse_scroll_activations(
+        &self,
+        commands: &mut Commands,
+        analog_map: &AnalogNameMap,
+        q_analog_inactive: &mut QueryAnalogInactive,
+        q_analog_active: &mut QueryAnalogActive,
+    ) {
+        for name in self.queue_scroll.iter() {
+            if let Some(&e) = analog_map.map_name.get(name) {
+                if q_analog_inactive.get(e).is_ok() {
+                    debug!("Activate InputAnalog {:?} (MouseScroll).", name.0);
+                    Self::activate_analog(commands, e, name, AnalogSourceMouseScroll);
+                }
+                if let Ok((_, _, _, has_scroll)) = q_analog_active.get(e) {
+                    if !has_scroll {
+                        debug!("Add MouseScroll to active InputAnalog {:?}.", name.0);
+                        Self::activate_analog(commands, e, name, AnalogSourceMouseScroll);
+                    }
+                }
+            }
+        }
+    }
+    fn do_action_deactivations(
+        &self,
+        commands: &mut Commands,
+        q_action_active: &mut QueryActionActive,
+    ) {
+        for (e, name) in q_action_active.iter() {
+            let mut deactivate = true;
+            if self.queue_key_action.iter().find(|n| *n == name).is_some() {
+                deactivate = false;
+            }
+            if self.queue_btn_action.iter().find(|n| *n == name).is_some() {
+                deactivate = false;
+            }
+            if deactivate {
+                debug!("Deactivate InputAction {:?}.", name.0);
+                Self::deactivate_action(commands, e, name);
+            }
+        }
+    }
+    fn do_analog_deactivations(
+        &self,
+        commands: &mut Commands,
+        q_analog_active: &mut QueryAnalogActive,
+    ) {
+        for (e, name, has_motion, has_scroll) in q_analog_active.iter() {
+            let mut deactivate = true;
+            if self.queue_motion.iter().find(|n| *n == name).is_some() {
+                deactivate = false;
+            } else if has_motion {
+                debug!("Remove MouseMotion from active InputAnalog {:?}.", name.0);
+                commands.entity(e).remove::<AnalogSourceMouseMotion>();
+            }
+            if self.queue_scroll.iter().find(|n| *n == name).is_some() {
+                deactivate = false;
+            } else if has_scroll {
+                debug!("Remove MouseScroll from active InputAnalog {:?}.", name.0);
+                commands.entity(e).remove::<AnalogSourceMouseScroll>();
+            }
+            if deactivate {
+                debug!("Deactivate InputAnalog {:?}.", name.0);
+                Self::deactivate_analog(commands, e, name);
+            }
+        }
+    }
+    fn refresh_state_from_inputs(
+        &mut self,
+        s_map: &KeyboardMouseMappings,
+        s_mouse: &MouseInputSettings,
+        in_key: &Res<ButtonInput<KeyCode>>,
+        in_btn: &Res<ButtonInput<MouseButton>>,
+    ) {
+        if in_key.is_changed() || in_btn.is_changed() {
+            self.temp_btns.clear();
+            self.refresh_key_actions_from_inputs(s_map, in_key);
+            self.refresh_btn_actions_from_inputs(s_map, in_key, in_btn);
+            self.refresh_mouse_motion_from_inputs(s_map, s_mouse, in_key, in_btn);
+            self.refresh_mouse_scroll_from_inputs(s_map, in_key, in_btn);
+            self.refresh_process_disambiguations();
+            self.temp_btns.clear();
+        }
+    }
+    fn add_ambiguity(
+        &mut self,
+        s_mouse: &MouseInputSettings,
+        action: InputActionName,
+        analog: InputAnalogName,
+    ) {
+        if self.to_disambiguate.iter()
+            .find(|(ac, an, _, _)| ac == &action && an == &analog).is_some()
+        {
+            return;
+        }
+        let dur = Duration::from_millis(s_mouse.action_motion_disambiguate_ms as u64);
+        self.to_disambiguate.push((
+            action, analog,
+            Timer::new(dur, TimerMode::Once),
+            false,
+        ));
+    }
+    fn refresh_key_actions_from_inputs(
+        &mut self,
+        s_map: &KeyboardMouseMappings,
+        in_key: &Res<ButtonInput<KeyCode>>,
+    ) {
+        self.queue_key_action.clear();
         for (keys, name) in s_map.key_actions.iter() {
             if keys.is_empty() { continue; }
             if keys.iter().all(|key| in_key.pressed(*key)) {
-                queue_key_action.push(name.into());
+                self.queue_key_action.push(name.into());
             }
         }
+    }
+    fn refresh_btn_actions_from_inputs(
+        &mut self,
+        s_map: &KeyboardMouseMappings,
+        in_key: &Res<ButtonInput<KeyCode>>,
+        in_btn: &Res<ButtonInput<MouseButton>>,
+    ) {
+        self.queue_btn_action.clear();
         let mut any_keys = false;
         for (keys, map) in s_map.mouse_actions.iter() {
             if keys.is_empty() { continue; }
@@ -326,8 +615,8 @@ fn keyboard_mouse_input(
                     if btns.is_empty() { continue; }
                     if btns.iter().all(|btn| in_btn.pressed(*btn)) {
                         any_keys = true;
-                        queue_btn_action.push(name.into());
-                        btns_triggered.push((btns.clone(), name.into()));
+                        self.queue_btn_action.push(name.into());
+                        self.temp_btns.push((btns.clone(), name.into()));
                     }
                 }
             }
@@ -337,12 +626,21 @@ fn keyboard_mouse_input(
                 for (btns, name) in map.iter() {
                     if btns.is_empty() { continue; }
                     if btns.iter().all(|btn| in_btn.pressed(*btn)) {
-                        queue_btn_action.push(name.into());
-                        btns_triggered.push((btns.clone(), name.into()));
+                        self.queue_btn_action.push(name.into());
+                        self.temp_btns.push((btns.clone(), name.into()));
                     }
                 }
             }
         }
+    }
+    fn refresh_mouse_motion_from_inputs(
+        &mut self,
+        s_map: &KeyboardMouseMappings,
+        s_mouse: &MouseInputSettings,
+        in_key: &Res<ButtonInput<KeyCode>>,
+        in_btn: &Res<ButtonInput<MouseButton>>,
+    ) {
+        self.queue_motion.clear();
         let mut any_keys = false;
         for (keys, map) in s_map.mouse_motion.iter() {
             if keys.is_empty() { continue; }
@@ -353,22 +651,16 @@ fn keyboard_mouse_input(
                     if btns.iter().all(|btn| in_btn.pressed(*btn)) {
                         any_keys = true;
                         any_btns = true;
-                        queue_motion.push(name.into());
-                        if let Some((_, action)) = btns_triggered.iter().find(|(b, _)| b == btns) {
-                            let dur = Duration::from_millis(s_mouse.action_motion_disambiguate_ms as u64);
-                            state.to_disambiguate.push((
-                                action.into(),
-                                name.into(),
-                                Timer::new(dur, TimerMode::Once),
-                                false,
-                            ));
+                        self.queue_motion.push(name.into());
+                        if let Some((_, action)) = self.temp_btns.iter().find(|(b, _)| b == btns) {
+                            self.add_ambiguity(s_mouse, action.into(), name.into());
                         }
                     }
                 }
                 if !any_btns {
                     if let Some(name) = map.get(&vec![]) {
                         any_keys = true;
-                        queue_motion.push(name.into());
+                        self.queue_motion.push(name.into());
                     }
                 }
             }
@@ -380,25 +672,27 @@ fn keyboard_mouse_input(
                     if btns.is_empty() { continue; }
                     if btns.iter().all(|btn| in_btn.pressed(*btn)) {
                         any_btns = true;
-                        queue_motion.push(name.into());
-                        if let Some((_, action)) = btns_triggered.iter().find(|(b, _)| b == btns) {
-                            let dur = Duration::from_millis(s_mouse.action_motion_disambiguate_ms as u64);
-                            state.to_disambiguate.push((
-                                action.into(),
-                                name.into(),
-                                Timer::new(dur, TimerMode::Once),
-                                false,
-                            ));
+                        self.queue_motion.push(name.into());
+                        if let Some((_, action)) = self.temp_btns.iter().find(|(b, _)| b == btns) {
+                            self.add_ambiguity(s_mouse, action.into(), name.into());
                         }
                     }
                 }
                 if !any_btns {
                     if let Some(name) = map.get(&vec![]) {
-                        queue_motion.push(name.into());
+                        self.queue_motion.push(name.into());
                     }
                 }
             }
         }
+    }
+    fn refresh_mouse_scroll_from_inputs(
+        &mut self,
+        s_map: &KeyboardMouseMappings,
+        in_key: &Res<ButtonInput<KeyCode>>,
+        in_btn: &Res<ButtonInput<MouseButton>>,
+    ) {
+        self.queue_scroll.clear();
         let mut any_keys = false;
         for (keys, map) in s_map.mouse_scroll.iter() {
             if keys.is_empty() { continue; }
@@ -409,13 +703,13 @@ fn keyboard_mouse_input(
                     if btns.iter().all(|btn| in_btn.pressed(*btn)) {
                         any_keys = true;
                         any_btns = true;
-                        queue_scroll.push(name.into());
+                        self.queue_scroll.push(name.into());
                     }
                 }
                 if !any_btns {
                     if let Some(name) = map.get(&vec![]) {
                         any_keys = true;
-                        queue_scroll.push(name.into());
+                        self.queue_scroll.push(name.into());
                     }
                 }
             }
@@ -427,229 +721,31 @@ fn keyboard_mouse_input(
                     if btns.is_empty() { continue; }
                     if btns.iter().all(|btn| in_btn.pressed(*btn)) {
                         any_btns = true;
-                        queue_scroll.push(name.into());
+                        self.queue_scroll.push(name.into());
                     }
                 }
                 if !any_btns {
                     if let Some(name) = map.get(&vec![]) {
-                        queue_scroll.push(name.into());
+                        self.queue_scroll.push(name.into());
                     }
                 }
             }
         }
-
-        // check for disambiguations that were released
-        state.to_disambiguate.retain(|(action, analog, _, _)| {
-            let a = queue_btn_action.iter().find(|&n| n == action).is_some();
-            let m = queue_motion.iter().find(|&n| n == analog).is_some();
+    }
+    fn refresh_process_disambiguations(&mut self) {
+        self.to_disambiguate.retain(|(action, analog, _, _)| {
+            let a = self.queue_btn_action.iter().find(|&n| n == action).is_some();
+            let m = self.queue_motion.iter().find(|&n| n == analog).is_some();
             match (a, m) {
                 (true, true) => { true }, // still ambiguous
                 (true, false) => { false }, // no longer ambiguous
                 (false, true) => { false }, // no longer ambiguous
                 (false, false) => {
-                    // no longer ambiguous; execute action immediately
-                    queue_immediate.push(action.clone());
+                    // completely released; execute action immediately
+                    self.queue_immediate.push(action.clone());
                     false
                 }
             }
         });
-    }
-
-    if !evr_motion.is_empty() {
-        evr_motion.clear();
-        for (_, name, _, ran) in state.to_disambiguate.iter_mut() {
-            if *ran { continue; }
-            *ran = true;
-            if let Some(e) = analog_map.map_name.get(name) {
-                if q_analog_active.get(*e).is_ok() {
-                    debug!("Mouse disambiguated by motion. Activate InputAnalog {:?} (MouseMotion).", name.0);
-                    let name = name.clone();
-                    commands.entity(*e).insert((
-                        InputAnalogActive,
-                        AnalogSourceMouseMotion,
-                    ));
-                    commands.add(move |world: &mut World| {
-                        world.try_run_schedule(InputAnalogOnStart(name)).ok();
-                    });
-                }
-                if let Ok((_, _, has_motion, _)) = q_analog_active.get(*e) {
-                    if !has_motion {
-                        debug!("Mouse disambiguated by motion. Add MouseMotion to active InputAnalog {:?}.", name.0);
-                        let name = name.clone();
-                        commands.entity(*e).insert(AnalogSourceMouseMotion);
-                        commands.add(move |world: &mut World| {
-                            world.try_run_schedule(InputAnalogOnStart(name)).ok();
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    for (name, _, timer, ran) in state.to_disambiguate.iter_mut() {
-        if *ran { continue; }
-        timer.tick(time.delta());
-        if timer.finished() {
-            *ran = true;
-            if let Some(e) = action_map.map_name.get(name) {
-                if q_action_active.get(*e).is_ok() {
-                    debug!("Mouse disambiguation timeout. Activate InputAction {:?}.", name.0);
-                    let name = name.clone();
-                    commands.entity(*e)
-                        .insert(InputActionActive);
-                    commands.add(move |world: &mut World| {
-                        world.try_run_schedule(InputActionOnPress(name)).ok();
-                    });
-                }
-            }
-        }
-    }
-
-    for name in queue_immediate.drain(..) {
-        if let Some(e) = action_map.map_name.get(&name) {
-            if q_action_inactive.get(*e).is_ok() {
-                debug!("Mouse disambiguated. Immediate InputAction {:?}.", name.0);
-                let n = name.clone();
-                commands.add(move |world: &mut World| {
-                    world.try_run_schedule(InputActionOnPress(n)).ok();
-                });
-                let n = name.clone();
-                commands.add(move |world: &mut World| {
-                    world.try_run_schedule(InputActionOnRelease(n)).ok();
-                });
-            }
-        }
-    }
-
-    for name in queue_key_action.iter() {
-        if let Some(e) = action_map.map_name.get(name) {
-            if q_action_inactive.get(*e).is_ok() {
-                debug!("Activate InputAction {:?} (Keyboard).", name.0);
-                let name = name.clone();
-                commands.entity(*e)
-                    .insert(InputActionActive);
-                commands.add(move |world: &mut World| {
-                    world.try_run_schedule(InputActionOnPress(name)).ok();
-                });
-            }
-        }
-    }
-
-    for name in queue_btn_action.iter() {
-        if state.to_disambiguate.iter().find(|(n, _, _, _)| n == name).is_some() {
-            continue;
-        }
-        if let Some(e) = action_map.map_name.get(name) {
-            if q_action_inactive.get(*e).is_ok() {
-                debug!("Activate InputAction {:?} (MouseButton).", name.0);
-                let name = name.clone();
-                commands.entity(*e)
-                    .insert(InputActionActive);
-                commands.add(move |world: &mut World| {
-                    world.try_run_schedule(InputActionOnPress(name)).ok();
-                });
-            }
-        }
-    }
-
-    for name in queue_motion.iter() {
-        if state.to_disambiguate.iter().find(|(_, n, _, _)| n == name).is_some() {
-            continue;
-        }
-        if let Some(e) = analog_map.map_name.get(name) {
-            if q_analog_inactive.get(*e).is_ok() {
-                debug!("Activate InputAnalog {:?} (MouseMotion).", name.0);
-                let name = name.clone();
-                commands.entity(*e).insert((
-                    InputAnalogActive,
-                    AnalogSourceMouseMotion,
-                ));
-                commands.add(move |world: &mut World| {
-                    world.try_run_schedule(InputAnalogOnStart(name)).ok();
-                });
-            }
-            if let Ok((_, _, has_motion, _)) = q_analog_active.get(*e) {
-                if !has_motion {
-                    debug!("Add MouseMotion to active InputAnalog {:?}.", name.0);
-                    let name = name.clone();
-                    commands.entity(*e).insert(AnalogSourceMouseMotion);
-                    commands.add(move |world: &mut World| {
-                        world.try_run_schedule(InputAnalogOnStart(name)).ok();
-                    });
-                }
-            }
-        }
-    }
-
-    for name in queue_scroll.iter() {
-        if let Some(e) = analog_map.map_name.get(name) {
-            if q_analog_inactive.get(*e).is_ok() {
-                debug!("Activate InputAnalog {:?} (MouseScroll).", name.0);
-                let name = name.clone();
-                commands.entity(*e).insert((
-                    InputAnalogActive,
-                    AnalogSourceMouseScroll,
-                ));
-                commands.add(move |world: &mut World| {
-                    world.try_run_schedule(InputAnalogOnStart(name)).ok();
-                });
-            }
-            if let Ok((_, _, _, has_scroll)) = q_analog_active.get(*e) {
-                if !has_scroll {
-                    debug!("Add MouseScroll to active InputAnalog {:?}.", name.0);
-                    let name = name.clone();
-                    commands.entity(*e).insert(AnalogSourceMouseScroll);
-                    commands.add(move |world: &mut World| {
-                        world.try_run_schedule(InputAnalogOnStart(name)).ok();
-                    });
-                }
-            }
-        }
-    }
-
-    for (e, name) in q_action_active.iter() {
-        let mut deactivate = true;
-        if queue_key_action.iter().find(|n| *n == name).is_some() {
-            deactivate = false;
-        }
-        if queue_btn_action.iter().find(|n| *n == name).is_some() {
-            deactivate = false;
-        }
-        if deactivate {
-            debug!("Deactivate InputAction {:?}.", name.0);
-            let name = name.clone();
-            commands.entity(e)
-                .remove::<ActionDeactivateCleanup>();
-            commands.add(move |world: &mut World| {
-                world.try_run_schedule(InputActionOnRelease(name)).ok();
-            });
-        }
-    }
-
-    for (e, name, has_motion, has_scroll) in q_analog_active.iter() {
-        let mut deactivate = true;
-        if queue_motion.iter().find(|n| *n == name).is_some() {
-            deactivate = false;
-        } else if has_motion {
-            debug!("Remove MouseMotion from active InputAnalog {:?}.", name.0);
-            commands.entity(e)
-                .remove::<AnalogSourceMouseMotion>();
-        }
-        if queue_scroll.iter().find(|n| *n == name).is_some() {
-            deactivate = false;
-        } else if has_scroll {
-            debug!("Remove MouseScroll from active InputAnalog {:?}.", name.0);
-            commands.entity(e)
-                .remove::<AnalogSourceMouseScroll>();
-        }
-        if deactivate {
-            debug!("Deactivate InputAnalog {:?}.", name.0);
-            let name = name.clone();
-            commands.entity(e)
-                .remove::<AnalogDeactivateCleanup>();
-            commands.add(move |world: &mut World| {
-                world.try_run_schedule(InputAnalogOnStop(name)).ok();
-            });
-        }
     }
 }

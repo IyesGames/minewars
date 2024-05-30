@@ -211,14 +211,6 @@ pub struct AnalogSourceGamepadZ {
     pub right: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum AnalogSource {
-    MouseMotion(AnalogSourceMouseMotion),
-    MouseScroll(AnalogSourceMouseScroll),
-    GamepadStick(AnalogSourceGamepadStick),
-    GamepadZ(AnalogSourceGamepadZ),
-}
-
 /// Useful for cleanup, to remove any possible analog source
 #[derive(Bundle)]
 pub struct AnalogSourcesCleanup {
