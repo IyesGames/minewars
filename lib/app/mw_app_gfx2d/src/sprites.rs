@@ -39,10 +39,19 @@ pub fn plugin(app: &mut App) {
 pub struct MapSpritesIndex(pub MapDataPos<Entity>);
 
 #[derive(Bundle)]
-struct CursorSpriteBundle {
+struct BaseSpriteBundle {
+    cleanup: GamePartialCleanup,
+    marker: BaseSprite,
     sprite: SpriteSheetBundle,
     pos: MwTilePos,
+}
+
+#[derive(Bundle)]
+struct CursorSpriteBundle {
+    cleanup: GamePartialCleanup,
     marker: CursorSprite,
+    sprite: SpriteSheetBundle,
+    pos: MwTilePos,
 }
 
 fn setup_cursor(
@@ -57,6 +66,7 @@ fn setup_cursor(
     };
     commands.spawn((
         CursorSpriteBundle {
+            cleanup: GamePartialCleanup,
             sprite: SpriteSheetBundle {
                 atlas: TextureAtlas {
                     index: i,
@@ -148,9 +158,10 @@ fn setup_tile_entities(
                 c.translation()
             },
         };
-        let e = commands.spawn((
-            BaseSprite,
-            SpriteSheetBundle {
+        let e = commands.spawn(BaseSpriteBundle {
+            cleanup: GamePartialCleanup,
+            marker: BaseSprite,
+            sprite: SpriteSheetBundle {
                 texture: assets.sprites_img.clone(),
                 atlas: TextureAtlas {
                     index: base_i,
@@ -166,7 +177,8 @@ fn setup_tile_entities(
                 visibility: Visibility::Hidden,
                 ..Default::default()
             },
-        )).id();
+            pos: MwTilePos(c.into()),
+        }).id();
         sprites_index.0[c.into()] = e;
     }
 
