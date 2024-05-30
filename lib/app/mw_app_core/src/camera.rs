@@ -45,39 +45,6 @@ pub struct CameraJumpSS;
 #[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash, Default)]
 pub struct CameraControlSS;
 
-#[derive(Bundle)]
-pub struct CameraInputActionBundle {
-    marker: CameraInput,
-    bundle: InputActionBundle,
-}
-
-#[derive(Bundle)]
-pub struct CameraInputAnalogBundle {
-    marker: CameraInput,
-    bundle: InputAnalogBundle,
-}
-
-#[derive(Component)]
-pub struct CameraInput;
-
-impl<'a> From<&'a str> for CameraInputActionBundle {
-    fn from(value: &'a str) -> Self {
-        Self {
-            marker: CameraInput,
-            bundle: value.into(),
-        }
-    }
-}
-
-impl<'a> From<&'a str> for CameraInputAnalogBundle {
-    fn from(value: &'a str) -> Self {
-        Self {
-            marker: CameraInput,
-            bundle: value.into(),
-        }
-    }
-}
-
 fn rc_camera_changed(
     q_camera: Query<(), (Changed<Transform>, With<GameCamera>)>,
 ) -> bool {
@@ -86,6 +53,11 @@ fn rc_camera_changed(
 
 pub mod input {
     use super::*;
+
+    #[derive(Component)]
+    pub struct CameraInput;
+    #[derive(Component)]
+    pub struct CameraControlInput;
 
     #[derive(Component)]
     pub struct AnalogGridCursor;
@@ -104,10 +76,25 @@ pub mod input {
     pub const ACTION_CENTER: &str = "ACTION_CAMERA_CENTER";
 
     pub(super) fn setup_inputs(mut commands: Commands) {
-        commands.spawn((AnalogGridCursor, CameraInputAnalogBundle::from(ANALOG_GRID_CURSOR)));
-        commands.spawn((AnalogPan, CameraInputAnalogBundle::from(ANALOG_PAN)));
-        commands.spawn((AnalogRotate, CameraInputAnalogBundle::from(ANALOG_ROTATE)));
-        commands.spawn((AnalogZoom, CameraInputAnalogBundle::from(ANALOG_ZOOM)));
-        commands.spawn((ActionCenter, CameraInputActionBundle::from(ACTION_CENTER)));
+        commands.spawn((
+            CameraInput, AnalogGridCursor,
+            InputAnalogBundle::from(ANALOG_GRID_CURSOR),
+        ));
+        commands.spawn((
+            CameraInput, CameraControlInput, AnalogPan,
+            InputAnalogBundle::from(ANALOG_PAN),
+        ));
+        commands.spawn((
+            CameraInput, CameraControlInput, AnalogRotate,
+            InputAnalogBundle::from(ANALOG_ROTATE),
+        ));
+        commands.spawn((
+            CameraInput, CameraControlInput, AnalogZoom,
+            InputAnalogBundle::from(ANALOG_ZOOM),
+        ));
+        commands.spawn((
+            CameraInput, CameraControlInput, ActionCenter,
+            InputActionBundle::from(ACTION_CENTER),
+        ));
     }
 }

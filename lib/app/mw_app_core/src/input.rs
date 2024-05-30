@@ -26,11 +26,10 @@ pub enum GameInputSS {
 
 /// System Sets for each class of input device.
 ///
-/// Adds run conditions based on `DetectedInputDevices`.
+/// Adds run conditions based on `CurrentInputDevice`.
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum InputDeviceSet {
-    Keyboard,
-    Mouse,
+    KeyboardMouse,
     Touch,
     Gamepad,
 }
@@ -60,7 +59,7 @@ pub struct GameInputSet;
 #[derive(Bundle, Default)]
 pub struct InputGovernorCoreBundle {
     pub marker: InputGovernor,
-    pub detected: DetectedInputDevices,
+    pub detected: CurrentInputDevice,
     pub toolbox: Toolbox,
 }
 
@@ -68,17 +67,20 @@ pub struct InputGovernorCoreBundle {
 #[derive(Component, Default)]
 pub struct InputGovernor;
 
-/// What input devices has the user been found to be using?
+/// What is the user's detected primary input device?
+///
+/// (What device was last seen to be used?)
 ///
 /// As soon as we notice input events from a particular kind
-/// of device, we note that here. This allows us to then enable
+/// of device, we change this. This allows us to then enable
 /// functionality and UI specific to that kind of input device.
-#[derive(Component, Default)]
-pub struct DetectedInputDevices {
-    pub kbd: bool,
-    pub mouse: bool,
-    pub touch: bool,
-    pub gamepad: bool,
+#[derive(Component, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CurrentInputDevice {
+    #[cfg_attr(not(any(target_os = "ios", target_os = "android")), default)]
+    KeyboardMouse,
+    #[cfg_attr(any(target_os = "ios", target_os = "android"), default)]
+    Touch,
+    Gamepad,
 }
 
 /// Gameplay Input Kill Switch

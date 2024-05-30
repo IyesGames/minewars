@@ -6,7 +6,7 @@ use crate::{prelude::*, settings::{KeyboardMouseMappings, MouseInputSettings}};
 pub fn plugin(app: &mut App) {
     app.configure_stage_set(
         Update, GameInputSS::Detect,
-        any_filter::<(With<InputGovernor>, Changed<DetectedInputDevices>)>
+        any_filter::<(With<InputGovernor>, Changed<CurrentInputDevice>)>
     );
     app.configure_stage_set_no_rc(
         Update, GameInputSS::Handle,
@@ -27,18 +27,15 @@ pub fn plugin(app: &mut App) {
             .run_if(rc_on_mouse_motion_or_cursor_event),
     ));
     app.configure_sets(Update, (
-        InputDeviceSet::Keyboard
+        InputDeviceSet::KeyboardMouse
             .in_set(SetStage::Want(GameInputSS::Detect))
-            .run_if(rc_input_device(InputDeviceSet::Keyboard)),
-        InputDeviceSet::Mouse
-            .in_set(SetStage::Want(GameInputSS::Detect))
-            .run_if(rc_input_device(InputDeviceSet::Mouse)),
+            .run_if(rc_input_device(CurrentInputDevice::KeyboardMouse)),
         InputDeviceSet::Touch
             .in_set(SetStage::Want(GameInputSS::Detect))
-            .run_if(rc_input_device(InputDeviceSet::Touch)),
+            .run_if(rc_input_device(CurrentInputDevice::Touch)),
         InputDeviceSet::Gamepad
             .in_set(SetStage::Want(GameInputSS::Detect))
-            .run_if(rc_input_device(InputDeviceSet::Gamepad)),
+            .run_if(rc_input_device(CurrentInputDevice::Gamepad)),
     ));
     app.add_systems(
         OnExit(AppState::InGame),
@@ -48,20 +45,20 @@ pub fn plugin(app: &mut App) {
         )
     );
     app.add_systems(Update, (
+        manage_inputs
+            .in_set(SetStage::Prepare(GameInputSS::Handle)),
         detect_input_devices
             .run_if(rc_detect_input_devices)
             .in_set(SetStage::Provide(GameInputSS::Detect)),
         keyboard_mouse_input
             .run_if(rc_keyboard_mouse_input)
             .in_set(GameInputSet)
+            .in_set(InputDeviceSet::KeyboardMouse)
             .in_set(SetStage::Provide(GameInputSS::Handle)),
     ));
     app.add_systems(Startup, (
         setup_input
             .in_set(SetStage::Prepare(GameInputSS::Setup)),
-        manage_inputs
-            .in_set(SetStage::Want(GameInputSS::Setup))
-            .in_set(SetStage::Prepare(SettingsSyncSS)),
     ));
 }
 
@@ -132,61 +129,62 @@ fn rc_accepting_game_input(
     !any_interaction
 }
 
-fn rc_input_device(device: InputDeviceSet)
-    -> impl Fn(Query<&DetectedInputDevices, With<InputGovernor>>) -> bool
+fn rc_input_device(device: CurrentInputDevice)
+    -> impl Fn(Query<&CurrentInputDevice, With<InputGovernor>>) -> bool
 {
-    match device {
-        InputDeviceSet::Keyboard =>
-            |q: Query<&DetectedInputDevices, With<InputGovernor>>|
-            q.get_single().map(|d| d.kbd)
-                .unwrap_or(false),
-        InputDeviceSet::Mouse =>
-            |q: Query<&DetectedInputDevices, With<InputGovernor>>|
-            q.get_single().map(|d| d.mouse)
-                .unwrap_or(false),
-        InputDeviceSet::Touch =>
-            |q: Query<&DetectedInputDevices, With<InputGovernor>>|
-            q.get_single().map(|d| d.touch)
-                .unwrap_or(false),
-        InputDeviceSet::Gamepad =>
-            |q: Query<&DetectedInputDevices, With<InputGovernor>>|
-            q.get_single().map(|d| d.gamepad)
-                .unwrap_or(false),
-    }
+    move |q: Query<&CurrentInputDevice, With<InputGovernor>>|
+        q.get_single().map(|d| *d == device)
+            .unwrap_or(false)
 }
 
 fn rc_detect_input_devices(
     mut evr_mouse: EventReader<MouseMotion>,
+    mut evr_cursor: EventReader<CursorMoved>,
     mut evr_kbd: EventReader<KeyboardInput>,
     mut evr_touch: EventReader<TouchInput>,
     mut evr_gamepad: EventReader<GamepadEvent>,
 ) -> bool {
     evr_mouse.read().count() > 0 ||
+    evr_cursor.read().count() > 0 ||
     evr_kbd.read().count() > 0 ||
     evr_touch.read().count() > 0 ||
     evr_gamepad.read().count() > 0
 }
 
 fn detect_input_devices(
+    commands: Commands,
     mut evr_mouse: EventReader<MouseMotion>,
+    mut evr_cursor: EventReader<CursorMoved>,
     mut evr_kbd: EventReader<KeyboardInput>,
     mut evr_touch: EventReader<TouchInput>,
     mut evr_gamepad: EventReader<GamepadEvent>,
-    gamepads: Res<Gamepads>,
-    mut q_input: Query<&mut DetectedInputDevices, With<InputGovernor>>,
+    mut q_input: Query<&mut CurrentInputDevice, With<InputGovernor>>,
+    q_action: Query<Entity, With<InputActionEnabled>>,
+    q_analog: Query<Entity, With<InputAnalogEnabled>>,
 ) {
-    let mut detected = q_input.single_mut();
-    if !detected.mouse && evr_mouse.read().count() > 0 {
-        detected.mouse = true;
+    let mut device = q_input.single_mut();
+    let mut changed = false;
+    if *device != CurrentInputDevice::KeyboardMouse {
+        if evr_mouse.read().count() > 0 ||
+           evr_cursor.read().count() > 0 ||
+           evr_kbd.read().count() > 0
+        {
+            changed = true;
+            *device = CurrentInputDevice::KeyboardMouse;
+        }
+    } else if *device != CurrentInputDevice::Gamepad {
+        if evr_gamepad.read().count() > 0 {
+            changed = true;
+            *device = CurrentInputDevice::Gamepad;
+        }
+    } else if *device != CurrentInputDevice::Touch {
+        if evr_touch.read().count() > 0 {
+            changed = true;
+            *device = CurrentInputDevice::Touch;
+        }
     }
-    if !detected.kbd && evr_kbd.read().count() > 0 {
-        detected.kbd = true;
-    }
-    if !detected.touch && evr_touch.read().count() > 0 {
-        detected.touch = true;
-    }
-    if evr_gamepad.read().count() > 0 {
-        detected.gamepad = gamepads.iter().count() != 0;
+    if changed {
+        deactivate_all(commands, q_action, q_analog);
     }
 }
 
@@ -195,10 +193,10 @@ fn manage_inputs(
         &mut ActionNameMap,
         &mut AnalogNameMap,
     ), With<InputGovernor>>,
-    q_action: Query<(Entity, &InputActionName), Added<InputAction>>,
-    q_analog: Query<(Entity, &InputAnalogName), Added<InputAnalog>>,
-    mut removed_action: RemovedComponents<InputAction>,
-    mut removed_analog: RemovedComponents<InputAnalog>,
+    q_action: Query<(Entity, &InputActionName), Added<InputActionEnabled>>,
+    q_analog: Query<(Entity, &InputAnalogName), Added<InputAnalogEnabled>>,
+    mut removed_action: RemovedComponents<InputActionEnabled>,
+    mut removed_analog: RemovedComponents<InputActionEnabled>,
 ) {
     let (
         mut action_name_map,
@@ -207,20 +205,24 @@ fn manage_inputs(
 
     for e in removed_action.read() {
         if let Some(name) = action_name_map.map_entity.remove(&e) {
+            debug!("Disabled InputAction {:?}.", name.0);
             action_name_map.map_name.remove(&name);
         }
     }
     for (e, name) in &q_action {
+        debug!("Enabled InputAction {:?}.", name.0);
         action_name_map.map_name.insert(name.clone(), e);
         action_name_map.map_entity.insert(e, name.clone());
     }
 
     for e in removed_analog.read() {
         if let Some(name) = analog_name_map.map_entity.remove(&e) {
+            debug!("Disabled InputAnalog {:?}.", name.0);
             analog_name_map.map_name.remove(&name);
         }
     }
     for (e, name) in &q_analog {
+        debug!("Enabled InputAnalog {:?}.", name.0);
         analog_name_map.map_name.insert(name.clone(), e);
         analog_name_map.map_entity.insert(e, name.clone());
     }
@@ -237,18 +239,18 @@ struct KeyboardMouseInputState {
     temp_btns: Vec<(Vec<MouseButton>, String)>,
 }
 
-type QueryActionActive<'w: 's, 's> = Query<'w, 's, (
+type QueryActionActive<'w, 's> = Query<'w, 's, (
     Entity,
-    &'w InputActionName,
+    &'static InputActionName,
 ), (
     With<InputAction>,
     Without<InputAnalog>,
     With<InputActionEnabled>,
     With<InputActionActive>,
 )>;
-type QueryAnalogActive<'w: 's, 's> = Query<'w, 's, (
+type QueryAnalogActive<'w, 's> = Query<'w, 's, (
     Entity,
-    &'w InputAnalogName,
+    &'static InputAnalogName,
     Has<AnalogSourceMouseMotion>,
     Has<AnalogSourceMouseScroll>,
 ), (
@@ -257,13 +259,13 @@ type QueryAnalogActive<'w: 's, 's> = Query<'w, 's, (
     With<InputAnalogEnabled>,
     With<InputAnalogActive>,
 )>;
-type QueryActionInactive<'w: 's, 's> = Query<'w, 's, (), (
+type QueryActionInactive<'w, 's> = Query<'w, 's, (), (
     With<InputAction>,
     Without<InputAnalog>,
     With<InputActionEnabled>,
     Without<InputActionActive>,
 )>;
-type QueryAnalogInactive<'w: 's, 's> = Query<'w, 's, (), (
+type QueryAnalogInactive<'w, 's> = Query<'w, 's, (), (
     With<InputAnalog>,
     Without<InputAction>,
     With<InputAnalogEnabled>,
@@ -333,34 +335,6 @@ fn keyboard_mouse_input(
 }
 
 impl KeyboardMouseInputState {
-    fn activate_action(commands: &mut Commands, e: Entity, name: &InputActionName) {
-        let name = name.clone();
-        commands.entity(e).insert(InputActionActive);
-        commands.add(move |world: &mut World| {
-            world.try_run_schedule(InputActionOnPress(name)).ok();
-        });
-    }
-    fn activate_analog<S: Component>(commands: &mut Commands, e: Entity, name: &InputAnalogName, source: S) {
-        let name = name.clone();
-        commands.entity(e).insert((InputAnalogActive, source));
-        commands.add(move |world: &mut World| {
-            world.try_run_schedule(InputAnalogOnStart(name)).ok();
-        });
-    }
-    fn deactivate_action(commands: &mut Commands, e: Entity, name: &InputActionName) {
-        let name = name.clone();
-        commands.entity(e).remove::<ActionDeactivateCleanup>();
-        commands.add(move |world: &mut World| {
-            world.try_run_schedule(InputActionOnRelease(name)).ok();
-        });
-    }
-    fn deactivate_analog(commands: &mut Commands, e: Entity, name: &InputAnalogName) {
-        let name = name.clone();
-        commands.entity(e).remove::<AnalogDeactivateCleanup>();
-        commands.add(move |world: &mut World| {
-            world.try_run_schedule(InputAnalogOnStop(name)).ok();
-        });
-    }
     fn do_disambiguate_by_motion(
         &mut self,
         commands: &mut Commands,
@@ -373,13 +347,13 @@ impl KeyboardMouseInputState {
             *ran = true;
             if let Some(&e) = analog_map.map_name.get(name) {
                 if q_analog_inactive.get(e).is_ok() {
-                    debug!("Mouse disambiguated by motion. Activate InputAnalog {:?} (MouseMotion).", name.0);
-                    Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                    trace!("Mouse disambiguated by motion. Activate InputAnalog {:?} (MouseMotion).", name.0);
+                    activate_analog(commands, e, name, AnalogSourceMouseMotion);
                 }
                 if let Ok((_, _, has_motion, _)) = q_analog_active.get(e) {
                     if !has_motion {
-                        debug!("Mouse disambiguated by motion. Add MouseMotion to active InputAnalog {:?}.", name.0);
-                        Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                        trace!("Mouse disambiguated by motion. Add MouseMotion to active InputAnalog {:?}.", name.0);
+                        activate_analog(commands, e, name, AnalogSourceMouseMotion);
                     }
                 }
             }
@@ -399,8 +373,8 @@ impl KeyboardMouseInputState {
                 *ran = true;
                 if let Some(&e) = action_map.map_name.get(name) {
                     if q_action_inactive.get(e).is_ok() {
-                        debug!("Mouse disambiguation timeout. Activate InputAction {:?}.", name.0);
-                        Self::activate_action(commands, e, name);
+                        trace!("Mouse disambiguation timeout. Activate InputAction {:?}.", name.0);
+                        activate_action(commands, e, name);
                     }
                 }
             }
@@ -416,14 +390,14 @@ impl KeyboardMouseInputState {
         for ref name in self.queue_immediate.drain(..) {
             if let Some(&e) = action_map.map_name.get(name) {
                 if q_action_inactive.get(e).is_ok() {
-                    debug!("Mouse disambiguated. Immediate trigger InputAction {:?}.", name.0);
-                    Self::activate_action(commands, e, name);
-                    Self::deactivate_action(commands, e, name);
+                    trace!("Mouse disambiguated. Immediate trigger InputAction {:?}.", name.0);
+                    activate_action(commands, e, name);
+                    deactivate_action(commands, e, name);
                 }
                 if q_action_active.get(e).is_ok() {
-                    debug!("Mouse disambiguated. Immediate restart InputAction {:?}.", name.0);
-                    Self::deactivate_action(commands, e, name);
-                    Self::activate_action(commands, e, name);
+                    trace!("Mouse disambiguated. Immediate restart InputAction {:?}.", name.0);
+                    deactivate_action(commands, e, name);
+                    activate_action(commands, e, name);
                 }
             }
         }
@@ -437,8 +411,8 @@ impl KeyboardMouseInputState {
         for name in self.queue_key_action.iter() {
             if let Some(&e) = action_map.map_name.get(name) {
                 if q_action_inactive.get(e).is_ok() {
-                    debug!("Activate InputAction {:?} (Keyboard).", name.0);
-                    Self::activate_action(commands, e, name);
+                    trace!("Activate InputAction {:?} (Keyboard).", name.0);
+                    activate_action(commands, e, name);
                 }
             }
         }
@@ -455,8 +429,8 @@ impl KeyboardMouseInputState {
             }
             if let Some(&e) = action_map.map_name.get(name) {
                 if q_action_inactive.get(e).is_ok() {
-                    debug!("Activate InputAction {:?} (MouseButton).", name.0);
-                    Self::activate_action(commands, e, name);
+                    trace!("Activate InputAction {:?} (MouseButton).", name.0);
+                    activate_action(commands, e, name);
                 }
             }
         }
@@ -474,13 +448,13 @@ impl KeyboardMouseInputState {
             }
             if let Some(&e) = analog_map.map_name.get(name) {
                 if q_analog_inactive.get(e).is_ok() {
-                    debug!("Activate InputAnalog {:?} (MouseMotion).", name.0);
-                    Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                    trace!("Activate InputAnalog {:?} (MouseMotion).", name.0);
+                    activate_analog(commands, e, name, AnalogSourceMouseMotion);
                 }
                 if let Ok((_, _, has_motion, _)) = q_analog_active.get(e) {
                     if !has_motion {
-                        debug!("Add MouseMotion to active InputAnalog {:?}.", name.0);
-                        Self::activate_analog(commands, e, name, AnalogSourceMouseMotion);
+                        trace!("Add MouseMotion to active InputAnalog {:?}.", name.0);
+                        activate_analog(commands, e, name, AnalogSourceMouseMotion);
                     }
                 }
             }
@@ -496,13 +470,13 @@ impl KeyboardMouseInputState {
         for name in self.queue_scroll.iter() {
             if let Some(&e) = analog_map.map_name.get(name) {
                 if q_analog_inactive.get(e).is_ok() {
-                    debug!("Activate InputAnalog {:?} (MouseScroll).", name.0);
-                    Self::activate_analog(commands, e, name, AnalogSourceMouseScroll);
+                    trace!("Activate InputAnalog {:?} (MouseScroll).", name.0);
+                    activate_analog(commands, e, name, AnalogSourceMouseScroll);
                 }
                 if let Ok((_, _, _, has_scroll)) = q_analog_active.get(e) {
                     if !has_scroll {
-                        debug!("Add MouseScroll to active InputAnalog {:?}.", name.0);
-                        Self::activate_analog(commands, e, name, AnalogSourceMouseScroll);
+                        trace!("Add MouseScroll to active InputAnalog {:?}.", name.0);
+                        activate_analog(commands, e, name, AnalogSourceMouseScroll);
                     }
                 }
             }
@@ -522,8 +496,8 @@ impl KeyboardMouseInputState {
                 deactivate = false;
             }
             if deactivate {
-                debug!("Deactivate InputAction {:?}.", name.0);
-                Self::deactivate_action(commands, e, name);
+                trace!("Deactivate InputAction {:?}.", name.0);
+                deactivate_action(commands, e, name);
             }
         }
     }
@@ -537,18 +511,18 @@ impl KeyboardMouseInputState {
             if self.queue_motion.iter().find(|n| *n == name).is_some() {
                 deactivate = false;
             } else if has_motion {
-                debug!("Remove MouseMotion from active InputAnalog {:?}.", name.0);
+                trace!("Remove MouseMotion from active InputAnalog {:?}.", name.0);
                 commands.entity(e).remove::<AnalogSourceMouseMotion>();
             }
             if self.queue_scroll.iter().find(|n| *n == name).is_some() {
                 deactivate = false;
             } else if has_scroll {
-                debug!("Remove MouseScroll from active InputAnalog {:?}.", name.0);
+                trace!("Remove MouseScroll from active InputAnalog {:?}.", name.0);
                 commands.entity(e).remove::<AnalogSourceMouseScroll>();
             }
             if deactivate {
-                debug!("Deactivate InputAnalog {:?}.", name.0);
-                Self::deactivate_analog(commands, e, name);
+                trace!("Deactivate InputAnalog {:?}.", name.0);
+                deactivate_analog(commands, e, name);
             }
         }
     }
@@ -733,7 +707,7 @@ impl KeyboardMouseInputState {
         }
     }
     fn refresh_process_disambiguations(&mut self) {
-        self.to_disambiguate.retain(|(action, analog, _, _)| {
+        self.to_disambiguate.retain(|(action, analog, _, ran)| {
             let a = self.queue_btn_action.iter().find(|&n| n == action).is_some();
             let m = self.queue_motion.iter().find(|&n| n == analog).is_some();
             match (a, m) {
@@ -742,10 +716,54 @@ impl KeyboardMouseInputState {
                 (false, true) => { false }, // no longer ambiguous
                 (false, false) => {
                     // completely released; execute action immediately
-                    self.queue_immediate.push(action.clone());
+                    if !*ran {
+                        self.queue_immediate.push(action.clone());
+                    }
                     false
                 }
             }
         });
+    }
+}
+
+pub fn activate_action(commands: &mut Commands, e: Entity, name: &InputActionName) {
+    let name = name.clone();
+    commands.entity(e).insert(InputActionActive);
+    commands.add(move |world: &mut World| {
+        world.try_run_schedule(InputActionOnPress(name)).ok();
+    });
+}
+pub fn activate_analog<S: Component>(commands: &mut Commands, e: Entity, name: &InputAnalogName, source: S) {
+    let name = name.clone();
+    commands.entity(e).insert((InputAnalogActive, source));
+    commands.add(move |world: &mut World| {
+        world.try_run_schedule(InputAnalogOnStart(name)).ok();
+    });
+}
+pub fn deactivate_action(commands: &mut Commands, e: Entity, name: &InputActionName) {
+    let name = name.clone();
+    commands.entity(e).remove::<ActionDeactivateCleanup>();
+    commands.add(move |world: &mut World| {
+        world.try_run_schedule(InputActionOnRelease(name)).ok();
+    });
+}
+pub fn deactivate_analog(commands: &mut Commands, e: Entity, name: &InputAnalogName) {
+    let name = name.clone();
+    commands.entity(e).remove::<AnalogDeactivateCleanup>();
+    commands.add(move |world: &mut World| {
+        world.try_run_schedule(InputAnalogOnStop(name)).ok();
+    });
+}
+
+pub fn deactivate_all(
+    mut commands: Commands,
+    q_action: Query<Entity, With<InputActionEnabled>>,
+    q_analog: Query<Entity, With<InputAnalogEnabled>>,
+) {
+    for e in q_action.iter() {
+        commands.entity(e).remove::<ActionDeactivateCleanup>();
+    }
+    for e in q_analog.iter() {
+        commands.entity(e).remove::<AnalogDeactivateCleanup>();
     }
 }

@@ -1,4 +1,4 @@
-use bevy::window::{PresentMode, PrimaryWindow, WindowMode};
+use bevy::{ecs::system::RunSystemOnce, window::{PresentMode, PrimaryWindow, WindowMode}};
 use map_macro::hashbrown::hash_map;
 use mw_app_core::input::*;
 use mw_common::grid::Topology;
@@ -130,18 +130,7 @@ impl Default for KeyboardMouseMappings {
 
 impl Setting for KeyboardMouseMappings {
     fn apply(&self, world: &mut World) {
-        let entities: Vec<_> = world.query_filtered::<Entity, With<InputAction>>()
-            .iter(world).collect();
-        for e in entities {
-            world.entity_mut(e)
-                .remove::<ActionDeactivateCleanup>();
-        }
-        let entities: Vec<_> = world.query_filtered::<Entity, With<InputAnalog>>()
-            .iter(world).collect();
-        for e in entities {
-            world.entity_mut(e)
-                .remove::<AnalogDeactivateCleanup>();
-        }
+        world.run_system_once(crate::input::deactivate_all);
     }
 }
 

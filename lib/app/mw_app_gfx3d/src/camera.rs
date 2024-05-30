@@ -1,4 +1,4 @@
-use mw_app_core::{camera::{CameraInput, GameCameraBundle}, graphics::{Gfx3dEnabled, GraphicsGovernor}, input::{InputAction, InputActionEnabled, InputAnalog, InputAnalogEnabled}};
+use mw_app_core::{camera::{input::*, *}, graphics::{Gfx3dEnabled, GraphicsGovernor}, input::{InputAction, InputActionEnabled, InputAnalog, InputAnalogEnabled}};
 
 use crate::{prelude::*, settings::Camera3dSettings};
 
