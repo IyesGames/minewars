@@ -188,15 +188,15 @@ pub struct InputAnalogName(pub String);
 
 /// Action currently performed by mouse motion or pointer/cursor position.
 /// Which is more appropriate is an implementation detail.
-#[derive(Component, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceMouseMotion;
 
 /// Action currently performed by mouse scrolling / wheel
-#[derive(Component, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceMouseScroll;
 
 /// Action currently performed by gamepad joystick
-#[derive(Component, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceGamepadStick {
     pub gamepad: Gamepad,
     pub left: bool,
@@ -204,14 +204,14 @@ pub struct AnalogSourceGamepadStick {
 }
 
 /// Action currently performed by gamepad Z axis / trigger
-#[derive(Component, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AnalogSourceGamepadZ {
     pub gamepad: Gamepad,
     pub left: bool,
     pub right: bool,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum AnalogSource {
     MouseMotion(AnalogSourceMouseMotion),
     MouseScroll(AnalogSourceMouseScroll),
@@ -226,6 +226,36 @@ pub struct AnalogSourcesCleanup {
     scroll: AnalogSourceMouseScroll,
     stick: AnalogSourceGamepadStick,
     z: AnalogSourceGamepadZ,
+}
+
+impl<'a> From<&'a String> for InputActionName {
+    fn from(value: &'a String) -> Self {
+        Self(value.to_owned())
+    }
+}
+
+impl<'a> From<&'a String> for InputAnalogName {
+    fn from(value: &'a String) -> Self {
+        Self(value.to_owned())
+    }
+}
+
+impl<'a> From<&'a String> for InputActionBundle {
+    fn from(value: &'a String) -> Self {
+        Self {
+            marker: InputAction,
+            name: value.into(),
+        }
+    }
+}
+
+impl<'a> From<&'a String> for InputAnalogBundle {
+    fn from(value: &'a String) -> Self {
+        Self {
+            marker: InputAnalog,
+            name: value.into(),
+        }
+    }
 }
 
 impl<'a> From<&'a str> for InputActionName {

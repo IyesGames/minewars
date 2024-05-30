@@ -7,13 +7,11 @@ use crate::{input::*, prelude::*};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<Topology>();
-    app.register_type::<Option<KeyCode>>();
-    app.register_type::<Option<MouseButton>>();
-    app.register_type::<HashMap<KeyCode, InputActionName>>();
-    app.register_type::<HashMap<MouseButton, InputActionName>>();
-    app.register_type::<HashMap<Option<MouseButton>, InputActionName>>();
-    app.register_type::<HashMap<Option<KeyCode>, HashMap<MouseButton, InputActionName>>>();
-    app.register_type::<HashMap<Option<KeyCode>, HashMap<Option<MouseButton>, InputAnalogName>>>();
+    app.register_type::<Vec<KeyCode>>();
+    app.register_type::<Vec<MouseButton>>();
+    app.register_type::<HashMap<Vec<KeyCode>, String>>();
+    app.register_type::<HashMap<Vec<MouseButton>, String>>();
+    app.register_type::<HashMap<Vec<KeyCode>, HashMap<Vec<MouseButton>, InputAnalogName>>>();
     app.init_setting::<WindowSettings>(SETTINGS_LOCAL.as_ref());
     app.init_setting::<GameViewSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<KeyboardMouseMappings>(SETTINGS_USER.as_ref());
@@ -48,7 +46,7 @@ pub struct MouseInputSettings {
 impl Default for MouseInputSettings {
     fn default() -> Self {
         Self {
-            action_motion_disambiguate_ms: 125,
+            action_motion_disambiguate_ms: 250,
         }
     }
 }
@@ -58,55 +56,10 @@ impl Setting for MouseInputSettings {}
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Setting)]
 pub struct KeyboardMouseMappings {
-    pub key_actions: HashMap<KeyCode, InputActionName>,
-    pub mouse_actions: HashMap<Option<KeyCode>, HashMap<MouseButton, InputActionName>>,
-    pub mouse_motion: HashMap<Option<KeyCode>, HashMap<Option<MouseButton>, InputAnalogName>>,
-    pub mouse_scroll: HashMap<Option<KeyCode>, HashMap<Option<MouseButton>, InputAnalogName>>,
-}
-
-impl KeyboardMouseMappings {
-    pub fn get_mouse_action(&self, in_kbd: &ButtonInput<KeyCode>, btn: MouseButton) -> Option<&InputActionName> {
-        for (key, map) in self.mouse_actions.iter() {
-            let Some(key) = key else {
-                continue;
-            };
-            if in_kbd.pressed(*key) {
-                return map.get(&btn);
-            }
-        }
-        if let Some(map) = self.mouse_actions.get(&None) {
-            return map.get(&btn);
-        }
-        None
-    }
-    pub fn get_mouse_motion(&self, in_kbd: &ButtonInput<KeyCode>, btn: Option<MouseButton>) -> Option<&InputAnalogName> {
-        for (key, map) in self.mouse_motion.iter() {
-            let Some(key) = key else {
-                continue;
-            };
-            if in_kbd.pressed(*key) {
-                return map.get(&btn);
-            }
-        }
-        if let Some(map) = self.mouse_motion.get(&None) {
-            return map.get(&btn);
-        }
-        None
-    }
-    pub fn get_mouse_scroll(&self, in_kbd: &ButtonInput<KeyCode>, btn: Option<MouseButton>) -> Option<&InputAnalogName> {
-        for (key, map) in self.mouse_scroll.iter() {
-            let Some(key) = key else {
-                continue;
-            };
-            if in_kbd.pressed(*key) {
-                return map.get(&btn);
-            }
-        }
-        if let Some(map) = self.mouse_scroll.get(&None) {
-            return map.get(&btn);
-        }
-        None
-    }
+    pub key_actions: HashMap<Vec<KeyCode>, String>,
+    pub mouse_actions: HashMap<Vec<KeyCode>, HashMap<Vec<MouseButton>, String>>,
+    pub mouse_motion: HashMap<Vec<KeyCode>, HashMap<Vec<MouseButton>, String>>,
+    pub mouse_scroll: HashMap<Vec<KeyCode>, HashMap<Vec<MouseButton>, String>>,
 }
 
 impl Default for KeyboardMouseMappings {
@@ -114,54 +67,56 @@ impl Default for KeyboardMouseMappings {
         let key_actions = hash_map! {
         };
         let mouse_actions = hash_map! {
-            None => hash_map! {
-                MouseButton::Middle => mw_app_core::camera::input::ACTION_CENTER.into(),
+            vec![] => hash_map! {
+                vec![MouseButton::Middle] => mw_app_core::camera::input::ACTION_CENTER.into(),
             },
         };
         let mouse_motion = hash_map! {
-            None => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_GRID_CURSOR.into(),
+            vec![] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_GRID_CURSOR.into(),
+                vec![MouseButton::Middle] => mw_app_core::camera::input::ANALOG_ROTATE.into(),
+                vec![MouseButton::Right] => mw_app_core::camera::input::ANALOG_PAN.into(),
             },
-            Some(KeyCode::ControlLeft) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_PAN.into(),
+            vec![KeyCode::ControlLeft] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_PAN.into(),
             },
-            Some(KeyCode::ControlRight) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_PAN.into(),
+            vec![KeyCode::ControlRight] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_PAN.into(),
             },
-            Some(KeyCode::AltLeft) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ROTATE.into(),
+            vec![KeyCode::AltLeft] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ROTATE.into(),
             },
-            Some(KeyCode::AltRight) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ROTATE.into(),
+            vec![KeyCode::AltRight] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ROTATE.into(),
             },
-            Some(KeyCode::ShiftLeft) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ZOOM.into(),
+            vec![KeyCode::ShiftLeft] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ZOOM.into(),
             },
-            Some(KeyCode::ShiftRight) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ZOOM.into(),
+            vec![KeyCode::ShiftRight] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ZOOM.into(),
             },
         };
         let mouse_scroll = hash_map! {
-            None => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ZOOM.into(),
+            vec![] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ZOOM.into(),
             },
-            Some(KeyCode::ControlLeft) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_PAN.into(),
+            vec![KeyCode::ControlLeft] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_PAN.into(),
             },
-            Some(KeyCode::ControlRight) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_PAN.into(),
+            vec![KeyCode::ControlRight] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_PAN.into(),
             },
-            Some(KeyCode::AltLeft) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ROTATE.into(),
+            vec![KeyCode::AltLeft] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ROTATE.into(),
             },
-            Some(KeyCode::AltRight) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ROTATE.into(),
+            vec![KeyCode::AltRight] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ROTATE.into(),
             },
-            Some(KeyCode::ShiftLeft) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ZOOM.into(),
+            vec![KeyCode::ShiftLeft] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ZOOM.into(),
             },
-            Some(KeyCode::ShiftRight) => hash_map! {
-                None => mw_app_core::camera::input::ANALOG_ZOOM.into(),
+            vec![KeyCode::ShiftRight] => hash_map! {
+                vec![] => mw_app_core::camera::input::ANALOG_ZOOM.into(),
             },
         };
         Self {
@@ -179,15 +134,13 @@ impl Setting for KeyboardMouseMappings {
             .iter(world).collect();
         for e in entities {
             world.entity_mut(e)
-                .remove::<ActionDeactivateCleanup>()
-                .insert(ActionExtrasBundle::default());
+                .remove::<ActionDeactivateCleanup>();
         }
         let entities: Vec<_> = world.query_filtered::<Entity, With<InputAnalog>>()
             .iter(world).collect();
         for e in entities {
             world.entity_mut(e)
-                .remove::<AnalogDeactivateCleanup>()
-                .insert(AnalogExtrasBundle::default());
+                .remove::<AnalogDeactivateCleanup>();
         }
     }
 }
