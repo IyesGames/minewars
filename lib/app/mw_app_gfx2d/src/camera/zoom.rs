@@ -128,80 +128,100 @@ fn input_analog_zoom_scroll(
     settings: Settings,
     mut evr_scroll: EventReader<MouseWheel>,
     mut q_camera: Query<(
-        &mut CameraZoomState, &OrthographicProjection,
+        &mut CameraZoomState, &mut OrthographicProjection,
     ), With<ActiveGameCamera>>,
 ) {
     let s_input = settings.get::<Camera2dControlSettings>().unwrap();
-    let mut total_zoom = 1.0;
-    let mut enable_snapping = false;
+    let mut total_lines = 0.0;
+    let mut total_pixels = 0.0;
     for ev in evr_scroll.read() {
-        total_zoom *= match ev.unit {
+        match ev.unit {
             MouseScrollUnit::Line => {
-                enable_snapping |= s_input.enable_zoom_scroll_line_snapping;
-                let mut y = ev.y;
-                if !s_input.scroll_zoom_allow_fractional_lines {
-                    if y < 0.0 {
-                        y = y.floor();
-                    }
-                    if y > 0.0 {
-                        y = y.ceil();
-                    }
-                }
-                if s_input.scroll_zoom_per_line < 0.0 {
-                    y = -y;
-                }
-                let zoom_abs = s_input.scroll_zoom_per_line.abs();
-                if y < 0.0 {
-                    (-y) * zoom_abs
-                } else {
-                    y * (1.0 / zoom_abs)
-                }
+                total_lines -= ev.y;
             }
             MouseScrollUnit::Pixel => {
-                enable_snapping |= s_input.enable_zoom_scroll_pixel_snapping;
-                let mut y = ev.y;
-                if s_input.scroll_zoom_per_pixel < 0.0 {
-                    y = -y;
-                }
-                let zoom_abs = s_input.scroll_zoom_per_pixel.abs();
-                if y < 0.0 {
-                    (-y) * zoom_abs
+                total_pixels -= ev.y;
+            }
+        }
+    }
+    if total_pixels != 0.0 {
+        let total_zoom = (total_pixels * s_input.scroll_zoom_per_pixel).exp();
+        for (mut zoom, mut proj) in &mut q_camera {
+            zoom.start_scale = (zoom.start_scale * total_zoom)
+                .clamp(s_input.zoom_min, s_input.zoom_max);
+            proj.scale = (proj.scale * total_zoom)
+                .clamp(s_input.zoom_min, s_input.zoom_max);
+            zoom.tween_timer = None;
+            zoom.tween_target_scale = proj.scale;
+            if s_input.enable_zoom_scroll_pixel_snapping {
+                let nearest_pow2 = proj.scale.log2().round().exp2().round();
+                let (t_lo, t_hi) = if s_input.zoom_level_snap_threshold > 0.0 && s_input.zoom_level_snap_threshold < 1.0 {
+                    (s_input.zoom_level_snap_threshold, 1.0 / s_input.zoom_level_snap_threshold)
+                } else if s_input.zoom_level_snap_threshold > 1.0 && s_input.zoom_level_snap_threshold < 2.0 {
+                    (1.0 / s_input.zoom_level_snap_threshold, s_input.zoom_level_snap_threshold)
                 } else {
-                    y * (1.0 / zoom_abs)
+                    (1.0, 1.0)
+                };
+                if proj.scale < nearest_pow2 * t_hi && proj.scale > nearest_pow2 * t_lo {
+                    zoom.start_scale = nearest_pow2;
+                    proj.scale = nearest_pow2;
+                    zoom.snap_break_accum *= total_zoom;
+                    if zoom.snap_break_accum > t_hi || zoom.snap_break_accum < t_lo {
+                        zoom.start_scale = zoom.start_scale * zoom.snap_break_accum;
+                        proj.scale = (proj.scale * zoom.snap_break_accum)
+                            .clamp(s_input.zoom_min, s_input.zoom_max);
+                        zoom.snap_break_accum = 1.0;
+                    }
+                } else {
+                    zoom.snap_break_accum = 1.0;
                 }
             }
         }
     }
-    if total_zoom == 0.0 {
-        return;
-    }
-    for (mut zoom, proj) in &mut q_camera {
-        zoom.start_scale = zoom.start_scale * total_zoom;
-        zoom.tween_timer = Some(Timer::new(Duration::from_secs_f32(s_input.zoom_tween_duration), TimerMode::Once));
-        zoom.tween_start_scale = proj.scale;
-        zoom.tween_target_scale = (zoom.tween_target_scale * total_zoom)
-            .clamp(s_input.zoom_min, s_input.zoom_max);
-        if enable_snapping {
-            let nearest_pow2 = zoom.tween_target_scale.log2().round().exp2().round();
-            let (t_lo, t_hi) = if s_input.zoom_level_snap_threshold > 0.0 && s_input.zoom_level_snap_threshold < 1.0 {
-                (s_input.zoom_level_snap_threshold, 1.0 / s_input.zoom_level_snap_threshold)
-            } else if s_input.zoom_level_snap_threshold > 1.0 && s_input.zoom_level_snap_threshold < 2.0 {
-                (1.0 / s_input.zoom_level_snap_threshold, s_input.zoom_level_snap_threshold)
-            } else {
-                (1.0, 1.0)
-            };
-            if zoom.tween_target_scale < nearest_pow2 * t_hi && zoom.tween_target_scale > nearest_pow2 * t_lo {
-                zoom.start_scale = nearest_pow2;
-                zoom.tween_target_scale = nearest_pow2;
-                zoom.snap_break_accum *= total_zoom;
-                if zoom.snap_break_accum > t_hi || zoom.snap_break_accum < t_lo {
-                    zoom.start_scale = zoom.start_scale * zoom.snap_break_accum;
-                    zoom.tween_target_scale = (zoom.tween_target_scale * zoom.snap_break_accum)
-                        .clamp(s_input.zoom_min, s_input.zoom_max);
+    if total_lines != 0.0 {
+        if !s_input.scroll_zoom_allow_fractional_lines {
+            if total_lines < 0.0 {
+                total_lines = total_lines.floor();
+            }
+            if total_lines > 0.0 {
+                total_lines = total_lines.ceil();
+            }
+        }
+        let total_zoom = (total_lines * s_input.scroll_zoom_per_line).exp();
+        for (mut zoom, proj) in &mut q_camera {
+            zoom.start_scale = zoom.start_scale * total_zoom
+                .clamp(s_input.zoom_min, s_input.zoom_max);
+            zoom.tween_timer = Some(Timer::new(Duration::from_secs_f32(s_input.zoom_tween_duration), TimerMode::Once));
+            zoom.tween_start_scale = proj.scale;
+            let old = zoom.tween_target_scale;
+            zoom.tween_target_scale = (zoom.tween_target_scale * total_zoom)
+                .clamp(s_input.zoom_min, s_input.zoom_max);
+            if s_input.enable_zoom_scroll_line_snapping {
+                let nearest_pow2 = if zoom.tween_target_scale > old {
+                    zoom.tween_target_scale.log2().floor().exp2().floor()
+                } else {
+                    zoom.tween_target_scale.log2().ceil().exp2().ceil()
+                };
+                let (t_lo, t_hi) = if s_input.zoom_level_snap_threshold > 0.0 && s_input.zoom_level_snap_threshold < 1.0 {
+                    (s_input.zoom_level_snap_threshold, 1.0 / s_input.zoom_level_snap_threshold)
+                } else if s_input.zoom_level_snap_threshold > 1.0 && s_input.zoom_level_snap_threshold < 2.0 {
+                    (1.0 / s_input.zoom_level_snap_threshold, s_input.zoom_level_snap_threshold)
+                } else {
+                    (1.0, 1.0)
+                };
+                if zoom.tween_target_scale < nearest_pow2 * t_hi && zoom.tween_target_scale > nearest_pow2 * t_lo {
+                    zoom.start_scale = nearest_pow2;
+                    zoom.tween_target_scale = nearest_pow2;
+                    zoom.snap_break_accum *= total_zoom;
+                    if zoom.snap_break_accum > t_hi || zoom.snap_break_accum < t_lo {
+                        zoom.start_scale = zoom.start_scale * zoom.snap_break_accum;
+                        zoom.tween_target_scale = (zoom.tween_target_scale * zoom.snap_break_accum)
+                            .clamp(s_input.zoom_min, s_input.zoom_max);
+                        zoom.snap_break_accum = 1.0;
+                    }
+                } else {
                     zoom.snap_break_accum = 1.0;
                 }
-            } else {
-                zoom.snap_break_accum = 1.0;
             }
         }
     }

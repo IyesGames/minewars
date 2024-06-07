@@ -110,54 +110,59 @@ fn input_analog_pan_scroll(
     settings: Settings,
     mut evr_scroll: EventReader<MouseWheel>,
     mut q_camera: Query<(
-        &mut CameraPanState, &Transform, &OrthographicProjection,
+        &mut CameraPanState, &mut Transform, &OrthographicProjection,
     ), With<ActiveGameCamera>>,
 ) {
     let s_input = settings.get::<Camera2dControlSettings>().unwrap();
-    let mut delta = Vec2::ZERO;
+    let mut total_lines = Vec2::ZERO;
+    let mut total_pixels = Vec2::ZERO;
     for ev in evr_scroll.read() {
-        delta += match ev.unit {
+        match ev.unit {
             MouseScrollUnit::Line => {
-                let (mut x, mut y) = (ev.x, ev.y);
-                if !s_input.scroll_pan_allow_fractional_lines {
-                    if x < 0.0 {
-                        x = x.floor();
-                    }
-                    if y < 0.0 {
-                        y = y.floor();
-                    }
-                    if x > 0.0 {
-                        x = x.ceil();
-                    }
-                    if y > 0.0 {
-                        y = y.ceil();
-                    }
-                }
-                Vec2::new(
-                    x * s_input.scroll_pan_per_line,
-                    y * s_input.scroll_pan_per_line,
-                )
+                total_lines.x += ev.x;
+                total_lines.y -= ev.y;
             }
             MouseScrollUnit::Pixel => {
-                Vec2::new(
-                    ev.x * s_input.scroll_pan_per_pixel,
-                    ev.y * s_input.scroll_pan_per_pixel,
-                )
+                total_pixels.x += ev.x;
+                total_pixels.y -= ev.y;
             }
         };
     }
-    if delta == Vec2::ZERO {
-        return;
+    if total_pixels != Vec2::ZERO {
+        total_pixels *= s_input.scroll_pan_per_pixel;
+        for (mut pan, mut xf, proj) in &mut q_camera {
+            let delta = (xf.rotation * total_pixels.extend(0.0)).truncate() * proj.scale;
+            pan.start_translation -= delta;
+            xf.translation -= delta.extend(0.0);
+            pan.tween_timer = None;
+            pan.tween_target_translation = xf.translation.truncate();
+        }
     }
-    delta.y = -delta.y;
-    for (mut pan, xf, proj) in &mut q_camera {
-        let delta = (xf.rotation * delta.extend(0.0)).truncate() * proj.scale;
-        pan.tween_target_translation.x -= delta.x;
-        pan.tween_target_translation.y -= delta.y;
-        pan.start_translation.x -= delta.x;
-        pan.start_translation.y -= delta.y;
-        pan.tween_start_translation = xf.translation.truncate();
-        pan.tween_timer = Some(Timer::new(Duration::from_secs_f32(s_input.pan_tween_duration), TimerMode::Once));
+    if total_lines != Vec2::ZERO {
+        if !s_input.scroll_pan_allow_fractional_lines {
+            if total_lines.x < 0.0 {
+                total_lines.x = total_lines.x.floor();
+            }
+            if total_lines.y < 0.0 {
+                total_lines.y = total_lines.y.floor();
+            }
+            if total_lines.x > 0.0 {
+                total_lines.x = total_lines.x.ceil();
+            }
+            if total_lines.y > 0.0 {
+                total_lines.y = total_lines.y.ceil();
+            }
+        }
+        total_lines *= s_input.scroll_pan_per_line;
+        for (mut pan, xf, proj) in &mut q_camera {
+            let delta = (xf.rotation * total_lines.extend(0.0)).truncate() * proj.scale;
+            pan.tween_target_translation.x -= delta.x;
+            pan.tween_target_translation.y -= delta.y;
+            pan.start_translation.x -= delta.x;
+            pan.start_translation.y -= delta.y;
+            pan.tween_start_translation = xf.translation.truncate();
+            pan.tween_timer = Some(Timer::new(Duration::from_secs_f32(s_input.pan_tween_duration), TimerMode::Once));
+        }
     }
 }
 

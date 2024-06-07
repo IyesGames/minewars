@@ -117,65 +117,72 @@ fn input_analog_rotate_scroll(
 ) {
     let s_input = settings.get::<Camera2dControlSettings>().unwrap();
     let desc = q_map.single();
-    let mut delta = 0.0;
-    let mut enable_snapping = false;
+    let mut total_lines = 0.0;
+    let mut total_pixels = 0.0;
     for ev in evr_scroll.read() {
-        delta += match ev.unit {
+        match ev.unit {
             MouseScrollUnit::Line => {
-                let mut y = ev.y;
-                if !s_input.scroll_rotate_allow_fractional_lines {
-                    if y < 0.0 {
-                        y = y.floor();
-                    }
-                    if y > 0.0 {
-                        y = y.ceil();
-                    }
-                }
-                enable_snapping |= s_input.enable_rotate_scroll_line_snapping;
-                y * s_input.scroll_rotate_per_line
+                total_lines += ev.y;
             }
             MouseScrollUnit::Pixel => {
-                enable_snapping |= s_input.enable_rotate_scroll_pixel_snapping;
-                ev.y * s_input.scroll_rotate_per_pixel
-            }
-        };
-    }
-    if delta == 0.0 {
-        return;
-    }
-    delta = delta.to_radians();
-    if s_input.scroll_rotate_invert_leftside {
-        let window = q_window.single();
-        if let Some(cursor) = window.cursor_position() {
-            if cursor.x < window.width() / 2.0 {
-                delta = -delta;
+                total_pixels += ev.y;
             }
         }
     }
-    for (mut rotate, mut xf) in &mut q_camera {
-        rotate.angle_start += delta;
-        rotate.angle += delta;
-        if enable_snapping {
-            let snap_interval = match desc.topology {
-                Topology::Hex => s_input.rotate_hex_snap_interval,
-                Topology::Sq => s_input.rotate_sq_snap_interval,
-            }.to_radians();
-            let snap_angle = (rotate.angle / snap_interval).round() * snap_interval;
-            let snap_delta = (rotate.angle - snap_angle).abs();
-            let threshold = s_input.rotate_snap_threshold.to_radians();
-            if snap_delta < threshold {
-                rotate.angle_start = snap_angle;
-                rotate.angle = snap_angle;
-                rotate.snap_break_accum += delta;
-                if rotate.snap_break_accum.abs() > threshold {
-                    rotate.angle_start += rotate.snap_break_accum;
-                    rotate.angle += rotate.snap_break_accum;
+    if total_pixels != 0.0 {
+        let mut delta = (total_pixels * s_input.scroll_rotate_per_pixel).to_radians();
+        if s_input.scroll_rotate_invert_leftside {
+            let window = q_window.single();
+            if let Some(cursor) = window.cursor_position() {
+                if cursor.x < window.width() / 2.0 {
+                    delta = -delta;
+                }
+            }
+        }
+        for (mut rotate, mut xf) in &mut q_camera {
+            rotate.angle_start += delta;
+            rotate.angle += delta;
+            if s_input.enable_rotate_scroll_pixel_snapping {
+                let snap_interval = match desc.topology {
+                    Topology::Hex => s_input.rotate_hex_snap_interval,
+                    Topology::Sq => s_input.rotate_sq_snap_interval,
+                }.to_radians();
+                let snap_angle = (rotate.angle / snap_interval).round() * snap_interval;
+                let snap_delta = (rotate.angle - snap_angle).abs();
+                let threshold = s_input.rotate_snap_threshold.to_radians();
+                if snap_delta < threshold {
+                    rotate.angle_start = snap_angle;
+                    rotate.angle = snap_angle;
+                    rotate.snap_break_accum += delta;
+                    if rotate.snap_break_accum.abs() > threshold {
+                        rotate.angle_start += rotate.snap_break_accum;
+                        rotate.angle += rotate.snap_break_accum;
+                        rotate.snap_break_accum = 0.0;
+                    }
+                } else {
                     rotate.snap_break_accum = 0.0;
                 }
-            } else {
-                rotate.snap_break_accum = 0.0;
+            }
+            xf.rotation = Quat::from_rotation_z(rotate.angle);
+        }
+    }
+    if total_lines != 0.0 {
+        if !s_input.scroll_rotate_allow_fractional_lines {
+            if total_lines < 0.0 {
+                total_lines = total_lines.floor();
+            }
+            if total_lines > 0.0 {
+                total_lines = total_lines.ceil();
             }
         }
-        xf.rotation = Quat::from_rotation_z(rotate.angle);
+        let mut delta = (total_lines * s_input.scroll_rotate_per_line).to_radians();
+        if s_input.scroll_rotate_invert_leftside {
+            let window = q_window.single();
+            if let Some(cursor) = window.cursor_position() {
+                if cursor.x < window.width() / 2.0 {
+                    delta = -delta;
+                }
+            }
+        }
     }
 }
