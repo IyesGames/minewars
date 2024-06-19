@@ -20,6 +20,7 @@ pub mod hostauth;
 pub mod rpc;
 pub mod server;
 
+pub mod abuse;
 pub mod map;
 pub mod session;
 
