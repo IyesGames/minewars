@@ -13,10 +13,6 @@ pub fn plugin(app: &mut App) {
         Gfx2dImplSet::Bespoke
             .in_set(Gfx2dImplSet::Any)
             .run_if(rc_gfx2d_bespoke),
-        #[cfg(feature = "tilemap")]
-        Gfx2dImplSet::Tilemap
-            .in_set(Gfx2dImplSet::Any)
-            .run_if(rc_gfx2d_tilemap),
     ));
     app.configure_sets(OnEnter(AppState::InGame), (
         Gfx2dImplSet::Any
@@ -27,10 +23,6 @@ pub fn plugin(app: &mut App) {
         Gfx2dImplSet::Bespoke
             .in_set(Gfx2dImplSet::Any)
             .run_if(rc_gfx2d_bespoke),
-        #[cfg(feature = "tilemap")]
-        Gfx2dImplSet::Tilemap
-            .in_set(Gfx2dImplSet::Any)
-            .run_if(rc_gfx2d_tilemap),
     ));
 }
 
@@ -39,8 +31,6 @@ pub enum Gfx2dImplSet {
     Any,
     Sprites,
     Bespoke,
-    #[cfg(feature = "tilemap")]
-    Tilemap,
 }
 
 #[derive(Component)]
@@ -71,15 +61,6 @@ fn rc_gfx2d_bespoke(
 ) -> bool {
     settings.get::<Gfx2dImpl>().map(|s|
         *s == Gfx2dImpl::Bespoke
-    ).unwrap_or(false)
-}
-
-#[cfg(feature = "tilemap")]
-fn rc_gfx2d_tilemap(
-    settings: Settings,
-) -> bool {
-    settings.get::<Gfx2dImpl>().map(|s|
-        *s == Gfx2dImpl::Tilemap
     ).unwrap_or(false)
 }
 

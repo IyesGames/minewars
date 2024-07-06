@@ -20,7 +20,7 @@ path = "../mw_app_core"
 [dependencies]
 
 [dependencies.serde]
-version = "1.0.196"
+version = "1.0.203"
 features = [ "derive" ]
 
 [dependencies.bevy]

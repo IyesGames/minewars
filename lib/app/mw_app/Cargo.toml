@@ -9,7 +9,6 @@ edition = "2021"
 dev = []
 release = []
 proprietary = []
-buttplug = ["dep:buttplug"]
 
 [dependencies.mw_common]
 path = "../../common/mw_common"
@@ -28,27 +27,27 @@ path = "../../common/mw_proto_auth"
 path = "../mw_app_core"
 
 [dependencies]
-anyhow = "1.0.79"
-derive_more = "0.99.17"
+anyhow = "1.0.86"
+derive_more = "0.99.18"
 enum-iterator = "1.5.0"
 enum-map = "2.7.3"
 glam = "0.25.0"
-hashbrown = "0.14.3"
+hashbrown = "0.14.5"
 iyes_perf_ui = "0.2.3"
 map-macro = { version = "0.3.0", features = ["hashbrown"] }
 modular-bitfield = "0.11.2"
-num = "0.4.1"
+num = "0.4.3"
 num-derive = "0.4.2"
-num-traits = "0.2.18"
+num-traits = "0.2.19"
 num_cpus = "1.16.0"
 rand = "0.8.5"
 ron = "0.8.1"
-thiserror = "1.0.57"
-toml = "0.8.10"
+thiserror = "1.0.61"
+toml = "0.8.14"
 tracing = "0.1.40"
 
 [dependencies.serde]
-version = "1.0.196"
+version = "1.0.203"
 features = [ "derive" ]
 
 [dependencies.bevy]
@@ -83,14 +82,3 @@ git = "https://github.com/IyesGames/iyes_cli"
 [dependencies.iyes_ui]
 git = "https://github.com/IyesGames/iyes_ui"
 features = ["iyes_cli"]
-
-[dependencies.buttplug]
-version = "7.1.13"
-optional = true
-default-features = false
-features = [
-    "tokio-runtime",
-    "websockets",
-    "websocket-server-manager",
-    "serialize-json",
-]

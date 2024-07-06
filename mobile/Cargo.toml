@@ -7,11 +7,10 @@ publish = false
 
 [features]
 default = [
-    "gfx2d_tilemap",
+    "gfx2d",
     "gfx3d",
     "mw_ui_desktop",
     "mw_ui_mobile",
-    "buttplug",
 ]
 dev = [
     "mw_app_core/dev",
@@ -45,9 +44,7 @@ proprietary = [
     "mw_platform_ios/proprietary",
 ]
 gfx2d = ["mw_app_gfx2d"]
-gfx2d_tilemap = ["gfx2d", "mw_app_gfx2d/tilemap"]
 gfx3d = ["mw_app_gfx3d"]
-buttplug = ["mw_app/buttplug"]
 
 [dependencies.mw_app_core]
 path = "../lib/app/mw_app_core"

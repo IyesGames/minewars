@@ -7,7 +7,6 @@ edition = "2021"
 dev = []
 release = []
 proprietary = []
-tilemap = ["dep:bevy_ecs_tilemap"]
 
 [dependencies.mw_common]
 path = "../../common/mw_common"
@@ -19,7 +18,7 @@ path = "../mw_app_core"
 [dependencies]
 
 [dependencies.serde]
-version = "1.0.196"
+version = "1.0.203"
 features = [ "derive" ]
 
 [dependencies.bevy]
@@ -48,10 +47,6 @@ features = ["assets"]
 
 [dependencies.bevy_tweening]
 version = "0.10.0"
-
-[dependencies.bevy_ecs_tilemap]
-optional = true
-git = "https://github.com/StarArawn/bevy_ecs_tilemap"
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"

@@ -12,8 +12,8 @@ proprietary = []
 mw_dataformat = { path = "../../common/mw_dataformat" }
 mw_proto_auth = { path = "../../common/mw_proto_auth" }
 mw_proto_hostauth = { path = "../../common/mw_proto_hostauth" }
-toml = "0.8.10"
-anyhow = "1.0.79"
+toml = "0.8.14"
+anyhow = "1.0.86"
 ron = "0.8.1"
 
 [dependencies.mw_common]
@@ -21,11 +21,11 @@ path = "../../common/mw_common"
 features = [ "net" ]
 
 [dependencies.serde]
-version = "1.0.196"
+version = "1.0.203"
 features = [ "derive" ]
 
 [dependencies.clap]
-version = "4.5.1"
+version = "4.5.8"
 features = [ "derive" ]
 
 [dependencies.tracing-subscriber]

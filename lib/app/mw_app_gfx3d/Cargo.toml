@@ -19,7 +19,7 @@ path = "../mw_app_core"
 iyes_perf_ui = "0.2.3"
 
 [dependencies.serde]
-version = "1.0.196"
+version = "1.0.203"
 features = [ "derive" ]
 
 [dependencies.bevy]

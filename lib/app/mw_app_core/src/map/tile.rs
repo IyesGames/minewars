@@ -89,9 +89,6 @@ pub struct MwMapTile;
 /// Map coordinate of a given tile.
 ///
 /// This uses our own grid coord types (Pos <-> {Hex, Sq}).
-///
-/// Renderer agnostic. `bevy_ecs_tilemap` `TilePos` will be added
-/// by that renderer's impl.
 #[derive(Component)]
 pub struct MwTilePos(pub Pos);
 

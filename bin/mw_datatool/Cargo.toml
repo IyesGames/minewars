@@ -9,7 +9,7 @@ edition = "2021"
 proprietary = ["dep:mw_game_minewars"]
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow = "1.0.86"
 
 [dependencies.mw_common]
 path = "../../lib/common/mw_common"
@@ -18,7 +18,7 @@ path = "../../lib/common/mw_common"
 path = "../../lib/common/mw_dataformat"
 
 [dependencies.clap]
-version = "4.5.1"
+version = "4.5.8"
 features = ["derive"]
 
 [dependencies.mw_game_minewars]

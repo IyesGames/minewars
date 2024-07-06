@@ -14,14 +14,8 @@ pub(crate) mod settings;
 pub(crate) mod camera;
 pub(crate) mod sprites;
 pub(crate) mod bespoke;
-#[cfg(feature = "tilemap")]
-pub(crate) mod tilemap;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((
-        #[cfg(feature = "tilemap")]
-        bevy_ecs_tilemap::TilemapPlugin,
-    ));
     app.add_plugins((
         crate::assets::plugin,
         crate::misc::plugin,
@@ -29,7 +23,5 @@ pub fn plugin(app: &mut App) {
         crate::camera::plugin,
         crate::sprites::plugin,
         crate::bespoke::plugin,
-        #[cfg(feature = "tilemap")]
-        crate::tilemap::plugin,
     ));
 }
