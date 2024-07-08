@@ -48,8 +48,7 @@ pub struct MwFileReader<'b, R: Read + Seek> {
 }
 
 pub struct MwFileReaderAwaitsIS {
-    /// to prevent users from constructing the struct directly
-    _a: ()
+    file_header: MwFileHeader,
 }
 
 /// MineWars Decoder (for bare Initialization Sequence)
@@ -85,6 +84,17 @@ pub enum FrameKind {
     Keepalive,
     Heterogenous,
     Homogenous,
+}
+
+impl MwFileReaderAwaitsIS {
+    pub fn finish_is<'b, R: Read + Seek>(self, isr: MwISReader<'b, R>) -> Result<MwFileReader<'b, R>, MwReaderError> {
+        Ok(MwFileReader {
+            buf: isr.buf,
+            reader: isr.reader,
+            file_header: self.file_header,
+            is_header: isr.is_header,
+        })
+    }
 }
 
 impl<'b, R: Read + Seek> MwFileReader<'b, R> {
@@ -124,7 +134,7 @@ impl<'b, R: Read + Seek> MwFileReader<'b, R> {
         self.reader.seek(SeekFrom::Start(off_data as u64))?;
         Ok((
             MwFileReaderAwaitsIS {
-                _a: (),
+                file_header: self.file_header,
             },
             MwISReader {
                 buf: self.buf,
@@ -135,15 +145,14 @@ impl<'b, R: Read + Seek> MwFileReader<'b, R> {
         ))
     }
     pub fn read_frames<'s>(mut self, scratch: Option<&'s mut Vec<u8>>) -> Result<MwFrameReader<'b, 's, R>, MwReaderError> {
-        let offset_framedata = MwFileHeader::serialized_len() as u64 +
-            self.is_header.len_total_is() as u64;
+        let offset_framedata = self.offset_framedata() as u64;
         self.reader.seek(SeekFrom::Start(offset_framedata))?;
         if self.is_framedata_compressed() {
             let cursor = if let Some(scratch) = scratch {
-                self.buf.resize(self.file_header.len_framedata_raw(), 0);
+                self.buf.resize(self.file_header.len_framedata_compressed(), 0);
                 self.reader.read_exact(self.buf)?;
                 scratch.clear();
-                scratch.resize(self.file_header.len_framedata_compressed(), 0);
+                scratch.resize(self.file_header.len_framedata_raw(), 0);
                 let data_len = lz4_flex::block::decompress_into(self.buf, scratch)?;
                 scratch.truncate(data_len);
                 Cursor::new(scratch)
@@ -173,6 +182,27 @@ impl<'b, R: Read + Seek> MwFileReader<'b, R> {
                     reader: self.reader,
                 }
             ))
+        }
+    }
+    pub fn len_isdata(&self) -> usize {
+        self.is_header.len_total_data()
+    }
+    pub fn offset_framedata(&self) -> usize {
+        MwFileHeader::serialized_len() + self.is_header.len_total_is()
+    }
+    pub fn get_uncompressed_framedata(&mut self) -> Result<Vec<u8>, MwReaderError> {
+        let offset_framedata = self.offset_framedata() as u64;
+        self.reader.seek(SeekFrom::Start(offset_framedata))?;
+        self.buf.resize(self.file_header.len_framedata_compressed(), 0);
+        self.reader.read_exact(self.buf)?;
+        if self.is_framedata_compressed() {
+            let mut out = Vec::new();
+            out.resize(self.file_header.len_framedata_raw(), 0);
+            let data_len = lz4_flex::block::decompress_into(self.buf, &mut out)?;
+            out.truncate(data_len);
+            Ok(out)
+        } else {
+            Ok(self.buf.clone())
         }
     }
     pub fn is_framedata_compressed(&self) -> bool {

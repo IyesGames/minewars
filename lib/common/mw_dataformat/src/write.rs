@@ -499,7 +499,14 @@ impl<'b, W: Write + Seek> MwFrameBuilder<'b, W> {
             is_header: self.is_header,
         })
     }
-    pub fn with_msgs(self) -> Result<Self, MwWriterError> {
-        Ok(self)
+    pub fn append_msgs(&mut self) -> Result<(), MwWriterError> {
+        todo!()
+    }
+    pub fn append_raw_data(&mut self, raw_data: &[u8]) -> Result<(), MwWriterError> {
+        if let Some(ref mut h) = &mut self.hasher {
+            h.write(raw_data);
+        }
+        self.writer.write_all(raw_data)?;
+        Ok(())
     }
 }
