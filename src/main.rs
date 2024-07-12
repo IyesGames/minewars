@@ -9,7 +9,9 @@ fn main() {
     let mut app = mw_app::setup_bevy_app();
     app.add_plugins(mw_app_core::plugin);
     app.add_plugins(mw_app::plugin);
+    app.add_plugins(mw_app_io::plugin);
     app.add_plugins(mw_app_game_minesweeper::plugin);
+
     #[cfg(feature = "gfx2d")]
     app.add_plugins(mw_app_gfx2d::plugin);
     #[cfg(feature = "gfx3d")]
@@ -18,6 +20,7 @@ fn main() {
     app.add_plugins(mw_ui_desktop::plugin);
     #[cfg(feature = "mw_ui_mobile")]
     app.add_plugins(mw_ui_mobile::plugin);
+
     #[cfg(feature = "proprietary")]
     app.add_plugins(mw_app_proprietary::plugin);
 

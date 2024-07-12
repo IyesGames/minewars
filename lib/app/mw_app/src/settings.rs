@@ -154,7 +154,9 @@ impl Setting for GameViewSettings {}
 #[reflect(Setting)]
 pub struct EngineSetupSettings {
     pub pipelined_rendering: bool,
-    pub cpu_threads_compute: usize,
+    pub cpu_threads_compute_min: usize,
+    pub cpu_threads_compute_max: usize,
+    pub cpu_threads_compute_pct: f32,
     pub cpu_threads_async_compute_min: usize,
     pub cpu_threads_async_compute_max: usize,
     pub cpu_threads_async_compute_pct: f32,
@@ -165,17 +167,18 @@ pub struct EngineSetupSettings {
 
 impl Default for EngineSetupSettings {
     fn default() -> Self {
+        let physical = num_cpus::get_physical();
+        let logical = num_cpus::get();
+        let compute_require = if physical < 4 {
+            logical
+        } else {
+            physical
+        };
         EngineSetupSettings {
             pipelined_rendering: true,
-            cpu_threads_compute: {
-                let physical = num_cpus::get_physical();
-                let logical = num_cpus::get();
-                if physical < 4 {
-                    logical
-                } else {
-                    physical
-                }
-            },
+            cpu_threads_compute_min: compute_require,
+            cpu_threads_compute_max: logical,
+            cpu_threads_compute_pct: 100.0,
             cpu_threads_async_compute_min: 2,
             cpu_threads_async_compute_max: 4,
             cpu_threads_async_compute_pct: 25.0,
@@ -194,17 +197,17 @@ impl From<&EngineSetupSettings> for TaskPoolOptions {
             io: bevy::core::TaskPoolThreadAssignmentPolicy {
                 min_threads: s.cpu_threads_io_min,
                 max_threads: s.cpu_threads_io_max,
-                percent: s.cpu_threads_io_pct,
+                percent: s.cpu_threads_io_pct / 100.0,
             },
             async_compute: bevy::core::TaskPoolThreadAssignmentPolicy {
                 min_threads: s.cpu_threads_async_compute_min,
                 max_threads: s.cpu_threads_async_compute_max,
-                percent: s.cpu_threads_async_compute_pct,
+                percent: s.cpu_threads_async_compute_pct / 100.0,
             },
             compute: bevy::core::TaskPoolThreadAssignmentPolicy {
-                min_threads: s.cpu_threads_compute,
-                max_threads: std::usize::MAX,
-                percent: 1.0,
+                min_threads: s.cpu_threads_compute_min,
+                max_threads: s.cpu_threads_compute_max,
+                percent: s.cpu_threads_compute_pct / 100.0,
             },
         }
     }

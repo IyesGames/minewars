@@ -14,6 +14,7 @@ default = [
 ]
 dev = [
     "mw_app_core/dev",
+    "mw_app_io/dev",
     "mw_app/dev",
     "mw_app_gfx2d?/dev",
     "mw_app_gfx3d?/dev",
@@ -24,6 +25,7 @@ dev = [
 ]
 release = [
     "mw_app_core/release",
+    "mw_app_io/release",
     "mw_app/release",
     "mw_app_gfx2d?/release",
     "mw_app_gfx3d?/release",
@@ -35,6 +37,7 @@ release = [
 proprietary = [
     "dep:mw_app_proprietary",
     "mw_app_core/proprietary",
+    "mw_app_io/proprietary",
     "mw_app/proprietary",
     "mw_app_gfx2d?/proprietary",
     "mw_app_gfx3d?/proprietary",
@@ -48,6 +51,9 @@ gfx3d = ["mw_app_gfx3d"]
 
 [dependencies.mw_app_core]
 path = "../lib/app/mw_app_core"
+
+[dependencies.mw_app_io]
+path = "../lib/app/mw_app_io"
 
 [dependencies.mw_app]
 path = "../lib/app/mw_app"

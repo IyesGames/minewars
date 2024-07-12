@@ -35,3 +35,13 @@ features = ["env-filter"]
 [dependencies.tracing]
 version = "0.1.40"
 features = ["async-await"]
+
+[dependencies.tokio]
+version = "1.38.0"
+features = [ "full" ]
+
+[dependencies.tokio-util]
+version = "0.7.11"
+features = [
+    "full",
+]

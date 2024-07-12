@@ -1,9 +1,7 @@
 [package]
-name = "mw_app"
+name = "mw_app_io"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
 dev = []
@@ -12,7 +10,16 @@ proprietary = []
 
 [dependencies.mw_common]
 path = "../../common/mw_common"
-features = [ "bevy" ]
+features = [ "bevy", "net" ]
+
+[dependencies.mw_dataformat]
+path = "../../common/mw_dataformat"
+
+[dependencies.mw_proto_host]
+path = "../../common/mw_proto_host"
+
+[dependencies.mw_proto_auth]
+path = "../../common/mw_proto_auth"
 
 [dependencies.mw_app_core]
 path = "../mw_app_core"
@@ -40,6 +47,16 @@ tracing = "0.1.40"
 [dependencies.serde]
 version = "1.0.203"
 features = [ "derive" ]
+
+[dependencies.tokio]
+version = "1.38.0"
+features = [ "full" ]
+
+[dependencies.tokio-util]
+version = "0.7.11"
+features = [
+    "full",
+]
 
 [dependencies.bevy]
 version = "0.13.2"
