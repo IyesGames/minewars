@@ -41,7 +41,9 @@ default-features = false
 features = [
     "animation",
     "bevy_asset",
+    "bevy_state",
     "bevy_audio",
+    "bevy_color",
     "bevy_gilrs",
     "bevy_scene",
     "bevy_winit",
@@ -68,8 +70,10 @@ features = [
     "bevy_gizmos",
     "android_shared_stdcxx",
     "tonemapping_luts",
+    "smaa_luts",
     "default_font",
     "serialize",
+    "sysinfo_plugin",
 ]
 
 [dependencies.bevy_common_assets]
