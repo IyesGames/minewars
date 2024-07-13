@@ -20,11 +20,11 @@ path = "../mw_app_core"
 [dependencies]
 anyhow = "1.0.86"
 derive_more = "0.99.18"
-enum-iterator = "1.5.0"
+enum-iterator = "2.1.0"
 enum-map = "2.7.3"
-glam = "0.25.0"
+glam = "0.27.0"
 hashbrown = "0.14.5"
-iyes_perf_ui = "0.2.3"
+iyes_perf_ui = "0.3.0"
 map-macro = { version = "0.3.0", features = ["hashbrown"] }
 modular-bitfield = "0.11.2"
 num = "0.4.3"
@@ -33,32 +33,32 @@ num-traits = "0.2.19"
 num_cpus = "1.16.0"
 rand = "0.8.5"
 ron = "0.8.1"
-thiserror = "1.0.61"
+thiserror = "1.0.62"
 toml = "0.8.14"
 tracing = "0.1.40"
 
 [dependencies.serde]
-version = "1.0.203"
+version = "1.0.204"
 features = [ "derive" ]
 
 [dependencies.bevy]
-version = "0.13.2"
+version = "0.14.0"
 default-features = false
 # Bevy should inherit its features via `mw_app_core`
 
 [dependencies.iyes_progress]
-version = "0.11.0"
+version = "0.12.0"
 features = ["assets"]
 
 [dependencies.bevy_common_assets]
-version = "0.10.0"
+version = "0.11.0"
 features = [
     "ron",
     "toml",
 ]
 
 [dependencies.bevy_asset_loader]
-version = "0.20"
+version = "0.21"
 features = [
     "progress_tracking",
     "standard_dynamic_assets",
@@ -66,10 +66,8 @@ features = [
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
+branch = "minewars"
 
 [dependencies.iyes_cli]
 git = "https://github.com/IyesGames/iyes_cli"
-
-[dependencies.iyes_ui]
-git = "https://github.com/IyesGames/iyes_ui"
-features = ["iyes_cli"]
+branch = "minewars"

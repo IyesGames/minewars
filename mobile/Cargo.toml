@@ -88,10 +88,10 @@ git = "https://github.com/IyesGames/minewars-proprietary-shim"
 optional = true
 
 [dependencies]
-iyes_perf_ui = "0.2.3"
+iyes_perf_ui = "0.3.0"
 
 [dependencies.bevy]
-version = "0.13.2"
+version = "0.14.0"
 default-features = false
 
 [package.metadata.android]

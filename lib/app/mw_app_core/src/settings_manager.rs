@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use bevy::ecs::component::Tick;
 use bevy::ecs::system::{SystemChangeTick, SystemParam};
 use bevy::reflect::{GetTypeRegistration, TypeRegistry};
-use bevy::reflect::serde::{ReflectSerializer, UntypedReflectDeserializer};
+use bevy::reflect::serde::{ReflectSerializer, ReflectDeserializer};
 use serde::{de::DeserializeSeed, Serialize};
 
 use crate::prelude::*;
@@ -68,7 +68,7 @@ impl SettingsAppExt for App {
     ) {
         self.init_resource::<SettingsStore>();
         self.register_type::<T>();
-        self.world.resource_mut::<SettingsStore>()
+        self.world_mut().resource_mut::<SettingsStore>()
             .init_setting::<T>(collection, Tick::new(0));
     }
     fn insert_setting<T: Setting + GetTypeRegistration>(
@@ -78,7 +78,7 @@ impl SettingsAppExt for App {
     ) {
         self.init_resource::<SettingsStore>();
         self.register_type::<T>();
-        self.world.resource_mut::<SettingsStore>()
+        self.world_mut().resource_mut::<SettingsStore>()
             .insert_setting(collection, value, Tick::new(0));
     }
 }
@@ -193,7 +193,7 @@ impl SettingsStore {
 
         let mut deserializer = ron::Deserializer::from_str(&s).unwrap();
         while deserializer.end().is_err() {
-            let reflect_deserializer = UntypedReflectDeserializer::new(&registry);
+            let reflect_deserializer = ReflectDeserializer::new(&registry);
             let output: Box<dyn Reflect> =
                 reflect_deserializer.deserialize(&mut deserializer)
                     .context("Settings entry is not in valid Bevy Reflect format")?;
@@ -368,11 +368,11 @@ fn sync_settings(world: &mut World, mut ranonce: Local<bool>) {
 }
 
 pub fn early_load_settings(app: &mut App, filenames: &[&str]) {
-    let Some(mut settings_store) = app.world.remove_resource::<SettingsStore>() else {
+    let Some(mut settings_store) = app.world_mut().remove_resource::<SettingsStore>() else {
         panic!("SettingsStore should be initialized");
     };
     settings_store.init_settings_root();
-    let registry = app.world.resource::<AppTypeRegistry>();
+    let registry = app.world().resource::<AppTypeRegistry>();
     let registry = registry.read();
     for collection in filenames {
         if let Err(e) = settings_store.load_collection(&registry, collection.as_ref(), Tick::new(0)) {
@@ -380,7 +380,7 @@ pub fn early_load_settings(app: &mut App, filenames: &[&str]) {
         }
     }
     std::mem::drop(registry);
-    app.world.insert_resource(settings_store);
+    app.world_mut().insert_resource(settings_store);
 }
 
 fn apply_initial_settings(world: &mut World) {

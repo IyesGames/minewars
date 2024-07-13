@@ -76,7 +76,7 @@ impl HandshakeResponding {
         buf_tx.clear();
         rmp_serde::encode::write(buf_tx, response)?;
         self.tx.write_all(buf_tx).await?;
-        self.tx.finish().await?;
+        self.tx.finish()?;
         Ok(HandshakeComplete)
     }
 }

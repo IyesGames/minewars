@@ -18,8 +18,9 @@ path = "../mw_app_core"
 [dependencies]
 
 [dependencies.bevy]
-version = "0.13.2"
+version = "0.14.0"
 default-features = false
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
+branch = "minewars"

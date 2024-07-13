@@ -22,7 +22,6 @@ pub mod apporg;
 pub mod assets;
 pub mod settings_manager;
 pub mod ui;
-pub mod value;
 
 // governors and game state
 pub mod driver;
@@ -46,7 +45,6 @@ pub fn plugin(app: &mut App) {
     // external plugins
     app.add_plugins((
         bevy_fluent::FluentPlugin,
-        bevy_tweening::TweeningPlugin,
     ));
     // our plugins
     app.add_plugins((
@@ -54,7 +52,6 @@ pub fn plugin(app: &mut App) {
         crate::assets::plugin,
         crate::settings_manager::plugin,
         crate::ui::plugin,
-        crate::value::plugin,
     ));
     app.add_plugins((
         crate::camera::plugin,

@@ -42,7 +42,7 @@ fn open_console(
                             align_items: AlignItems::Center,
                             ..Default::default()
                         },
-                        background_color: BackgroundColor(Color::BEIGE),
+                        background_color: BackgroundColor(bevy::color::palettes::css::BEIGE.into()),
                         ..Default::default()
                     },
                 ))
@@ -51,7 +51,7 @@ fn open_console(
                 TextStyle {
                     font: ui_assets.font_bold.clone(),
                     font_size: 24.0,
-                    color: Color::RED,
+                    color: bevy::color::palettes::css::RED.into(),
                 }
             } else {
                 TextStyle::default()

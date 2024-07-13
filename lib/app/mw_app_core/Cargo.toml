@@ -25,18 +25,18 @@ path = "../../common/mw_dataformat"
 [dependencies]
 anyhow = "1.0.86"
 directories = "5.0.1"
-enum-iterator = "1.5.0"
+enum-iterator = "2.1.0"
 fluent_content = "0.0.5"
 unic-langid = "0.9.5"
 modular-bitfield = "0.11.2"
 ron = "0.8.1"
 
 [dependencies.serde]
-version = "1.0.203"
+version = "1.0.204"
 features = [ "derive" ]
 
 [dependencies.bevy]
-version = "0.13.2"
+version = "0.14.0"
 default-features = false
 features = [
     "animation",
@@ -52,7 +52,7 @@ features = [
     "bevy_sprite",
     "bevy_text",
     "bevy_ui",
-    "multi-threaded",
+    "multi_threaded",
     "png",
     "jpeg",
     "webp",
@@ -73,32 +73,31 @@ features = [
 ]
 
 [dependencies.bevy_common_assets]
-version = "0.10.0"
+version = "0.11.0"
 features = [
     "ron",
     "toml",
 ]
 
 [dependencies.bevy_asset_loader]
-version = "0.20"
+version = "0.21"
 features = [
     "progress_tracking",
     "standard_dynamic_assets",
 ]
 
-[dependencies.bevy_tweening]
-version = "0.10.0"
-
 [dependencies.bevy_fluent]
-version = "0.9.0"
+version = "0.10.0"
 features = []
 
 [dependencies.iyes_bevy_extras]
 git = "https://github.com/IyesGames/iyes_bevy_extras"
+branch = "minewars"
 
 [dependencies.iyes_progress]
-version = "0.11.0"
+version = "0.12.0"
 features = ["assets"]
 
 [dependencies.iyes_cli]
 git = "https://github.com/IyesGames/iyes_cli"
+branch = "minewars"

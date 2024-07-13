@@ -102,7 +102,7 @@ fn setup_splash_screen_layout(
         .spawn((
             LoadingProgressIndicatorOuter,
             NodeBundle {
-                background_color: BackgroundColor(Color::DARK_GRAY),
+                background_color: BackgroundColor(Srgba::gray(0.5).into()),
                 style: Style {
                     width: Val::Percent(75.0),
                     height: Val::Percent(50.0),
@@ -117,7 +117,7 @@ fn setup_splash_screen_layout(
         .spawn((
             LoadingProgressIndicator,
             NodeBundle {
-                background_color: BackgroundColor(Color::GRAY),
+                background_color: BackgroundColor(Srgba::gray(0.75).into()),
                 style: Style {
                     width: Val::Percent(0.0),
                     height: Val::Percent(100.0),
@@ -161,7 +161,7 @@ fn setup_gameloading_screen_layout(
         .spawn((
             LoadingProgressIndicatorOuter,
             NodeBundle {
-                background_color: BackgroundColor(Color::DARK_GRAY),
+                background_color: BackgroundColor(Srgba::gray(0.5).into()),
                 style: Style {
                     width: Val::Percent(75.0),
                     height: Val::Percent(50.0),
@@ -176,7 +176,7 @@ fn setup_gameloading_screen_layout(
         .spawn((
             LoadingProgressIndicator,
             NodeBundle {
-                background_color: BackgroundColor(Color::GRAY),
+                background_color: BackgroundColor(Srgba::gray(0.75).into()),
                 style: Style {
                     width: Val::Percent(0.0),
                     height: Val::Percent(100.0),
@@ -269,18 +269,18 @@ fn splash_fade(
     for (e, mut sprite, mut fade) in q.iter_mut() {
         if fade.timer_wait.duration().as_secs_f32() > 0.0 && !fade.timer_wait.finished() {
             fade.timer_wait.tick(t.delta());
-            sprite.color.set_a(0.0);
+            sprite.color.set_alpha(0.0);
         } else if fade.timer_intro.duration().as_secs_f32() > 0.0 && !fade.timer_intro.finished() {
             fade.timer_intro.tick(t.delta());
             let remain = fade.timer_intro.fraction();
-            sprite.color.set_a(remain);
+            sprite.color.set_alpha(remain);
         } else if !fade.timer_on.finished() {
             fade.timer_on.tick(t.delta());
-            sprite.color.set_a(1.0);
+            sprite.color.set_alpha(1.0);
         } else if !fade.timer_fade.finished() {
             fade.timer_fade.tick(t.delta());
             let remain = fade.timer_fade.fraction_remaining();
-            sprite.color.set_a(remain);
+            sprite.color.set_alpha(remain);
         } else {
             commands.entity(e).despawn_recursive();
         }

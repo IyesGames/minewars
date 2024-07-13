@@ -11,7 +11,7 @@ mw_common = { path = "../mw_common" }
 num-derive = "0.4.2"
 num-traits = "0.2.19"
 seahash = "4.1.0"
-thiserror = "1.0.61"
+thiserror = "1.0.62"
 
 [dependencies.lz4_flex]
 version = "0.11.3"

@@ -17,6 +17,6 @@ features = [ "bevy" ]
 path = "../mw_app_core"
 
 [dependencies.bevy]
-version = "0.13.2"
+version = "0.14.0"
 default-features = false
 # Bevy should inherit its features via `mw_app_core`

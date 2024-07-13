@@ -31,7 +31,7 @@ pub fn plugin(app: &mut App) {
         )
     );
     app.add_systems(
-        OnTransition { from: AppState::InGame, to: AppState::Menu },
+        OnTransition { exited: AppState::InGame, entered: AppState::Menu },
         (
             despawn_all_recursive::<With<GameFullCleanup>>,
         )

@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use bevy::{asset::{AssetLoader, AsyncReadExt}, utils::BoxedFuture};
+use bevy::{asset::{AssetLoader, AsyncReadExt}, utils::{BoxedFuture, ConditionalSendFuture}};
 use mw_app_core::map::MapTileDataOrig;
 use mw_dataformat::{header::{ISHeader, MwFileHeader}, read::{MwFileReader, MwReaderError}};
 
@@ -45,78 +45,76 @@ impl AssetLoader for MwFileLoader {
         &["minewars"]
     }
 
-    fn load<'a>(
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut bevy::asset::io::Reader,
+        reader: &'a mut bevy::asset::io::Reader<'_>,
         settings: &'a Self::Settings,
-        load_context: &'a mut bevy::asset::LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut scratch = Vec::new();
-            let mut buf = Vec::new();
-            let len_headers = MwFileHeader::serialized_len() + ISHeader::serialized_len();
-            let mut bytes = Vec::new();
-            let mfr = if settings.load_replay {
-                reader.read_to_end(&mut buf).await?;
-                let mut mfr = MwFileReader::new(Cursor::new(&mut bytes), &mut buf)?;
-                if settings.verify_checksums {
-                    mfr.verify_checksums()?;
-                }
-                mfr
-            } else {
-                bytes.resize(len_headers, 0);
-                reader.read_exact(&mut bytes).await?;
-                let len_isdata = {
-                    let mut mfr = MwFileReader::new(Cursor::new(&mut bytes), &mut buf)?;
-                    if settings.verify_checksums {
-                        mfr.verify_checksum_header()?;
-                    }
-                    mfr.len_isdata()
-                };
-                bytes.resize(len_headers + len_isdata, 0);
-                reader.read_exact(&mut bytes[len_headers..]).await?;
-                let mut mfr = MwFileReader::new(Cursor::new(&mut bytes), &mut buf)?;
-                if settings.verify_checksums {
-                    mfr.verify_checksum_isdata()?;
-                }
-                mfr
-            };
-            let (mfr, mut isr) = mfr.read_is()?;
-            let map: MapDataPos<MapTileDataOrig> = match isr.map_topology() {
-                Topology::Hex => {
-                    let map: MapDataC<Hex, MapTileDataOrig> =
-                        isr.read_map(Some(&mut scratch), settings.load_map_items)?;
-                    map.rekey()
-                }
-                Topology::Sq => {
-                    let map: MapDataC<Sq, MapTileDataOrig> =
-                        isr.read_map(Some(&mut scratch), settings.load_map_items)?;
-                    map.rekey()
-                }
-            };
-            let cits = isr.read_cits_pos()?.to_owned();
-            let orig = MapDataOrig {
-                map, cits,
-            };
-            let mwmap = MwMap {
-                topology: isr.map_topology(),
-                data: orig,
-            };
-            let h_mwmap = load_context.add_labeled_asset("Map".into(), mwmap);
-            let mut mwfile = MwFile {
-                map: h_mwmap.clone(),
-                replay: None,
-            };
-            if settings.load_replay {
-                let mut mfr = mfr.finish_is(isr)?;
-                let mwreplay = MwReplay {
-                    map: h_mwmap.clone(),
-                    raw_framedata: mfr.get_uncompressed_framedata()?,
-                };
-                let h_mwreplay = load_context.add_labeled_asset("Replay".into(), mwreplay);
-                mwfile.replay = Some(h_mwreplay);
+        load_context: &'a mut bevy::asset::LoadContext<'_>,
+    ) -> Result<MwFile, MwFileLoaderError> {
+        let mut scratch = Vec::new();
+        let mut buf = Vec::new();
+        let len_headers = MwFileHeader::serialized_len() + ISHeader::serialized_len();
+        let mut bytes = Vec::new();
+        let mfr = if settings.load_replay {
+            reader.read_to_end(&mut buf).await?;
+            let mut mfr = MwFileReader::new(Cursor::new(&mut bytes), &mut buf)?;
+            if settings.verify_checksums {
+                mfr.verify_checksums()?;
             }
-            Ok(mwfile)
-        })
+            mfr
+        } else {
+            bytes.resize(len_headers, 0);
+            reader.read_exact(&mut bytes).await?;
+            let len_isdata = {
+                let mut mfr = MwFileReader::new(Cursor::new(&mut bytes), &mut buf)?;
+                if settings.verify_checksums {
+                    mfr.verify_checksum_header()?;
+                }
+                mfr.len_isdata()
+            };
+            bytes.resize(len_headers + len_isdata, 0);
+            reader.read_exact(&mut bytes[len_headers..]).await?;
+            let mut mfr = MwFileReader::new(Cursor::new(&mut bytes), &mut buf)?;
+            if settings.verify_checksums {
+                mfr.verify_checksum_isdata()?;
+            }
+            mfr
+        };
+        let (mfr, mut isr) = mfr.read_is()?;
+        let map: MapDataPos<MapTileDataOrig> = match isr.map_topology() {
+            Topology::Hex => {
+                let map: MapDataC<Hex, MapTileDataOrig> =
+                    isr.read_map(Some(&mut scratch), settings.load_map_items)?;
+                map.rekey()
+            }
+            Topology::Sq => {
+                let map: MapDataC<Sq, MapTileDataOrig> =
+                    isr.read_map(Some(&mut scratch), settings.load_map_items)?;
+                map.rekey()
+            }
+        };
+        let cits = isr.read_cits_pos()?.to_owned();
+        let orig = MapDataOrig {
+            map, cits,
+        };
+        let mwmap = MwMap {
+            topology: isr.map_topology(),
+            data: orig,
+        };
+        let h_mwmap = load_context.add_labeled_asset("Map".into(), mwmap);
+        let mut mwfile = MwFile {
+            map: h_mwmap.clone(),
+            replay: None,
+        };
+        if settings.load_replay {
+            let mut mfr = mfr.finish_is(isr)?;
+            let mwreplay = MwReplay {
+                map: h_mwmap.clone(),
+                raw_framedata: mfr.get_uncompressed_framedata()?,
+            };
+            let h_mwreplay = load_context.add_labeled_asset("Replay".into(), mwreplay);
+            mwfile.replay = Some(h_mwreplay);
+        }
+        Ok(mwfile)
     }
 }

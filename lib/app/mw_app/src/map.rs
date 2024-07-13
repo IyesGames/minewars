@@ -5,7 +5,7 @@ use crate::{prelude::*, settings::GameViewSettings};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
-        OnTransition { from: AppState::InGame, to: AppState::GameLoading },
+        OnTransition { exited: AppState::InGame, entered: AppState::GameLoading },
         cleanup_mapgov,
     );
     app.add_systems(Update,

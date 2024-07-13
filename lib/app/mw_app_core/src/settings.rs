@@ -1,7 +1,6 @@
-use crate::{graphics::GraphicsStyle, prelude::*, user::{MyUserProfile, UserGovernor, UserProfile}, value::Lch};
+use crate::{graphics::GraphicsStyle, prelude::*, user::{MyUserProfile, UserGovernor, UserProfile}};
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Vec<Lch>>();
     app.init_setting::<GraphicsStyleSettings>(SETTINGS_LOCAL.as_ref());
     app.init_setting::<UserProfileSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<PlidColorSettings>(SETTINGS_USER.as_ref());
@@ -52,32 +51,32 @@ impl Setting for GraphicsStyleSettings {}
 #[derive(Reflect, Debug, Clone)]
 #[reflect(Setting)]
 pub struct PlidColorSettings {
-    pub colors: Vec<Lch>,
-    pub fog: Lch,
+    pub colors: Vec<Oklcha>,
+    pub fog: Oklcha,
 }
 
 impl Default for PlidColorSettings {
     fn default() -> Self {
         PlidColorSettings {
             colors: vec![
-                Lch(0.75, 0.0, 0.0),
-                Lch(0.5, 0.5, 0.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 11.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 6.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 3.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 13.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 8.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 2.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 12.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 4.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 14.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 7.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 1.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 9.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 5.0/15.0 * 360.0),
-                Lch(0.5, 0.5, 10.0/15.0 * 360.0),
+                Oklcha::new(0.75, 0.0, 0.0, 1.0),
+                Oklcha::new(0.5, 0.5, 0.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 11.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 6.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 3.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 13.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 8.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 2.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 12.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 4.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 14.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 7.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 1.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 9.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 5.0/15.0 * 360.0, 1.0),
+                Oklcha::new(0.5, 0.5, 10.0/15.0 * 360.0, 1.0),
             ],
-            fog: Lch(0.25, 0.0, 0.0),
+            fog: Oklcha::new(0.25, 0.0, 0.0, 1.0),
         }
     }
 }

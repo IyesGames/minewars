@@ -6,12 +6,6 @@ use mw_common::grid::Topology;
 use crate::{input::*, prelude::*};
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Topology>();
-    app.register_type::<Vec<KeyCode>>();
-    app.register_type::<Vec<MouseButton>>();
-    app.register_type::<HashMap<Vec<KeyCode>, String>>();
-    app.register_type::<HashMap<Vec<MouseButton>, String>>();
-    app.register_type::<HashMap<Vec<KeyCode>, HashMap<Vec<MouseButton>, InputAnalogName>>>();
     app.init_setting::<WindowSettings>(SETTINGS_LOCAL.as_ref());
     app.init_setting::<GameViewSettings>(SETTINGS_USER.as_ref());
     app.init_setting::<KeyboardMouseMappings>(SETTINGS_USER.as_ref());

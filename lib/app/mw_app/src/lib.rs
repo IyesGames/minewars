@@ -4,7 +4,6 @@
 /// (and in proprietary)
 pub mod prelude {
     pub use mw_app_core::prelude::*;
-    pub use iyes_ui::prelude::*;
     pub use bevy_asset_loader::prelude::*;
 }
 
@@ -59,7 +58,7 @@ pub fn setup_bevy_app() -> App {
         &mut app, &[SETTINGS_ENGINE]
     );
     app.insert_resource(ClearColor(Color::BLACK));
-    let setup_settings = app.world.resource::<SettingsStore>()
+    let setup_settings = app.world().resource::<SettingsStore>()
         .get::<EngineSetupSettings>().cloned().unwrap();
     let bevy_plugins = DefaultPlugins;
     let bevy_plugins = bevy_plugins.set(WindowPlugin {
@@ -74,13 +73,13 @@ pub fn setup_bevy_app() -> App {
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
         filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace,mw_app_core=trace,mw_app=trace".into(),
         level: bevy::log::Level::TRACE,
-        update_subscriber: None,
+        ..default()
     });
     #[cfg(not(feature = "dev"))]
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
         filter: "info,wgpu_core=warn,wgpu_hal=warn".into(),
         level: bevy::log::Level::INFO,
-        update_subscriber: None,
+        ..default()
     });
     let compute_threads = {
         let physical = num_cpus::get_physical();

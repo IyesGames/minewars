@@ -23,5 +23,5 @@ fn exit_game(
 fn exit_app(
     mut evw: EventWriter<AppExit>,
 ) {
-    evw.send(AppExit);
+    evw.send(AppExit::Success);
 }

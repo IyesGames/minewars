@@ -1,12 +1,13 @@
 use bevy::ecs::system::{lifetimeless::SQuery, SystemParam};
 use iyes_perf_ui::prelude::*;
+use iyes_perf_ui::entry::PerfUiEntry;
 use mw_app_core::map::GridCursorTileEntity;
 
 use crate::{map::{Ass3dTileKind, Ass3dTileVariant, TileAss3d}, prelude::*};
 
 pub(crate) fn plugin(app: &mut App) {
-    app.add_perf_ui_entry_type::<PerfUiAss3dTileKind>();
-    app.add_perf_ui_entry_type::<PerfUiAss3dTileVariant>();
+    app.add_perf_ui_simple_entry::<PerfUiAss3dTileKind>();
+    app.add_perf_ui_simple_entry::<PerfUiAss3dTileVariant>();
 }
 
 /// Custom Perf UI entry to show Tile 3D Asset Kind

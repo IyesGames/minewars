@@ -21,11 +21,11 @@ path = "../../common/mw_common"
 features = [ "net" ]
 
 [dependencies.serde]
-version = "1.0.203"
+version = "1.0.204"
 features = [ "derive" ]
 
 [dependencies.clap]
-version = "4.5.8"
+version = "4.5.9"
 features = [ "derive" ]
 
 [dependencies.tracing-subscriber]

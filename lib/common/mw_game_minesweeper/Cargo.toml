@@ -15,7 +15,7 @@ bevy = [
 path = "../mw_common"
 
 [dependencies.serde]
-version = "1.0.203"
+version = "1.0.204"
 features = [ "derive" ]
 
 [dependencies]
@@ -23,6 +23,6 @@ modular-bitfield = "0.11.2"
 rand = "0.8.5"
 
 [dependencies.bevy]
-version = "0.13.2"
+version = "0.14.0"
 optional = true
 default-features = false

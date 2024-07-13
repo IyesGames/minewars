@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<(Vec2, Vec2)>();
     app.init_setting::<Gfx2dImpl>(SETTINGS_LOCAL.as_ref());
     app.init_setting::<Camera2dControlSettings>(SETTINGS_USER.as_ref());
 }

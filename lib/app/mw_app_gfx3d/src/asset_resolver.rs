@@ -198,7 +198,7 @@ impl Ass3dResolver {
             };
             if let Some(digits) = digits {
                 if let Some(digit_scene_name) = digits.get(digit as usize) {
-                    if let Some(scene) = gltf.named_scenes.get(digit_scene_name) {
+                    if let Some(scene) = gltf.named_scenes.get(digit_scene_name.as_str()) {
                         return Some(ResolvedAsset {
                             scale: crate::misc::TILE_SCALE / skin.tile_size,
                             scene: scene.clone(),

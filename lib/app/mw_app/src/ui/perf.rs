@@ -1,15 +1,16 @@
 use bevy::ecs::system::{lifetimeless::{SQuery, SRes}, SystemParam};
 use iyes_perf_ui::prelude::*;
+use iyes_perf_ui::entry::PerfUiEntry;
 use mw_app_core::map::{tile::TileOwner, GridCursor, GridCursorTileEntity};
 use mw_common::{game::TileKind, grid::Pos, plid::PlayerId};
 
 use crate::{net::NetInfo, prelude::*};
 
 pub fn plugin(app: &mut App) {
-    app.add_perf_ui_entry_type::<PerfUiNetRtt>();
-    app.add_perf_ui_entry_type::<PerfUiGridCursor>();
-    app.add_perf_ui_entry_type::<PerfUiTileKind>();
-    app.add_perf_ui_entry_type::<PerfUiTileOwner>();
+    app.add_perf_ui_simple_entry::<PerfUiNetRtt>();
+    app.add_perf_ui_simple_entry::<PerfUiGridCursor>();
+    app.add_perf_ui_simple_entry::<PerfUiTileKind>();
+    app.add_perf_ui_simple_entry::<PerfUiTileOwner>();
 }
 
 /// Custom Perf UI entry to show Network Ping

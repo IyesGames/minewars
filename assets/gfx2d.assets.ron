@@ -3,8 +3,8 @@
         path: "gfx2d/sprites.ktx2",
     ),
     "gfx2d.tilemap.sprites.layout": TextureAtlasLayout (
-        tile_size_x: 128.,
-        tile_size_y: 128.,
+        tile_size_x: 128,
+        tile_size_y: 128,
         rows: 10,
         columns: 10,
     ),
@@ -12,8 +12,8 @@
         path: "gfx2d/roads6.ktx2",
     ),
     "gfx2d.tilemap.roads6.layout": TextureAtlasLayout (
-        tile_size_x: 128.,
-        tile_size_y: 128.,
+        tile_size_x: 128,
+        tile_size_y: 128,
         rows: 8,
         columns: 8,
     ),
@@ -21,8 +21,8 @@
         path: "gfx2d/roads4.ktx2",
     ),
     "gfx2d.tilemap.roads4.layout": TextureAtlasLayout (
-        tile_size_x: 128.,
-        tile_size_y: 128.,
+        tile_size_x: 128,
+        tile_size_y: 128,
         rows: 4,
         columns: 4,
     ),

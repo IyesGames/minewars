@@ -1,6 +1,7 @@
 use std::io::Cursor;
 
 use bevy::{asset::{saver::AssetSaver, AssetLoader, AsyncWriteExt}, tasks::futures_lite::AsyncWrite, utils::BoxedFuture};
+use loader::MwFileLoaderSettings;
 use mw_app_core::map::MapTileDataOrig;
 use mw_dataformat::write::{MwFileBuilder, MwWriterError};
 
@@ -46,26 +47,24 @@ impl AssetSaver for MwFileSaver {
     type OutputLoader = loader::MwFileLoader;
     type Error = MwFileSaverError;
 
-    fn save<'a>(
+    async fn save<'a>(
         &'a self,
         writer: &'a mut bevy::asset::io::Writer,
         asset: bevy::asset::saver::SavedAsset<'a, Self::Asset>,
         settings: &'a Self::Settings,
-    ) -> BoxedFuture<'a, Result<<Self::OutputLoader as AssetLoader>::Settings, Self::Error>> {
-        Box::pin(async move {
-            let mwmap = asset.get_labeled::<MwMap, _>("Map")
-                .ok_or(MwFileSaverError::NoMapAsset)?
-                .get();
-            let mwreplay = asset.get_labeled::<MwReplay, _>("Replay")
-                .map(|x| x.get());
-            save_mwfile(writer, settings, mwmap, mwreplay).await?;
-            let out_settings = loader::MwFileLoaderSettings {
-                load_replay: settings.save_replay,
-                load_map_items: settings.save_map_items,
-                verify_checksums: true,
-            };
-            Ok(out_settings)
-        })
+    ) -> Result<MwFileLoaderSettings, MwFileSaverError> {
+        let mwmap = asset.get_labeled::<MwMap, _>("Map")
+            .ok_or(MwFileSaverError::NoMapAsset)?
+            .get();
+        let mwreplay = asset.get_labeled::<MwReplay, _>("Replay")
+            .map(|x| x.get());
+        save_mwfile(writer, settings, mwmap, mwreplay).await?;
+        let out_settings = loader::MwFileLoaderSettings {
+            load_replay: settings.save_replay,
+            load_map_items: settings.save_map_items,
+            verify_checksums: true,
+        };
+        Ok(out_settings)
     }
 }
 

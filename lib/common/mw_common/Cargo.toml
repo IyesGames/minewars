@@ -13,14 +13,14 @@ net = [ "dep:rustls", "dep:tokio", "dep:tokio-util", "dep:quinn"]
 anyhow = "1.0.86"
 bytemuck = { version = "1.16.1", features = ["derive"] }
 derive_more = "0.99.18"
-enum-iterator = "1.5.0"
+enum-iterator = "2.1.0"
 enum-map = "2.7.3"
-glam = "0.25.0"
+glam = "0.27.0"
 modular-bitfield = "0.11.2"
 num = "0.4.3"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
-thiserror = "1.0.61"
+thiserror = "1.0.62"
 tracing = "0.1.40"
 rand_pcg = "0.3.1"
 noise = "0.9.0"
@@ -40,11 +40,11 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.203"
+version = "1.0.204"
 features = [ "derive" ]
 
 [dependencies.bevy]
-version = "0.13.2"
+version = "0.14.0"
 default-features = false
 optional = true
 features = [
@@ -71,13 +71,13 @@ features = [
 ]
 
 [dependencies.rustls]
-version = "0.21" # must be whatever quinn uses
+version = "0.23" # must be whatever quinn uses
 optional = true
 default-features = false
 features = []
 
 [dependencies.quinn]
-version = "0.10.2"
+version = "0.11.2"
 optional = true
 default-features = false
-features = ["runtime-tokio", "tls-rustls"]
+features = ["runtime-tokio", "rustls", "ring", "log"]
