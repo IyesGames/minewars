@@ -1,3 +1,5 @@
+use mw_common::net::*;
+
 use crate::{prelude::*, settings::NetworkingSettings};
 
 pub mod host;
@@ -79,10 +81,9 @@ fn setup_quic_endpoint(
         let (tx, rx) = tokio::sync::oneshot::channel();
         *task = Some(rx);
         rt.0.spawn(async move {
-            let _ = tx.send(mw_common::net::setup_quic(
-                my_addr, server_settings.as_ref(), client_settings.as_ref(),
-            ).await
-            .map(|e| Arc::new(e)));
+            let _ = tx.send(create_quic_endpoint(
+                my_addr, server_settings, client_settings
+            ).await);
         });
     }
     Ok(())
@@ -92,4 +93,25 @@ fn setup_endpoint_fail(In(r): In<AnyResult<()>>, mut commands: Commands) {
     if r.is_err() {
         commands.insert_resource(QuicEndpoint(None));
     }
+}
+
+async fn create_quic_endpoint(
+    my_addr: SocketAddr,
+    server_settings: Option<ServerSettings>,
+    client_settings: Option<ClientSettings>,
+) -> AnyResult<Arc<quinn::Endpoint>> {
+    let mut server_crypto = None;
+    if let Some(s) = server_settings {
+        let crypto = load_server_crypto(&s).await
+            .context("Cannot load server crypto")?;
+        server_crypto = Some(crypto);
+    }
+    let mut client_crypto = None;
+    if let Some(s) = client_settings {
+        let crypto = load_client_crypto(&s).await
+            .context("Cannot load client crypto")?;
+        client_crypto = Some(crypto);
+    }
+    setup_quic(my_addr, server_crypto, client_crypto)
+        .map(|e| Arc::new(e))
 }

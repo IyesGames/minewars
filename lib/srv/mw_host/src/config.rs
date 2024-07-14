@@ -115,8 +115,8 @@ pub struct ServerConfig {
     pub ip_control: ControlListMode,
     /// List of IPs for IP restriction
     pub ip_list: IpListOrFile,
-    /// If players connect with client authentication, expect certs signed by this CA
-    pub player_ca: PathBuf,
+    /// If players connect with client authentication, expect certs signed by any of these CAs
+    pub player_ca: Vec<PathBuf>,
     /// Allow players to connect without a prior `ExpectPlayer` from RPC/hostauth
     pub allow_players_unexpected: bool,
     /// Allow players to connect without a client TLS certificate (disable client cert verification)
@@ -182,8 +182,8 @@ pub struct RpcConfig {
     pub key: PathBuf,
     /// Enable TLS certificate verification of clients.
     pub require_client_cert: bool,
-    /// If enabled, require clients to have a certificate signed by the CA provided here.
-    pub client_ca: PathBuf,
+    /// If enabled, require clients to have a certificate signed by a CA provided here.
+    pub client_ca: Vec<PathBuf>,
     /// Mode for IP restriction
     pub ip_control: ControlListMode,
     /// List of IPs for IP restriction
@@ -248,12 +248,16 @@ impl Config {
             parent
         };
         self.rpc.key = reparent_path(dir, &self.rpc.key);
-        self.rpc.client_ca = reparent_path(dir, &self.rpc.client_ca);
+        for path in &mut self.rpc.client_ca {
+            *path = reparent_path(dir, path);
+        }
         for path in &mut self.rpc.cert {
             *path = reparent_path(dir, path);
         }
         self.server.key = reparent_path(dir, &self.server.key);
-        self.server.player_ca = reparent_path(dir, &self.server.player_ca);
+        for path in &mut self.server.player_ca {
+            *path = reparent_path(dir, path);
+        }
         for path in &mut self.server.cert {
             *path = reparent_path(dir, path);
         }

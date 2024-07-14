@@ -16,8 +16,13 @@ struct Args {
 async fn connect_sendrpc(args: Args) -> AnyResult<()> {
     use mw_proto_hostrpc::methods::kill_session::KillSession;
 
-    let crypto = load_client_crypto(&args.ca_server, false, &[""], "").await?;
-    let endpoint = setup_quic_client(crypto, "0.0.0.0:0".parse().unwrap())?;
+    let client_settings = ClientSettings {
+        client_certs: vec![],
+        client_key: None,
+        server_ca: vec![args.ca_server.clone()],
+    };
+    let crypto = load_client_crypto(&client_settings).await?;
+    let endpoint = setup_quic("0.0.0.0:0".parse().unwrap(), None, Some(crypto))?;
 
     let conn = endpoint.connect(SocketAddr::new(args.server, args.port), "auth.iyes.games")?.await?;
     let (mut tx, mut rx) = conn.open_bi().await?;
@@ -26,7 +31,8 @@ async fn connect_sendrpc(args: Args) -> AnyResult<()> {
         session_id: 1503,
     })?;
     tx.write_all(&buf).await?;
-    tx.finish().await?;
+    tx.finish().ok();
+    tx.stopped().await?;
     let buf = rx.read_to_end(4096).await?;
     let response = mw_proto_hostrpc::de_response::<KillSession>(&buf)?;
     dbg!(response);

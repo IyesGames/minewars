@@ -1,5 +1,6 @@
-use mw_common::{net::*, prelude::rustls::ServerConfig};
+use mw_common::net::*;
 use mw_proto_host::server::ProtoState;
+use quinn::crypto::rustls::QuicServerConfig;
 
 use crate::prelude::*;
 
@@ -9,11 +10,17 @@ pub async fn host_main(
     softreset: CancellationToken,
 ) {
     info!("Host Server Initializing...");
+    let server_settings = ServerSettings {
+        server_certs: config.server.cert.clone(),
+        server_key: config.server.key.clone(),
+        client_ca: if config.server.allow_players_nocert {
+            vec![]
+        } else {
+            config.server.player_ca.clone()
+        },
+    };
     match load_server_crypto(
-        &config.server.cert,
-        &config.server.key,
-        !config.server.allow_players_nocert,
-        &config.server.player_ca,
+        &server_settings,
     ).await {
         Ok(crypto) => {
             info!("Host Server crypto (certs and keys) loaded.");
@@ -39,10 +46,10 @@ async fn host_listener(
     config: Arc<Config>,
     rt: ManagedRuntime,
     softreset: CancellationToken,
-    crypto: Arc<ServerConfig>,
+    crypto: Arc<QuicServerConfig>,
     addr: SocketAddr,
 ) {
-    let endpoint = match setup_quic_server(crypto, addr) {
+    let endpoint = match setup_quic(addr, Some(crypto), None) {
         Ok(endpoint) => endpoint,
         Err(e) => {
             error!("Failed to create QUIC Endpoint: {}", e);
@@ -60,13 +67,13 @@ async fn host_listener(
             _ = rt.listen_shutdown() => {
                 break;
             }
-            connecting = endpoint.accept() => {
-                match connecting {
-                    Some(connecting) => {
+            incoming = endpoint.accept() => {
+                match incoming {
+                    Some(incoming) => {
                         let rt = rt.clone();
                         let config = config.clone();
                         tokio::spawn(async {
-                            if let Err(e) = player_handle_connection(rt, config, connecting).await {
+                            if let Err(e) = player_handle_connection(rt, config, incoming).await {
                                 error!("Player connection error: {}", e);
                             }
                         });
@@ -84,17 +91,18 @@ async fn host_listener(
 async fn player_handle_connection(
     rt: ManagedRuntime,
     config: Arc<Config>,
-    connecting: quinn::Connecting,
+    incoming: quinn::Incoming,
 ) -> AnyResult<()> {
-    let addr_remote = connecting.remote_address();
+    let addr_remote = incoming.remote_address();
     if !check_list(config.server.ip_control, config.server.ip_list.temporary_todo_unwrap(), &addr_remote.ip()) {
         info!("Ignoring incoming Player connection from banned IP: {}", addr_remote);
+        incoming.ignore();
         return Ok(());
     }
     // TODO: player expectation
 
     info!("Incoming Player connection from: {}", addr_remote);
-    let conn = connecting.await?;
+    let conn = incoming.await?;
 
     info!("Player connected from: {}", addr_remote);
 

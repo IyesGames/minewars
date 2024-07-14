@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 use mw_common::net::*;
 use mw_proto_hostrpc::{RpcMethodName, RpcError};
-use rustls::ServerConfig;
+use quinn::crypto::rustls::QuicServerConfig;
 
 pub async fn rpc_main(
     config: Arc<Config>,
@@ -11,11 +11,17 @@ pub async fn rpc_main(
 ) {
     if config.rpc.enable {
         info!("RPC Server initializing...");
+        let server_settings = ServerSettings {
+            server_certs: config.rpc.cert.clone(),
+            server_key: config.rpc.key.clone(),
+            client_ca: if config.rpc.require_client_cert {
+                config.rpc.client_ca.clone()
+            } else {
+                vec![]
+            },
+        };
         match load_server_crypto(
-            &config.rpc.cert,
-            &config.rpc.key,
-            config.rpc.require_client_cert,
-            &config.rpc.client_ca,
+            &server_settings,
         ).await {
             Ok(crypto) => {
                 info!("RPC crypto (certs and keys) loaded.");
@@ -44,10 +50,10 @@ async fn rpc_listener(
     config: Arc<Config>,
     rt: ManagedRuntime,
     softreset: CancellationToken,
-    crypto: Arc<ServerConfig>,
+    crypto: Arc<QuicServerConfig>,
     addr: SocketAddr,
 ) {
-    let endpoint = match setup_quic_server(crypto, addr) {
+    let endpoint = match setup_quic(addr, Some(crypto), None) {
         Ok(endpoint) => endpoint,
         Err(e) => {
             error!("Failed to create QUIC Endpoint: {}", e);
@@ -65,12 +71,12 @@ async fn rpc_listener(
             _ = rt.listen_shutdown() => {
                 break;
             }
-            connecting = endpoint.accept() => {
-                match connecting {
-                    Some(connecting) => {
+            incoming = endpoint.accept() => {
+                match incoming {
+                    Some(incoming) => {
                         let config = config.clone();
                         tokio::spawn(async {
-                            if let Err(e) = rpc_handle_connection(config, connecting).await {
+                            if let Err(e) = rpc_handle_connection(config, incoming).await {
                                 error!("RPC connection error: {}", e);
                             }
                         });
@@ -87,15 +93,16 @@ async fn rpc_listener(
 
 async fn rpc_handle_connection(
     config: Arc<Config>,
-    connecting: quinn::Connecting,
+    incoming: quinn::Incoming,
 ) -> AnyResult<()> {
-    let addr_remote = connecting.remote_address();
+    let addr_remote = incoming.remote_address();
     if !check_list(config.rpc.ip_control, config.rpc.ip_list.temporary_todo_unwrap(), &addr_remote.ip()) {
         info!("Ignoring incoming RPC connection from banned IP: {}", addr_remote);
+        incoming.ignore();
         return Ok(());
     }
     info!("Incoming RPC connection from: {}", addr_remote);
-    let conn = connecting.await?;
+    let conn = incoming.await?;
     info!("RPC connected: {}", addr_remote);
 
     loop {

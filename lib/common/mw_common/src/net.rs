@@ -8,7 +8,7 @@ pub mod prelude {
     pub use super::ManagedRuntime;
 }
 
-use quinn::Endpoint;
+use quinn::{crypto::rustls::{QuicClientConfig, QuicServerConfig}, Endpoint};
 use rustls::pki_types::{CertificateDer, PrivatePkcs8KeyDer};
 use tokio_util::task::TaskTracker;
 
@@ -92,79 +92,92 @@ pub struct ClientSettings {
     pub server_ca: Vec<PathBuf>,
 }
 
-pub async fn setup_quic(
-    my_addr: SocketAddr,
-    server_settings: Option<&ServerSettings>,
-    client_settings: Option<&ClientSettings>,
-) -> AnyResult<Endpoint> {
-    let mut endpoint = if let Some(ss) = server_settings {
-        let b = if !ss.client_ca.is_empty() {
-            let mut roots = rustls::RootCertStore::empty();
-            for path in ss.client_ca.iter() {
-                let client_ca = tokio::fs::read(path).await
-                    .context("Cannot load Client CA cert")?;
-                roots.add(CertificateDer::from(client_ca))
-                    .context("Cannot add Client CA cert to root store")?;
-            }
-            let verifier = rustls::server::WebPkiClientVerifier::builder(roots.into())
-                .build()
-                .context("Cannot create client cert verifier")?;
-            rustls::ServerConfig::builder()
-                .with_client_cert_verifier(verifier)
-        } else {
-            rustls::ServerConfig::builder()
-                .with_no_client_auth()
-        };
-        let mut server_certs = Vec::with_capacity(ss.server_certs.len());
-        for path in ss.server_certs.iter() {
-            let server_cert = tokio::fs::read(path).await
-                .context("Cannot load server cert")?;
-            server_certs.push(CertificateDer::from(server_cert));
+pub async fn load_server_crypto(
+    ss: &ServerSettings,
+) -> AnyResult<Arc<QuicServerConfig>> {
+    let b = if !ss.client_ca.is_empty() {
+        let mut roots = rustls::RootCertStore::empty();
+        for path in ss.client_ca.iter() {
+            let client_ca = tokio::fs::read(path).await
+                .context("Cannot load Client CA cert")?;
+            roots.add(CertificateDer::from(client_ca))
+                .context("Cannot add Client CA cert to root store")?;
         }
-        let server_key = tokio::fs::read(&ss.server_key).await
-            .context("Cannot load server private key")?;
-        let server_crypto = b.with_single_cert(
-            server_certs,
-            PrivatePkcs8KeyDer::from(server_key).into(),
-        ).context("Cannot create server crypto")?;
-        let server_crypto = quinn::crypto::rustls::QuicServerConfig::try_from(server_crypto)
-            .context("Cannot create server crypto")?;
-        let server_config = quinn::ServerConfig::with_crypto(Arc::new(server_crypto));
+        let verifier = rustls::server::WebPkiClientVerifier::builder(roots.into())
+            .build()
+            .context("Cannot create client cert verifier")?;
+        rustls::ServerConfig::builder()
+            .with_client_cert_verifier(verifier)
+    } else {
+        rustls::ServerConfig::builder()
+            .with_no_client_auth()
+    };
+    let mut server_certs = Vec::with_capacity(ss.server_certs.len());
+    for path in ss.server_certs.iter() {
+        let server_cert = tokio::fs::read(path).await
+            .context("Cannot load server cert")?;
+        server_certs.push(CertificateDer::from(server_cert));
+    }
+    let server_key = tokio::fs::read(&ss.server_key).await
+        .context("Cannot load server private key")?;
+    let server_crypto = b.with_single_cert(
+        server_certs,
+        PrivatePkcs8KeyDer::from(server_key).into(),
+    ).context("Cannot create TLS server config")?;
+    let server_crypto = quinn::crypto::rustls::QuicServerConfig::try_from(server_crypto)
+        .context("Cannot create QUIC server config")?;
+    Ok(Arc::new(server_crypto))
+}
+
+pub async fn load_client_crypto(
+    cs: &ClientSettings,
+) -> AnyResult<Arc<QuicClientConfig>>
+{
+    let mut roots = rustls::RootCertStore::empty();
+    for path in cs.server_ca.iter() {
+        let server_ca = tokio::fs::read(path).await
+            .context("Cannot load Server CA cert")?;
+        roots.add(CertificateDer::from(server_ca))
+            .context("Cannot add Server CA cert to root store")?;
+    }
+    let b = rustls::ClientConfig::builder()
+        .with_root_certificates(roots);
+    let client_crypto = if let Some(path) = &cs.client_key {
+        let mut client_certs = Vec::with_capacity(cs.client_certs.len());
+        for path in cs.client_certs.iter() {
+            let client_cert = tokio::fs::read(path).await
+                .context("Cannot load client cert")?;
+            client_certs.push(CertificateDer::from(client_cert));
+        }
+        let client_key = tokio::fs::read(path).await
+            .context("Cannot load client private key")?;
+        b.with_client_auth_cert(
+            client_certs,
+            PrivatePkcs8KeyDer::from(client_key).into(),
+        ).context("Cannot create TLS client config")?
+    } else {
+        b.with_no_client_auth()
+    };
+    let client_crypto = quinn::crypto::rustls::QuicClientConfig::try_from(client_crypto)
+        .context("Cannot create QUIC client config")?;
+    Ok(Arc::new(client_crypto))
+}
+
+pub fn setup_quic(
+    my_addr: SocketAddr,
+    server_crypto: Option<Arc<QuicServerConfig>>,
+    client_crypto: Option<Arc<QuicClientConfig>>,
+) -> AnyResult<Endpoint> {
+    let mut endpoint = if let Some(ss) = server_crypto {
+        let server_config = quinn::ServerConfig::with_crypto(ss);
         Endpoint::server(server_config, my_addr)
     } else {
         Endpoint::client(my_addr)
     }.context("Cannot create QUIC endpoint")?;
-
-    if let Some(cs) = client_settings {
-        let mut roots = rustls::RootCertStore::empty();
-        for path in cs.server_ca.iter() {
-            let server_ca = tokio::fs::read(path).await
-                .context("Cannot load Server CA cert")?;
-            roots.add(CertificateDer::from(server_ca))
-                .context("Cannot add Server CA cert to root store")?;
-        }
-        let b = rustls::ClientConfig::builder()
-            .with_root_certificates(roots);
-        let client_crypto = if let Some(path) = &cs.client_key {
-            let mut client_certs = Vec::with_capacity(cs.client_certs.len());
-            for path in cs.client_certs.iter() {
-                let client_cert = tokio::fs::read(path).await
-                    .context("Cannot load client cert")?;
-                client_certs.push(CertificateDer::from(client_cert));
-            }
-            let client_key = tokio::fs::read(path).await
-                .context("Cannot load client private key")?;
-            b.with_client_auth_cert(
-                client_certs,
-                PrivatePkcs8KeyDer::from(client_key).into(),
-            ).context("Cannot create client crypto")?
-        } else {
-            b.with_no_client_auth()
-        };
-        let client_crypto = quinn::crypto::rustls::QuicClientConfig::try_from(client_crypto)
-            .context("Cannot create client crypto")?;
-        let client_config = quinn::ClientConfig::new(Arc::new(client_crypto));
+    if let Some(cs) = client_crypto {
+        let client_config = quinn::ClientConfig::new(cs);
         endpoint.set_default_client_config(client_config);
     }
     Ok(endpoint)
 }
+
