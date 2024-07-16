@@ -40,7 +40,8 @@ fn emit_haptic_events(
     // pass 1: accumulate info from events into buffers
     // (though some events are obvious and we can emit haptic immediately)
     for ev in evr_game.read() {
-        if ev.plid != viewing.0 {
+        // Ignore if it is not our event
+        if !ev.plids.contains(viewing.0) {
             continue;
         }
         match ev.ev {

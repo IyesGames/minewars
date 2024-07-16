@@ -189,14 +189,14 @@ pub struct MwDigit {
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "bevy", derive(Event))]
 pub struct GameEvent {
-    pub plid: PlayerId,
+    pub plids: Plids,
     pub ev: MwEv,
 }
 
-impl From<(PlayerId, MwEv)> for GameEvent {
-    fn from((plid, ev): (PlayerId, MwEv)) -> Self {
+impl From<(Plids, MwEv)> for GameEvent {
+    fn from((plids, ev): (Plids, MwEv)) -> Self {
         GameEvent {
-            plid,
+            plids,
             ev,
         }
     }

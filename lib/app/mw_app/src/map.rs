@@ -188,7 +188,7 @@ fn update_tiles_from_gameevents_kind(
     let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
         // Ignore if it is not our event
-        if ev.plid != viewing.0 {
+        if !ev.plids.contains(viewing.0) {
             continue;
         }
         match ev.ev {
@@ -241,7 +241,7 @@ fn update_tiles_from_gameevents_owner_digit(
     let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
         // Ignore if it is not our event
-        if ev.plid != viewing.0 {
+        if !ev.plids.contains(viewing.0) {
             continue;
         }
         match ev.ev {
@@ -278,7 +278,7 @@ fn update_tiles_from_gameevents_gents(
     let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
         // Ignore if it is not our event
-        if ev.plid != viewing.0 {
+        if !ev.plids.contains(viewing.0) {
             continue;
         }
         let (pos, newgent) = match ev.ev {
@@ -316,7 +316,8 @@ fn handle_gameevent_explosions(
     let viewing = q_session.single();
     let (mut tuq, index) = q_map.single_mut();
     for ev in evr.read() {
-        if ev.plid != viewing.0 {
+        // Ignore if it is not our event
+        if !ev.plids.contains(viewing.0) {
             continue;
         }
         if let MwEv::Explode { pos } = ev.ev {
@@ -358,7 +359,7 @@ fn tile_alert(
     let dur_ms = settings.get::<GameViewSettings>().unwrap().tile_alert_duration_ms;
     for ev in evr.read() {
         // Ignore if it is not our event
-        if ev.plid != viewing.0 {
+        if !ev.plids.contains(viewing.0) {
             continue;
         }
         if let MwEv::TileOwner { pos, plid } = ev.ev {
