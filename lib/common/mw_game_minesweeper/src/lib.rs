@@ -121,7 +121,7 @@ impl<C: Coord> Game for GameMinesweeper<C> {
     type OutEvent = MwEv;
     type SchedEvent = MinesweeperSchedEvent;
 
-    fn init<H: Host<Self>>(&mut self, host: &mut H, _initdata: Self::InitData) {
+    fn init<H: Host<Self>>(&mut self, host: &mut H, _initdata: Box<Self::InitData>) {
         // schedule an event for "game over by running out of time"
         if self.settings.time_limit_secs != 0 {
             host.msg(Plids::all(true), MwEv::Player {

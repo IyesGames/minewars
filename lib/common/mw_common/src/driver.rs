@@ -6,7 +6,7 @@ use crate::{prelude::*, plid::{PlayerId, Plids}};
 /// a networked MineWars session (the proprietary "tokio host") or an
 /// offline/debug session in Bevy ("bevy host"). Each one should
 /// implement this trait using its respective timers, events, etc.
-pub trait Host<G: Game>: Sized {
+pub trait Host<G: Game>: Sized + Send + Sync + 'static {
     /// Notify the Host about something that happened in the game world
     fn msg(&mut self, plids: Plids, event: G::OutEvent);
     /// Request an action to occur at a specific future time
@@ -22,7 +22,7 @@ pub trait Host<G: Game>: Sized {
 /// For example:
 /// the multiplayer MineWars game (proprietary)
 /// or the simplified singleplayer minesweeper mode (open-source).
-pub trait Game: Sized {
+pub trait Game: Sized + Send + Sync + 'static {
     /// Anything that happened that needs to be communicated to a player
     ///
     /// When the Host calls either `Game::input_action` or `Game::unsched`
@@ -48,7 +48,7 @@ pub trait Game: Sized {
     type InitData: Send + Sync + 'static;
 
     /// Called once, at the start, before anything else
-    fn init<H: Host<Self>>(&mut self, host: &mut H, initdata: Self::InitData);
+    fn init<H: Host<Self>>(&mut self, host: &mut H, initdata: Box<Self::InitData>);
 
     /// Trigger a timer-driven event in the game
     fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent);
@@ -58,6 +58,12 @@ pub trait Game: Sized {
 
     /// Query the game for data / status updates to put in an unreliable datagram
     fn unreliable<H: Host<Self>>(&mut self, _host: &mut H) {}
+
+    fn needs_maintain(&self) -> bool {
+        false
+    }
+
+    fn maintain(&mut self) {}
 }
 
 /// Abstract interface for writing multiple player streams at once.
