@@ -1,3 +1,5 @@
+#![feature(btree_extract_if)]
+
 /// Convenience, to be imported in every file in the crate
 pub mod prelude {
     pub use mw_app_core::prelude::*;

@@ -16,6 +16,9 @@ features = [ "bevy" ]
 [dependencies.mw_app_core]
 path = "../mw_app_core"
 
+[dependencies.mw_app_io]
+path = "../mw_app_io"
+
 [dependencies.bevy]
 version = "0.14.0"
 default-features = false

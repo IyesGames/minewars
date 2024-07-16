@@ -26,6 +26,7 @@ path = "../mw_app_core"
 
 [dependencies]
 anyhow = "1.0.86"
+async-channel = "2.3.1"
 derive_more = "0.99.18"
 enum-iterator = "2.1.0"
 enum-map = "2.7.3"

@@ -1,6 +1,7 @@
 use mw_app_core::{driver::*, graphics::*, player::*, session::*, settings::{GraphicsStyleSettings, PlidColorSettings}, user::*};
+use mw_game_minesweeper::MinesweeperSettings;
 
-use crate::{map::SimpleMapGenerator, prelude::*, settings::SimpleMapSettings};
+use crate::{map::SimpleMapGenerator, offline::SetupOfflineGame, prelude::*, settings::SimpleMapSettings};
 
 pub fn plugin(app: &mut App) {
     app.register_clicommand_noargs(
@@ -39,7 +40,12 @@ fn start_minesweeper_singleplayer(
             topology: s_mapgen.topology,
             size: s_mapgen.size,
         },
-        // TODO: Bevy Driver
+        SetupOfflineGame {
+            settings: MinesweeperSettings {
+                n_plids: 1,
+                ..Default::default()
+            },
+        },
     ));
     let e_gov_gfx = commands.spawn((
         GraphicsGovernorBundle {
