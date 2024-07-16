@@ -42,7 +42,8 @@ pub struct MapSpritesIndex(pub MapDataPos<Entity>);
 struct BaseSpriteBundle {
     cleanup: GamePartialCleanup,
     marker: BaseSprite,
-    sprite: SpriteSheetBundle,
+    sprite: SpriteBundle,
+    atlas: TextureAtlas,
     pos: MwTilePos,
 }
 
@@ -50,7 +51,8 @@ struct BaseSpriteBundle {
 struct CursorSpriteBundle {
     cleanup: GamePartialCleanup,
     marker: CursorSprite,
-    sprite: SpriteSheetBundle,
+    sprite: SpriteBundle,
+    atlas: TextureAtlas,
     pos: MwTilePos,
 }
 
@@ -67,14 +69,14 @@ fn setup_cursor(
     commands.spawn((
         CursorSpriteBundle {
             cleanup: GamePartialCleanup,
-            sprite: SpriteSheetBundle {
-                atlas: TextureAtlas {
-                    index: i,
-                    layout: assets.sprites_layout.clone(),
-                },
+            sprite: SpriteBundle {
                 texture: assets.sprites_img.clone(),
                 transform: Transform::from_xyz(0.0, 0.0, zpos::CURSOR),
                 ..Default::default()
+            },
+            atlas: TextureAtlas {
+                index: i,
+                layout: assets.sprites_layout.clone(),
             },
             pos: MwTilePos(Pos::origin()),
             marker: CursorSprite,
@@ -161,12 +163,8 @@ fn setup_tile_entities(
         let e = commands.spawn(BaseSpriteBundle {
             cleanup: GamePartialCleanup,
             marker: BaseSprite,
-            sprite: SpriteSheetBundle {
+            sprite: SpriteBundle {
                 texture: assets.sprites_img.clone(),
-                atlas: TextureAtlas {
-                    index: base_i,
-                    layout: assets.sprites_layout.clone(),
-                },
                 sprite: Sprite {
                     color: Color::WHITE,
                     ..Default::default()
@@ -176,6 +174,10 @@ fn setup_tile_entities(
                 ),
                 visibility: Visibility::Hidden,
                 ..Default::default()
+            },
+            atlas: TextureAtlas {
+                index: base_i,
+                layout: assets.sprites_layout.clone(),
             },
             pos: MwTilePos(c.into()),
         }).id();

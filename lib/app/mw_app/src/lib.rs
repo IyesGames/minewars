@@ -71,7 +71,7 @@ pub fn setup_bevy_app() -> App {
     });
     #[cfg(feature = "dev")]
     let bevy_plugins = bevy_plugins.set(bevy::log::LogPlugin {
-        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace,mw_app_core=trace,mw_app=trace".into(),
+        filter: "info,wgpu_core=warn,wgpu_hal=warn,minewars=trace,mw_app_core=trace,mw_app_io=trace,mw_app=trace".into(),
         level: bevy::log::Level::TRACE,
         ..default()
     });
