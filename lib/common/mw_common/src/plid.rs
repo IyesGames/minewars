@@ -15,6 +15,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 #[derive(Serialize, Deserialize)]
+#[derive(bitcode::Encode, bitcode::Decode)]
 #[serde(from = "u8", into = "u8")]
 pub enum PlayerId {
     Neutral,
@@ -65,6 +66,8 @@ impl PartialEq<PlayerId> for u8 {
 
 /// Bitmask to mux player IDs: can support a game with up to 15 players
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize)]
+#[derive(bitcode::Encode, bitcode::Decode)]
 pub struct Plids(pub u16);
 
 impl Plids {

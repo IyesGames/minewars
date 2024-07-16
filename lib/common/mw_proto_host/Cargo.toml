@@ -10,6 +10,7 @@ mw_common = { path = "../mw_common", features = ["net"] }
 mw_dataformat = { path = "../mw_dataformat" }
 thiserror = "1.0.62"
 rmp-serde = "1.3.0"
+bitcode = { version = "0.6.3", features = ["derive", "glam", "serde"] }
 
 [dependencies.serde]
 version = "1.0.204"
