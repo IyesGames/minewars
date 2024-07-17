@@ -5,17 +5,19 @@ pub mod prelude {
     pub use mw_app_core::prelude::*;
 }
 
-use crate::prelude::*;
-
+pub mod cli;
 pub mod offline_host;
 pub mod net;
 pub mod mwfile;
 
 pub mod settings;
 
+use crate::prelude::*;
+
 pub fn plugin(app: &mut App) {
     app.add_plugins((
-        settings::plugin,
-        net::plugin,
+        crate::cli::plugin,
+        crate::settings::plugin,
+        crate::net::plugin,
     ));
 }

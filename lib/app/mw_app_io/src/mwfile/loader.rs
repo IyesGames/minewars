@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use bevy::{asset::{AssetLoader, AsyncReadExt}, utils::{BoxedFuture, ConditionalSendFuture}};
+use bevy::asset::{io::AsyncReadAndSeek, AssetLoader, AsyncReadExt};
 use mw_app_core::map::MapTileDataOrig;
 use mw_dataformat::{header::{ISHeader, MwFileHeader}, read::{MwFileReader, MwReaderError}};
 
@@ -51,6 +51,25 @@ impl AssetLoader for MwFileLoader {
         settings: &'a Self::Settings,
         load_context: &'a mut bevy::asset::LoadContext<'_>,
     ) -> Result<MwFile, MwFileLoaderError> {
+        let (mwmap, mwreplay) = load_mwfile(reader, settings).await?;
+        let h_mwmap = load_context.add_labeled_asset("Map".into(), mwmap);
+        let mut mwfile = MwFile {
+            map: h_mwmap.clone(),
+            replay: None,
+        };
+        if let Some(mut mwreplay) = mwreplay {
+            mwreplay.map = h_mwmap.clone();
+            let h_mwreplay = load_context.add_labeled_asset("Replay".into(), mwreplay);
+            mwfile.replay = Some(h_mwreplay);
+        }
+        Ok(mwfile)
+    }
+}
+
+pub async fn load_mwfile(
+    reader: &mut (dyn AsyncReadAndSeek + Unpin + Send + Sync),
+    settings: &MwFileLoaderSettings,
+) -> Result<(MwMap, Option<MwReplay>), MwFileLoaderError> {
         let mut scratch = Vec::new();
         let mut buf = Vec::new();
         let len_headers = MwFileHeader::serialized_len() + ISHeader::serialized_len();
@@ -101,20 +120,14 @@ impl AssetLoader for MwFileLoader {
             topology: isr.map_topology(),
             data: orig,
         };
-        let h_mwmap = load_context.add_labeled_asset("Map".into(), mwmap);
-        let mut mwfile = MwFile {
-            map: h_mwmap.clone(),
-            replay: None,
-        };
         if settings.load_replay {
             let mut mfr = mfr.finish_is(isr)?;
             let mwreplay = MwReplay {
-                map: h_mwmap.clone(),
+                map: default(),
                 raw_framedata: mfr.get_uncompressed_framedata()?,
             };
-            let h_mwreplay = load_context.add_labeled_asset("Replay".into(), mwreplay);
-            mwfile.replay = Some(h_mwreplay);
+            Ok((mwmap, Some(mwreplay)))
+        } else {
+            Ok((mwmap, None))
         }
-        Ok(mwfile)
-    }
 }

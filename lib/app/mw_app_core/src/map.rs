@@ -68,6 +68,7 @@ pub struct MapGovernorBundle {
 pub struct MapGovernor;
 
 #[derive(Component)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MapDescriptor {
     pub size: u8,
     pub topology: Topology,
@@ -83,6 +84,7 @@ pub struct CitIndex {
 }
 
 #[derive(Component)]
+#[derive(Clone)]
 pub struct MapDataOrig {
     pub map: MapDataPos<MapTileDataOrig>,
     pub cits: Vec<Pos>,

@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use bevy::{asset::{saver::AssetSaver, AssetLoader, AsyncWriteExt}, tasks::futures_lite::AsyncWrite, utils::BoxedFuture};
+use bevy::{asset::{saver::AssetSaver, AsyncWriteExt}, tasks::futures_lite::AsyncWrite};
 use loader::MwFileLoaderSettings;
 use mw_app_core::map::MapTileDataOrig;
 use mw_dataformat::write::{MwFileBuilder, MwWriterError};
@@ -69,7 +69,7 @@ impl AssetSaver for MwFileSaver {
 }
 
 pub async fn save_mwfile(
-    writer: &mut (dyn AsyncWrite + Unpin + Send + Sync + 'static),
+    writer: &mut (dyn AsyncWrite + Unpin + Send + Sync),
     settings: &MwFileSaverSettings,
     mwmap: &MwMap,
     mut mwreplay: Option<&MwReplay>,
@@ -121,6 +121,5 @@ pub async fn save_mwfile(
         let b_file = b_file.with_is(b_is.finish()?)?;
         b_file.finish()?;
     }
-    writer.write_all(&out).await?;
-    Ok(())
+    Ok(writer.write_all(&out).await?)
 }
