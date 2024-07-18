@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, mem::discriminant};
 
 use async_channel::{Receiver, Sender, TryRecvError};
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool, Task};
-use mw_app_core::{driver::{DriverGovernor, NeedsDriverGovernorSet}, session::{NeedsSessionGovernorSet, PlidPlayingAs, SessionGovernor}};
+use mw_app_core::{driver::{DriverGovernor, GameOutEventSS, NeedsDriverGovernorSet}, session::{NeedsSessionGovernorSet, PlidPlayingAs, SessionGovernor}};
 use mw_common::driver::{Game, Host};
 
 use crate::prelude::*;
@@ -40,6 +40,7 @@ where
         app.add_systems(Update,
             update_offline_game::<G, EIn, EOut>
                 .in_set(InStateSet(AppState::InGame))
+                .in_set(SetStage::Provide(GameOutEventSS))
                 .in_set(NeedsSessionGovernorSet)
                 .in_set(NeedsDriverGovernorSet)
                 .run_if(any_filter::<(With<OfflineHost<G>>, With<DriverGovernor>)>)
@@ -77,6 +78,7 @@ enum TaskIn<G: Game> {
         event: G::InputAction,
     },
     SchedTrigger(Instant),
+    Maintain,
 }
 
 enum TaskOut<G: Game> {
@@ -211,6 +213,7 @@ where
             let task = rt.spawn(async move {
                 task_host_game(game, host, rx_in, tx_out).await;
             });
+            tx_in.try_send(TaskIn::Maintain).ok();
             OfflineHostState::Running {
                 tx: tx_in,
                 rx: rx_out,
@@ -304,6 +307,23 @@ async fn task_host_game<G: Game>(
             }
             TaskIn::GameInput { plid, event }  => {
                 game.input(&mut host, plid, event);
+                for (plids, event) in host.events.drain(..) {
+                    let Ok(_) = tx.send(TaskOut::GameOutput { plids, event }).await else {
+                        break 'main;
+                    };
+                }
+                if host.game_over {
+                    let _ = tx.send(TaskOut::GameOver).await;
+                    break 'main;
+                }
+                let Ok(_) = tx.send(host.maintain_scheds()).await else {
+                    break 'main;
+                };
+                while game.needs_maintain() {
+                    game.maintain();
+                }
+            }
+            TaskIn::Maintain => {
                 for (plids, event) in host.events.drain(..) {
                     let Ok(_) = tx.send(TaskOut::GameOutput { plids, event }).await else {
                         break 'main;

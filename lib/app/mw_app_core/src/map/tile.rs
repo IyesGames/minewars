@@ -5,6 +5,7 @@
 //! To find the entity for a specific Pos, look it up via the
 //! `MapTileIndex` on the Map Governor.
 
+use bevy::ecs::query::{QueryData, QueryFilter, WorldQuery};
 use mw_common::{game::{CitId, ItemKind, MwDigit, StructureKind, TileKind}, grid::Pos, plid::PlayerId};
 
 use crate::{view::VisibleInView, prelude::*};
@@ -182,5 +183,25 @@ impl TileUpdateQueue {
     }
     pub fn clear(&mut self) {
         self.0 = None;
+    }
+    pub fn for_each<QD, QF, F>(&self, query: &mut Query<QD, QF>, mut f: F)
+    where
+        QD: QueryData,
+        QF: QueryFilter,
+        F: FnMut(<QD as WorldQuery>::Item<'_>),
+    {
+        match &self.0 {
+            None => {},
+            Some(TilesToUpdate::All) => {
+                query.iter_mut().for_each(f);
+            }
+            Some(TilesToUpdate::Specific(entities)) => {
+                entities.iter().for_each(|e| {
+                    if let Ok(item) = query.get_mut(*e) {
+                        f(item);
+                    }
+                });
+            }
+        }
     }
 }

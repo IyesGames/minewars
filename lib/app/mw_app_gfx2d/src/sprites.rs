@@ -1,4 +1,4 @@
-use mw_app_core::map::{tile::*, *};
+use mw_app_core::{map::{tile::*, *}, player::{Plid, PlidColor}, session::{NeedsSessionGovernorSet, PlayersIndex, SessionGovernor}, settings::PlidColorSettings};
 use mw_common::grid::*;
 
 use crate::{assets::Gfx2dAssets, misc::*, prelude::*};
@@ -21,6 +21,8 @@ pub fn plugin(app: &mut App) {
     ));
     app.add_systems(Update, (
         update_sprite_tile_kind,
+        update_sprite_tile_owner
+            .in_set(NeedsSessionGovernorSet),
     )
         .in_set(SetStage::WantChanged(TileUpdateSS))
         .in_set(Gfx2dImplSet::Sprites)
@@ -36,15 +38,30 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Component)]
-pub struct MapSpritesIndex(pub MapDataPos<Entity>);
+struct SpriteEntities {
+    base: Entity,
+}
+
+#[derive(Component)]
+struct TileEntity(Entity);
+
+#[derive(Component)]
+struct MapSprite;
+
+#[derive(Bundle)]
+struct MapSpriteBundle {
+    cleanup: GamePartialCleanup,
+    marker: MapSprite,
+    pos: MwTilePos,
+    tile: TileEntity,
+    sprite: SpriteBundle,
+    atlas: TextureAtlas,
+}
 
 #[derive(Bundle)]
 struct BaseSpriteBundle {
-    cleanup: GamePartialCleanup,
+    mapsprite: MapSpriteBundle,
     marker: BaseSprite,
-    sprite: SpriteBundle,
-    atlas: TextureAtlas,
-    pos: MwTilePos,
 }
 
 #[derive(Bundle)]
@@ -116,12 +133,14 @@ fn setup_tile_entities(
     mut commands: Commands,
     spreader: Res<WorkSpreader>,
     assets: Res<Gfx2dAssets>,
-    mut q_map: Query<(Entity, &mut TileUpdateQueue, &MapDescriptor, &MapTileIndex, Has<MapSpritesIndex>), With<MapGovernor>>,
+    mut q_map: Query<(Entity, &mut TileUpdateQueue, &MapDescriptor, &MapTileIndex), With<MapGovernor>>,
+    mut done: Local<bool>,
 ) -> Progress {
-    let (e_map, mut tuq, desc, tile_index) = match q_map.get_single_mut() {
-        Err(_) => return false.into(),
-        Ok((_, _, _, _, true)) => return true.into(),
-        Ok((e, tuq, desc, tile_index, false)) => (e, tuq, desc, tile_index),
+    if *done {
+        return true.into();
+    }
+    let Ok((e_map, mut tuq, desc, tile_index)) = q_map.get_single_mut() else {
+        return false.into();
     };
     if spreader.acquire() {
         return false.into();
@@ -139,11 +158,7 @@ fn setup_tile_entities(
         ),
     };
 
-    let mut sprites_index = MapSpritesIndex(
-        MapDataPos::new(desc.size, Entity::PLACEHOLDER)
-    );
-
-    for (c, &e) in tile_index.0.iter() {
+    for (c, &e_tile) in tile_index.0.iter() {
         let trans = match desc.topology {
             Topology::Hex => {
                 let c = Hex::from(c);
@@ -160,32 +175,37 @@ fn setup_tile_entities(
                 c.translation()
             },
         };
-        let e = commands.spawn(BaseSpriteBundle {
-            cleanup: GamePartialCleanup,
+        let e_spr = commands.spawn(BaseSpriteBundle {
             marker: BaseSprite,
-            sprite: SpriteBundle {
-                texture: assets.sprites_img.clone(),
-                sprite: Sprite {
-                    color: Color::WHITE,
+            mapsprite: MapSpriteBundle {
+                cleanup: GamePartialCleanup,
+                marker: MapSprite,
+                tile: TileEntity(e_tile),
+                sprite: SpriteBundle {
+                    texture: assets.sprites_img.clone(),
+                    sprite: Sprite {
+                        color: Color::WHITE,
+                        ..Default::default()
+                    },
+                    transform: Transform::from_xyz(
+                        trans.x * width, trans.y * height, zpos::TILE
+                    ),
+                    visibility: Visibility::Hidden,
                     ..Default::default()
                 },
-                transform: Transform::from_xyz(
-                    trans.x * width, trans.y * height, zpos::TILE
-                ),
-                visibility: Visibility::Hidden,
-                ..Default::default()
+                atlas: TextureAtlas {
+                    index: base_i,
+                    layout: assets.sprites_layout.clone(),
+                },
+                pos: MwTilePos(c.into()),
             },
-            atlas: TextureAtlas {
-                index: base_i,
-                layout: assets.sprites_layout.clone(),
-            },
-            pos: MwTilePos(c.into()),
         }).id();
-        sprites_index.0[c.into()] = e;
+        commands.entity(e_tile).insert(SpriteEntities {
+            base: e_spr,
+        });
     }
 
-    commands.entity(e_map)
-        .insert(sprites_index);
+    *done = true;
 
     debug!("Initialized map graphics using 2D Sprites.");
 
@@ -193,7 +213,7 @@ fn setup_tile_entities(
 }
 
 fn reveal_sprites_onenter_ingame(
-    mut q_sprite: Query<&mut Visibility, With<BaseSprite>>,
+    mut q_sprite: Query<&mut Visibility, With<MapSprite>>,
 ) {
     for mut vis in &mut q_sprite {
         *vis = Visibility::Visible;
@@ -201,17 +221,17 @@ fn reveal_sprites_onenter_ingame(
 }
 
 fn update_sprite_tile_kind(
-    q_map: Query<(&TileUpdateQueue, &MapDescriptor, &MapSpritesIndex), With<MapGovernor>>,
-    q_tile: Query<(&MwTilePos, &TileKind), With<MwMapTile>>,
+    q_map: Query<(&TileUpdateQueue, &MapDescriptor), With<MapGovernor>>,
+    mut q_tile: Query<(&MwTilePos, &TileKind, &SpriteEntities), With<MwMapTile>>,
     mut q_sprite: Query<&mut TextureAtlas, With<BaseSprite>>,
 ) {
-    let (tuq, desc, sprindex) = q_map.single();
+    let (tuq, desc) = q_map.single();
     let i_base = match desc.topology {
         Topology::Hex => sprite::TILES6,
         Topology::Sq => sprite::TILES4,
     };
-    let mut do_update = |e, kind| {
-        if let Ok(mut atlas) = q_sprite.get_mut(e) {
+    tuq.for_each(&mut q_tile, |(pos, kind, e_spr)| {
+        if let Ok(mut atlas) = q_sprite.get_mut(e_spr.base) {
             atlas.index = i_base + match kind {
                 TileKind::Water => sprite::TILE_WATER,
                 TileKind::FoundationRoad => sprite::TILE_FOUNDATION,
@@ -223,22 +243,28 @@ fn update_sprite_tile_kind(
                 TileKind::Destroyed => sprite::TILE_DEAD,
             };
         }
-    };
-    match &tuq.0 {
-        None => {},
-        Some(TilesToUpdate::All) => {
-            for (pos, kind) in &q_tile {
-                let e_spr = sprindex.0[pos.0];
-                do_update(e_spr, *kind);
-            }
+    });
+}
+
+fn update_sprite_tile_owner(
+    settings: Settings,
+    q_map: Query<(&TileUpdateQueue,), With<MapGovernor>>,
+    mut q_tile: Query<(&MwTilePos, &TileOwner, &SpriteEntities), With<MwMapTile>>,
+    mut q_sprite: Query<&mut Sprite, With<BaseSprite>>,
+    q_player: Query<&PlidColor, With<Plid>>,
+    q_session: Query<&PlayersIndex, With<SessionGovernor>>,
+) {
+    let s_colors = settings.get::<PlidColorSettings>().unwrap();
+    let color_neutral = s_colors.colors[0];
+    let (tuq,) = q_map.single();
+    let players_index = q_session.single();
+    tuq.for_each(&mut q_tile, |(pos, owner, e_spr)| {
+        let color = players_index.e_plid.get(owner.0.i())
+            .and_then(|e| q_player.get(*e).ok())
+            .map(|plidcolor| plidcolor.color)
+            .unwrap_or(color_neutral.into());
+        if let Ok(mut sprite) = q_sprite.get_mut(e_spr.base) {
+            sprite.color = color;
         }
-        Some(TilesToUpdate::Specific(entities)) => {
-            for e in entities.iter() {
-                if let Ok((pos, kind)) = q_tile.get(*e) {
-                    let e_spr = sprindex.0[pos.0];
-                    do_update(e_spr, *kind);
-                }
-            }
-        }
-    }
+    });
 }
