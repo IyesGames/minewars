@@ -235,7 +235,7 @@ fn update_tiles_from_gameevents_owner_digit(
     mut evr: EventReader<GameEvent>,
     q_session: Query<&PlidViewing, With<SessionGovernor>>,
     mut q_map: Query<(&mut TileUpdateQueue, &MapTileIndex), With<MapGovernor>>,
-    mut q_tile: Query<(Entity, &mut TileOwner, &mut TileDigitExternal), With<MwMapTile>>,
+    mut q_tile: Query<(Entity, &mut TileOwner, &mut TileDigitGame), With<MwMapTile>>,
 ) {
     let viewing = q_session.single();
     let (mut tuq, index) = q_map.single_mut();

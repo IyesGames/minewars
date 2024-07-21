@@ -97,8 +97,8 @@ fn switch_view_update_map(
         }
         if tiledata.kind().is_land() {
             emut.insert(LandTileBundle {
-                digit_internal: TileDigitInternal::default(),
-                digit_external: TileDigitExternal(MwDigit { digit: tiledata.digit(), asterisk: tiledata.asterisk() }),
+                digit_game: TileDigitGame::default(),
+                digit_preview: TileDigitPreview(MwDigit { digit: tiledata.digit(), asterisk: tiledata.asterisk() }),
                 gent: if tiledata.has_structure() {
                     TileGent::Structure(tiledata.structure())
                 } else if tiledata.flag() != PlayerId::Neutral {

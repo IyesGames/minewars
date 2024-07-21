@@ -65,8 +65,8 @@ pub struct PlayableTileBundle {
 /// Components of land tiles
 #[derive(Bundle, Default)]
 pub struct LandTileBundle {
-    pub digit_internal: TileDigitInternal,
-    pub digit_external: TileDigitExternal,
+    pub digit_game: TileDigitGame,
+    pub digit_preview: TileDigitPreview,
     pub gent: TileGent,
     pub roads: TileRoads,
 }
@@ -108,14 +108,14 @@ pub struct TileOwner(pub PlayerId);
 ///
 /// This comes from game updates.
 #[derive(Component, Default)]
-pub struct TileDigitInternal(pub MwDigit);
+pub struct TileDigitGame(pub MwDigit);
 
 /// Any digit that we compute locally based on known item locations.
 ///
 /// This is the "preview" of what digits are
 /// expected to look like for other players.
 #[derive(Component, Default)]
-pub struct TileDigitExternal(pub MwDigit);
+pub struct TileDigitPreview(pub MwDigit);
 
 /// Any Road connections to neighboring tiles.
 ///

@@ -28,3 +28,18 @@ pub enum GraphicsStyle {
     Gfx2d,
     Gfx3d,
 }
+
+#[derive(Component, Default)]
+pub enum DisplayDigitsMode {
+    #[default]
+    None,
+    Game,
+    Preview,
+}
+
+#[derive(Component, Default)]
+pub enum DisplayItemsMode {
+    #[default]
+    None,
+    MyItems,
+}
