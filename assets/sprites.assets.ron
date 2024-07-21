@@ -1,0 +1,83 @@
+({
+    "sprites.roads6.image": File (
+        path: "sprites/roads6.ktx2",
+    ),
+    "sprites.roads6.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 8,
+        rows: 8,
+    ),
+    "sprites.roads4.image": File (
+        path: "sprites/roads4.ktx2",
+    ),
+    "sprites.roads4.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 4,
+        rows: 4,
+    ),
+    "sprites.numbers.image": File (
+        path: "sprites/numbers.ktx2",
+    ),
+    "sprites.numbers.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 10,
+        rows: 10,
+    ),
+    "sprites.digits.image": File (
+        path: "sprites/digits.ktx2",
+    ),
+    "sprites.digits.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 10,
+        rows: 2,
+    ),
+    "sprites.tiles.image": File (
+        path: "sprites/tiles.ktx2",
+    ),
+    "sprites.tiles.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 10,
+        rows: 2,
+    ),
+    "sprites.explosions.image": File (
+        path: "sprites/explosions.ktx2",
+    ),
+    "sprites.explosions.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 8,
+        rows: 2,
+    ),
+    "sprites.gents.image": File (
+        path: "sprites/gents.ktx2",
+    ),
+    "sprites.gents.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 4,
+        rows: 4,
+    ),
+    "sprites.ui-icons.image": File (
+        path: "sprites/ui-icons.ktx2",
+    ),
+    "sprites.ui-icons.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 8,
+        rows: 4,
+    ),
+    "sprites.flags.image": File (
+        path: "sprites/flags.ktx2",
+    ),
+    "sprites.flags.layout": TextureAtlasLayout (
+        tile_size_x: 256,
+        tile_size_y: 256,
+        columns: 4,
+        rows: 1,
+    ),
+})

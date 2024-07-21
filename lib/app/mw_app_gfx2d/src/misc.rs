@@ -99,26 +99,23 @@ pub fn fancytint<C: Coord>(map_size: u8, c: C, f_kind: impl Fn(C) -> TileKind) -
 
 #[allow(dead_code)]
 pub mod sprite {
-    pub const WIDTH6: f32 = 112.0;
-    pub const HEIGHT6: f32 = 128.0;
+    pub const WIDTH6: f32 = 224.0;
+    pub const HEIGHT6: f32 = 256.0;
 
-    pub const WIDTH4: f32 = 108.0;
-    pub const HEIGHT4: f32 = 108.0;
+    pub const WIDTH4: f32 = 216.0;
+    pub const HEIGHT4: f32 = 216.0;
 
-    pub const STRIDE: usize = 10;
+    pub const TILES6: usize = 0;
+    pub const TILES4: usize = 10;
 
-    pub const DIG: usize = 0 * STRIDE;
-    pub const DIGSTAR: usize = 1 * STRIDE;
-    pub const DIGEXTRA: usize = 8 * STRIDE;
-    pub const TILES6: usize = 2 * STRIDE;
-    pub const TILES4: usize = 3 * STRIDE;
-    pub const FLAGS: usize = 7 * STRIDE;
-    pub const OVERLAYS: usize = 6 * STRIDE;
-    pub const GENTS: usize = 4 * STRIDE;
-    pub const BRIDGE_DIAG: usize = 5 * STRIDE + 0;
-    pub const BRIDGE_ANTIDIAG: usize = 5 * STRIDE + 1;
-    pub const BRIDGE_HORIZ: usize = 5 * STRIDE + 2;
-    pub const BRIDGE_VERT: usize = 5 * STRIDE + 3;
+    pub const DIG: usize = 0;
+    pub const DIGSTAR: usize = 10;
+
+    pub const EXPLOSION_MINE_START: usize = 0;
+    pub const EXPLOSION_MINE_END: usize = 10;
+    pub const EXPLOSION_DECOY_START: usize = 10;
+    pub const EXPLOSION_DECOY_END: usize = 20;
+
     pub const TILE_CURSOR: usize = 0;
     pub const TILE_WATER: usize = 1;
     pub const TILE_LAND: usize = 2;
@@ -126,22 +123,17 @@ pub mod sprite {
     pub const TILE_MTN: usize = 4;
     pub const TILE_FOREST: usize = 5;
     pub const TILE_DEAD: usize = 6;
-    pub const TILE_DEADSKULL: usize = 7;
     pub const TILE_FOUNDATION: usize = 8;
     pub const TILE_HIGHLIGHT: usize = 9;
-    pub const GENT_MINE: usize = GENTS + 0;
-    pub const GENT_DECOY: usize = GENTS + 1;
-    pub const GENT_FLASH: usize = GENTS + 2;
-    pub const GENT_MINEACT: usize = GENTS + 3;
-    pub const GENT_CIT: usize = GENTS + 4;
-    pub const GENT_TOWER: usize = GENTS + 5;
-    pub const GENT_WALL: usize = GENTS + 6;
-    pub const EXPLOSION_MINE: usize = OVERLAYS + 0;
-    pub const EXPLOSION_DECOY: usize = OVERLAYS + 1;
-    pub const SMOKE: usize = OVERLAYS + 2;
-    pub const STRIKE: usize = OVERLAYS + 3;
-    pub const REVEAL: usize = OVERLAYS + 4;
-    pub const SKULL: usize = OVERLAYS + 5;
+
+    pub const GENT_MINE: usize = 0;
+    pub const GENT_DECOY: usize = 1;
+    pub const GENT_FLASH: usize = 2;
+    pub const GENT_MINEACT: usize = 3;
+    pub const GENT_SMOKE: usize = 6;
+    pub const GENT_SKULL: usize = 7;
+    pub const GENT_CIT: usize = 8;
+    pub const GENT_TOWER: usize = 9;
 }
 
 #[allow(dead_code)]
