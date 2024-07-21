@@ -90,7 +90,7 @@ pub struct MwMapTile;
 /// Map coordinate of a given tile.
 ///
 /// This uses our own grid coord types (Pos <-> {Hex, Sq}).
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct MwTilePos(pub Pos);
 
 #[derive(Component)]

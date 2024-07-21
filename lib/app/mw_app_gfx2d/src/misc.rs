@@ -33,21 +33,6 @@ pub enum Gfx2dImplSet {
     Bespoke,
 }
 
-#[derive(Component)]
-pub struct CursorSprite;
-#[derive(Component)]
-pub struct BaseSprite;
-#[derive(Component)]
-pub struct DigitSprite;
-#[derive(Component)]
-pub struct GentSprite;
-#[derive(Component)]
-pub struct RegHighlightSprite;
-#[derive(Component)]
-pub struct ExplosionSprite {
-    pub timer: Timer,
-}
-
 fn rc_gfx2d_sprites(
     settings: Settings,
 ) -> bool {

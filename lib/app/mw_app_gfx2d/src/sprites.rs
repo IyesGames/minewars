@@ -1,7 +1,7 @@
-use mw_app_core::{map::{tile::*, *}, player::{Plid, PlidColor}, session::{NeedsSessionGovernorSet, PlayersIndex, SessionGovernor}, settings::PlidColorSettings};
+use mw_app_core::{assets::SpritesAssets, camera::ActiveGameCamera, map::{tile::*, *}, player::{Plid, PlidColor}, session::{NeedsSessionGovernorSet, PlayersIndex, SessionGovernor}, settings::PlidColorSettings};
 use mw_common::grid::*;
 
-use crate::{assets::Gfx2dAssets, misc::*, prelude::*};
+use crate::{misc::*, prelude::*};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
@@ -19,6 +19,11 @@ pub fn plugin(app: &mut App) {
         setup_cursor
             .in_set(Gfx2dImplSet::Any),
     ));
+    app.add_systems(Update, (
+        update_billboard_sprites,
+    )
+        .in_set(Gfx2dImplSet::Sprites)
+    );
     app.add_systems(Update, (
         update_sprite_tile_kind,
         update_sprite_tile_owner
@@ -40,6 +45,8 @@ pub fn plugin(app: &mut App) {
 #[derive(Component)]
 struct SpriteEntities {
     base: Entity,
+    base_overlay: Option<Entity>,
+    digit: Option<Entity>,
 }
 
 #[derive(Component)]
@@ -47,6 +54,26 @@ struct TileEntity(Entity);
 
 #[derive(Component)]
 struct MapSprite;
+
+#[derive(Component)]
+struct BillboardSprite;
+
+#[derive(Component)]
+pub struct CursorSprite;
+#[derive(Component)]
+pub struct BaseSprite;
+#[derive(Component)]
+pub struct BaseOverlaySprite;
+#[derive(Component)]
+pub struct DigitSprite;
+#[derive(Component)]
+pub struct GentSprite;
+#[derive(Component)]
+pub struct RegHighlightSprite;
+#[derive(Component)]
+pub struct ExplosionSprite {
+    pub timer: Timer,
+}
 
 #[derive(Bundle)]
 struct MapSpriteBundle {
@@ -65,6 +92,12 @@ struct BaseSpriteBundle {
 }
 
 #[derive(Bundle)]
+struct BaseOverlaySpriteBundle {
+    mapsprite: MapSpriteBundle,
+    marker: BaseOverlaySprite,
+}
+
+#[derive(Bundle)]
 struct CursorSpriteBundle {
     cleanup: GamePartialCleanup,
     marker: CursorSprite,
@@ -75,7 +108,7 @@ struct CursorSpriteBundle {
 
 fn setup_cursor(
     mut commands: Commands,
-    assets: Res<Gfx2dAssets>,
+    assets: Res<SpritesAssets>,
     q_map: Query<&MapDescriptor, With<MapGovernor>>,
 ) {
     let mapdesc = q_map.single();
@@ -87,13 +120,13 @@ fn setup_cursor(
         CursorSpriteBundle {
             cleanup: GamePartialCleanup,
             sprite: SpriteBundle {
-                texture: assets.sprites_img.clone(),
+                texture: assets.tiles_img.clone(),
                 transform: Transform::from_xyz(0.0, 0.0, zpos::CURSOR),
                 ..Default::default()
             },
             atlas: TextureAtlas {
                 index: i,
-                layout: assets.sprites_layout.clone(),
+                layout: assets.tiles_layout.clone(),
             },
             pos: MwTilePos(Pos::origin()),
             marker: CursorSprite,
@@ -132,7 +165,7 @@ fn cursor_update(
 fn setup_tile_entities(
     mut commands: Commands,
     spreader: Res<WorkSpreader>,
-    assets: Res<Gfx2dAssets>,
+    assets: Res<SpritesAssets>,
     mut q_map: Query<(Entity, &mut TileUpdateQueue, &MapDescriptor, &MapTileIndex), With<MapGovernor>>,
     mut done: Local<bool>,
 ) -> Progress {
@@ -149,11 +182,11 @@ fn setup_tile_entities(
 
     let (base_i, width, height) = match desc.topology {
         Topology::Hex => (
-            sprite::TILES6 + sprite::TILE_WATER,
+            sprite::TILES6 + sprite::TILE_LAND,
             sprite::WIDTH6, sprite::HEIGHT6,
         ),
         Topology::Sq => (
-            sprite::TILES4 + sprite::TILE_WATER,
+            sprite::TILES4 + sprite::TILE_LAND,
             sprite::WIDTH4, sprite::HEIGHT4,
         ),
     };
@@ -182,7 +215,7 @@ fn setup_tile_entities(
                 marker: MapSprite,
                 tile: TileEntity(e_tile),
                 sprite: SpriteBundle {
-                    texture: assets.sprites_img.clone(),
+                    texture: assets.tiles_img.clone(),
                     sprite: Sprite {
                         color: Color::WHITE,
                         ..Default::default()
@@ -195,13 +228,15 @@ fn setup_tile_entities(
                 },
                 atlas: TextureAtlas {
                     index: base_i,
-                    layout: assets.sprites_layout.clone(),
+                    layout: assets.tiles_layout.clone(),
                 },
                 pos: MwTilePos(c.into()),
             },
         }).id();
         commands.entity(e_tile).insert(SpriteEntities {
             base: e_spr,
+            base_overlay: None,
+            digit: None,
         });
     }
 
@@ -220,28 +255,99 @@ fn reveal_sprites_onenter_ingame(
     }
 }
 
+fn update_billboard_sprites(
+    q_camera: Query<&Transform, (With<Camera2d>, With<ActiveGameCamera>, Changed<Transform>, Without<BillboardSprite>)>,
+    mut q_sprite: Query<&mut Transform, With<BillboardSprite>>,
+) {
+    let Ok(xf_cam) = q_camera.get_single() else {
+        return;
+    };
+    q_sprite.iter_mut().for_each(|mut xf_spr| {
+        xf_spr.rotation = -xf_cam.rotation;
+    })
+}
+
 fn update_sprite_tile_kind(
+    mut commands: Commands,
+    assets: Res<SpritesAssets>,
     q_map: Query<(&TileUpdateQueue, &MapDescriptor), With<MapGovernor>>,
-    mut q_tile: Query<(&MwTilePos, &TileKind, &SpriteEntities), With<MwMapTile>>,
-    mut q_sprite: Query<&mut TextureAtlas, With<BaseSprite>>,
+    mut q_tile: Query<(Entity, &MwTilePos, &TileKind, &mut SpriteEntities), With<MwMapTile>>,
+    mut q_sprite: Query<(&mut TextureAtlas, Has<BillboardSprite>), With<BaseSprite>>,
+    mut q_overlay: Query<(&mut TextureAtlas, Has<BillboardSprite>), (With<BaseOverlaySprite>, Without<BaseSprite>)>,
 ) {
     let (tuq, desc) = q_map.single();
-    let i_base = match desc.topology {
+    let i_kind = match desc.topology {
         Topology::Hex => sprite::TILES6,
         Topology::Sq => sprite::TILES4,
     };
-    tuq.for_each(&mut q_tile, |(pos, kind, e_spr)| {
-        if let Ok(mut atlas) = q_sprite.get_mut(e_spr.base) {
-            atlas.index = i_base + match kind {
-                TileKind::Water => sprite::TILE_WATER,
-                TileKind::FoundationRoad => sprite::TILE_FOUNDATION,
-                TileKind::FoundationStruct => sprite::TILE_FOUNDATION,
-                TileKind::Regular => sprite::TILE_LAND,
-                TileKind::Fertile => sprite::TILE_FERTILE,
-                TileKind::Forest => sprite::TILE_FOREST,
-                TileKind::Mountain => sprite::TILE_MTN,
-                TileKind::Destroyed => sprite::TILE_DEAD,
+    tuq.for_each(&mut q_tile, |(e_tile, pos, kind, mut e_spr)| {
+        if let Ok((mut atlas, is_billboard)) = q_sprite.get_mut(e_spr.base) {
+            let (i_base, base_billboard, i_overlay, overlay_billboard) = match kind {
+                TileKind::Water =>
+                    (sprite::TILE_WATER, true, None, false),
+                TileKind::FoundationRoad =>
+                    (sprite::TILE_FOUNDATION, false, None, false),
+                TileKind::FoundationStruct =>
+                    (sprite::TILE_FOUNDATION, false, None, false),
+                TileKind::Regular =>
+                    (sprite::TILE_LAND, false, None, false),
+                TileKind::Fertile =>
+                    (sprite::TILE_LAND, false, Some(sprite::TILE_FERTILE), true),
+                TileKind::Forest =>
+                    (sprite::TILE_LAND, false, Some(sprite::TILE_FOREST), true),
+                TileKind::Mountain =>
+                    (sprite::TILE_LAND, false, Some(sprite::TILE_MTN), true),
+                TileKind::Destroyed =>
+                    (sprite::TILE_DEAD, false, None, false),
             };
+            atlas.index = i_kind + i_base;
+            if is_billboard && !base_billboard {
+                commands.entity(e_spr.base).remove::<BillboardSprite>();
+            }
+            if !is_billboard && base_billboard {
+                commands.entity(e_spr.base).insert(BillboardSprite);
+            }
+            match (e_spr.base_overlay, i_overlay) {
+                (None, None) => {},
+                (Some(e_overlay), None) => {
+                    commands.entity(e_overlay).despawn_recursive();
+                }
+                (None, Some(i_overlay)) => {
+                    let e = commands.spawn(BaseOverlaySpriteBundle {
+                        marker: BaseOverlaySprite,
+                        mapsprite: MapSpriteBundle {
+                            cleanup: GamePartialCleanup,
+                            marker: MapSprite,
+                            pos: pos.clone(),
+                            tile: TileEntity(e_tile),
+                            sprite: SpriteBundle {
+                                texture: assets.tiles_img.clone(),
+                                transform: Transform::from_xyz(0.0, 0.0, 0.5),
+                                ..Default::default()
+                            },
+                            atlas: TextureAtlas {
+                                layout: assets.tiles_layout.clone(),
+                                index: i_kind + i_overlay,
+                            },
+                        },
+                    }).id();
+                    if overlay_billboard {
+                        commands.entity(e).insert(BillboardSprite);
+                    }
+                    commands.entity(e_spr.base).add_child(e);
+                    e_spr.base_overlay = Some(e);
+                }
+                (Some(e_overlay), Some(i_overlay)) => {
+                    let (mut atlas, is_billboard) = q_overlay.get_mut(e_overlay).unwrap();
+                    atlas.index = i_kind + i_overlay;
+                    if is_billboard && !overlay_billboard {
+                        commands.entity(e_overlay).remove::<BillboardSprite>();
+                    }
+                    if !is_billboard && overlay_billboard {
+                        commands.entity(e_overlay).insert(BillboardSprite);
+                    }
+                }
+            }
         }
     });
 }
