@@ -11,5 +11,12 @@
         top: 4.0,
         bottom: 4.0,
     ),
+    "ui.bg.miniboard_icon.9p": NinePatch (
+        left: 5.0,
+        right: 5.0,
+        top: 5.0,
+        bottom: 3.0,
+        sides_tile_ratio: Some(1.0),
+    ),
 })
 

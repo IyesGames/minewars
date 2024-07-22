@@ -34,6 +34,7 @@ pub struct PlayerPlidBundle {
     pub color: PlidColor,
     pub state: PlidState,
     pub stats: PlidStats,
+    pub score: PlidScore,
     pub subs: PlidSubsIndex,
 }
 
@@ -58,6 +59,9 @@ pub struct PlidPlayable;
 
 #[derive(Component)]
 pub struct Plid(pub PlayerId);
+
+#[derive(Component, Default)]
+pub struct PlidScore(pub u32);
 
 #[derive(Component, Default)]
 pub struct PlidStats {
@@ -137,6 +141,7 @@ impl PlayerPlidBundle {
             },
             state: PlidState::Alive,
             stats: PlidStats::default(),
+            score: PlidScore::default(),
             subs: PlidSubsIndex(subs.to_owned()),
         }
     }

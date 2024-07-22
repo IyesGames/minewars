@@ -4,8 +4,6 @@ use num_derive::FromPrimitive;
 use modular_bitfield::prelude::*;
 
 use crate::prelude::*;
-use crate::grid::*;
-use crate::plid::*;
 
 pub type CitId = u8;
 

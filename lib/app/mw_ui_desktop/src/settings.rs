@@ -16,6 +16,7 @@ pub struct DesktopUiSettings {
     pub color_menu_button: Oklcha,
     pub color_menu_button_inactive: Oklcha,
     pub color_menu_button_selected: Oklcha,
+    pub mini_scoreboard_settings: MiniScoreboardSettings,
 }
 
 impl Default for DesktopUiSettings {
@@ -29,8 +30,16 @@ impl Default for DesktopUiSettings {
             color_menu_button: Oklcha::new(0.25, 0.125, 280.0, 1.0),
             color_menu_button_inactive: Oklcha::new(0.125, 0.125, 20.0, 1.0),
             color_menu_button_selected: Oklcha::new(0.2, 0.2, 280.0, 1.0),
+            mini_scoreboard_settings: MiniScoreboardSettings {
+                icon_size: 64.0,
+            },
         }
     }
 }
 
 impl Setting for DesktopUiSettings {}
+
+#[derive(Reflect, Clone, PartialEq)]
+pub struct MiniScoreboardSettings {
+    pub icon_size: f32,
+}

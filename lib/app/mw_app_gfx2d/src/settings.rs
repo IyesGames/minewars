@@ -69,7 +69,7 @@ impl Default for Camera2dControlSettings {
             enable_rotate_scroll_pixel_snapping: true,
             enable_rotate_scroll_line_snapping: true,
             zoom_min: 1.0,
-            zoom_max: 8.0,
+            zoom_max: 16.0,
             zoom_level_snap_threshold: 1.0 + (1.0 / 16.0),
             scroll_zoom_per_line: 1.0,
             scroll_zoom_per_pixel: 1.0 / 64.0,

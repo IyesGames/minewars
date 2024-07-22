@@ -8,7 +8,8 @@ pub fn plugin(app: &mut App) {
 
 fn update_9p(
     mut commands: Commands,
-    mut q_9p: Query<(Entity, Option<&mut ImageScaleMode>, &Handle<NinePatchMargins>)>,
+    mut q_9p: Query<(&mut ImageScaleMode, &Handle<NinePatchMargins>)>,
+    q_9p_new: Query<(Entity, &Handle<NinePatchMargins>), Without<ImageScaleMode>>,
     mut evr_asset: EventReader<AssetEvent<NinePatchMargins>>,
     assets: Res<Assets<NinePatchMargins>>,
     mut changeds: Local<HashSet<AssetId<NinePatchMargins>>>,
@@ -18,17 +19,18 @@ fn update_9p(
         AssetEvent::Modified { id } => Some(*id),
         _ => None,
     }));
-    for (e, mode, handle) in &mut q_9p {
-        if let Some(mut mode) = mode {
+    if !changeds.is_empty() {
+        q_9p.iter_mut().for_each(|(mut mode, handle)| {
             if changeds.contains(&handle.id()) {
                 if let Some(a) = assets.get(handle) {
                     *mode = a.into();
                 }
             }
-        } else {
-            if let Some(a) = assets.get(handle) {
-                commands.entity(e).insert(ImageScaleMode::from(a));
-            }
-        }
+        });
     }
+    q_9p_new.iter().for_each(|(e, handle)| {
+        if let Some(a) = assets.get(handle) {
+            commands.entity(e).insert(ImageScaleMode::from(a));
+        }
+    });
 }

@@ -26,4 +26,7 @@
     "ui.bg.notify_killfeed": File (
         path: "ui/notify_killfeed.png"
     ),
+    "ui.bg.miniboard_icon": File (
+        path: "ui/bg_miniboard_icon.png"
+    ),
 })

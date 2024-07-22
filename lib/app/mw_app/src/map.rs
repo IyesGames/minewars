@@ -145,6 +145,7 @@ fn setup_cit_entities(
         let e_cit = commands.spawn(
             CitBundle {
                 cleanup: GamePartialCleanup,
+                marker: MwCit,
                 region: CitRegion(i as u8),
                 owner: CitOwner(PlayerId::Neutral),
                 economy: CitEconomy {

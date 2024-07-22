@@ -33,6 +33,7 @@ fn start_minesweeper_singleplayer(
         SessionGovernorBundle::new(
             1.into(), &[e_plid0, e_plid1], &[&[], &[e_subplid]]
         ),
+        PlidScoreByOwnedPct,
     ));
     commands.spawn((
         DriverGovernorBundle::default(),

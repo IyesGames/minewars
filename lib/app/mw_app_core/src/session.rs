@@ -57,6 +57,14 @@ pub struct PlayersIndex {
     pub e_subplid: Vec<Vec<Entity>>,
 }
 
+/// Scoring based on how many cits a plid owns
+#[derive(Component)]
+pub struct PlidScoreByCits;
+
+/// Scoring based on % of map owned
+#[derive(Component)]
+pub struct PlidScoreByOwnedPct;
+
 impl SessionGovernorBundle {
     pub fn new(my_plid: PlayerId, e_plid: &[Entity], e_subplid: &[&[Entity]]) -> Self {
         let plidsmask = (1 << (e_plid.len() + 1)) - 1;

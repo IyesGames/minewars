@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+use super::WidgetsUiUpdateSS;
+
 pub fn plugin(app: &mut App) {
     app.configure_sets(
         Update, MultilayerImageSet
@@ -7,6 +9,7 @@ pub fn plugin(app: &mut App) {
     );
     app.add_systems(Update, (
         update_multilayer_images
+            .in_set(SetStage::Provide(WidgetsUiUpdateSS))
             .in_set(MultilayerImageSet),
     ));
 }
@@ -23,6 +26,8 @@ pub struct MultilayerImage {
 pub struct ImageLayer {
     pub image: UiImage,
     pub atlas: Option<TextureAtlas>,
+    pub force_width: Option<f32>,
+    pub force_height: Option<f32>,
 }
 
 #[derive(Component)]
@@ -38,7 +43,7 @@ struct MultilayerImageMembers {
 
 fn update_multilayer_images(
     mut commands: Commands,
-    mut q_member: Query<(&mut UiImage, Option<&mut TextureAtlas>), With<MultilayerImageMember>>,
+    mut q_member: Query<(&mut Style, &mut UiImage, Option<&mut TextureAtlas>), With<MultilayerImageMember>>,
     mut q_root: Query<(Entity, Ref<MultilayerImage>, Option<&mut MultilayerImageMembers>, Option<&mut BackgroundColor>)>,
 ) {
     let member_style = Style {
@@ -67,9 +72,16 @@ fn update_multilayer_images(
             // spawn any extra new members
             let mut last_parent = *members.members.last().unwrap();
             for (i, layer) in multilayer.layers.iter().enumerate().skip(n_members) {
+                let mut style = member_style.clone();
+                if let Some(width) = layer.force_width {
+                    style.width = Val::Px(width);
+                }
+                if let Some(height) = layer.force_height {
+                    style.height = Val::Px(height);
+                }
                 let e = commands.spawn((
                     ImageBundle {
-                        style: member_style.clone(),
+                        style,
                         image: layer.image.clone(),
                         ..Default::default()
                     },
@@ -87,11 +99,15 @@ fn update_multilayer_images(
             }
             // update anything that is changed within existing members
             for (layer, e_member) in multilayer.layers.iter().zip(members.members.iter()) {
-                let (mut image, atlas) = q_member.get_mut(*e_member).unwrap();
+                let (mut style, mut image, atlas) = q_member.get_mut(*e_member).unwrap();
                 // FIXME: UiImage is missing PartialEq
                 // if layer.image != *image {
                     *image = layer.image.clone();
                 // }
+                style.width = layer.force_width.map(|x| Val::Px(x))
+                    .unwrap_or(Val::Auto);
+                style.height = layer.force_height.map(|x| Val::Px(x))
+                    .unwrap_or(Val::Auto);
                 match (atlas, &layer.atlas) {
                     (None, None) => {},
                     (None, Some(new)) => {
@@ -115,10 +131,17 @@ fn update_multilayer_images(
             };
             let mut iter_layers = multilayer.layers.iter().enumerate();
             if let Some((i, first)) = iter_layers.next() {
+                let mut style = member_style.clone();
+                if let Some(width) = first.force_width {
+                    style.width = Val::Px(width);
+                }
+                if let Some(height) = first.force_height {
+                    style.height = Val::Px(height);
+                }
                 commands.entity(e_root).insert((
                     ImageBundle {
                         background_color: multilayer.background_color.clone(),
-                        style: member_style.clone(),
+                        style,
                         image: first.image.clone(),
                         ..Default::default()
                     },
@@ -133,9 +156,16 @@ fn update_multilayer_images(
             }
             let mut last_parent = e_root;
             for (i, layer) in iter_layers {
+                let mut style = member_style.clone();
+                if let Some(width) = layer.force_width {
+                    style.width = Val::Px(width);
+                }
+                if let Some(height) = layer.force_height {
+                    style.height = Val::Px(height);
+                }
                 let e = commands.spawn((
                     ImageBundle {
-                        style: member_style.clone(),
+                        style,
                         image: layer.image.clone(),
                         ..Default::default()
                     },

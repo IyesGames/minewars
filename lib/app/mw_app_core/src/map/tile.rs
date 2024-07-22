@@ -23,7 +23,7 @@ pub fn plugin(app: &mut App) {
     ));
 }
 
-/// Anything that updates components on map entities
+/// Anything that updates components on tile entities
 #[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct TileUpdateSS;
 

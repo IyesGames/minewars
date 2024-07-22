@@ -20,6 +20,8 @@ mod camera;
 mod haptic;
 mod input;
 mod map;
+mod cit;
+mod player;
 mod view;
 
 pub mod ui;
@@ -38,6 +40,8 @@ pub fn plugin(app: &mut App) {
         crate::haptic::plugin,
         crate::input::plugin,
         crate::map::plugin,
+        crate::cit::plugin,
+        crate::player::plugin,
         crate::net::plugin,
         crate::settings::plugin,
         crate::splash::plugin,

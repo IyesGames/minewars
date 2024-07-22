@@ -10,15 +10,25 @@ use mw_common::plid::PlayerId;
 use crate::prelude::*;
 
 pub fn plugin(app: &mut App) {
+    // TODO: maybe rc?
+    app.configure_stage_set_no_rc(Update, CitUpdateSS);
 }
+
+/// Anything that updates components on cit entities
+#[derive(SystemSet, Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub struct CitUpdateSS;
 
 #[derive(Bundle)]
 pub struct CitBundle {
     pub cleanup: GamePartialCleanup,
+    pub marker: MwCit,
     pub region: CitRegion,
     pub owner: CitOwner,
     pub economy: CitEconomy,
 }
+
+#[derive(Component)]
+pub struct MwCit;
 
 #[derive(Component)]
 pub struct CitRegion(pub u8);
