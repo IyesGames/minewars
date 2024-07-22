@@ -16,7 +16,6 @@ pub const PROPRIETARY: bool = cfg!(feature = "proprietary");
 // foundational
 pub mod apporg;
 pub mod assets;
-pub mod ui;
 
 // governors and game state
 pub mod driver;
@@ -45,7 +44,6 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         crate::apporg::plugin,
         crate::assets::plugin,
-        crate::ui::plugin,
     ));
     app.add_plugins((
         crate::camera::plugin,

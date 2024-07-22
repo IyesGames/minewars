@@ -1,5 +1,6 @@
 use bevy_asset_loader::prelude::*;
-use mw_app_core::assets::properties::{NinePatchMargins, PropertiesDynamicAssetCollection};
+use mw_app_core::assets::properties::PropertiesDynamicAssetCollection;
+use mw_ui_common::assets::properties::NinePatchMargins;
 
 use crate::prelude::*;
 

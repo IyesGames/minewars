@@ -1,4 +1,4 @@
-use mw_app_core::ui::{UiCamera, UiRoot};
+use mw_ui_common::{camera::UiCamera, root::UiRoot};
 
 use crate::{prelude::*, settings::DesktopUiSettings};
 

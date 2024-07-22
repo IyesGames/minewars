@@ -1,4 +1,5 @@
-use mw_app_core::{camera::{input::ACTION_CENTER, ActiveGameCamera, CameraJumpTo, GameCamera}, graphics::*, input::InputActionOnPress, map::{GridCursor, MapGovernor}, ui::UiCamera};
+use mw_app_core::{camera::{input::ACTION_CENTER, ActiveGameCamera, CameraJumpTo, GameCamera}, graphics::*, input::InputActionOnPress, map::{GridCursor, MapGovernor}};
+use mw_ui_common::camera::UiCamera;
 
 use crate::prelude::*;
 

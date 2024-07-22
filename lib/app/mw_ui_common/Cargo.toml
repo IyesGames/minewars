@@ -8,6 +8,10 @@ path = "../mw_engine"
 
 [dependencies]
 
+[dependencies.serde]
+version = "1.0.204"
+features = [ "derive" ]
+
 [dependencies.bevy]
 version = "0.14.0"
 default-features = false

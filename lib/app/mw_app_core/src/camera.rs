@@ -1,6 +1,7 @@
 use mw_common::grid::Pos;
+use mw_ui_common::camera::UiCamera;
 
-use crate::{input::*, prelude::*, ui::UiCamera};
+use crate::{input::*, prelude::*};
 
 pub fn plugin(app: &mut App) {
     app.add_event::<CameraJumpTo>();

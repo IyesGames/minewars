@@ -6,14 +6,6 @@ pub fn plugin(app: &mut App) {
     ));
 }
 
-/// Marker for the camera that displays our UI
-#[derive(Component, Default)]
-pub struct UiCamera;
-
-/// Marker for UI root entities / top-level containers
-#[derive(Component)]
-pub struct UiRoot;
-
 fn update_9p(
     mut commands: Commands,
     mut q_9p: Query<(Entity, Option<&mut ImageScaleMode>, &Handle<NinePatchMargins>)>,

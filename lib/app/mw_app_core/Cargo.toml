@@ -25,6 +25,9 @@ path = "../../common/mw_dataformat"
 [dependencies.mw_engine]
 path = "../mw_engine"
 
+[dependencies.mw_ui_common]
+path = "../mw_ui_common"
+
 [dependencies]
 anyhow = "1.0.86"
 enum-iterator = "2.1.0"

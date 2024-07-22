@@ -20,6 +20,9 @@ path = "../mw_engine"
 [dependencies.mw_app_core]
 path = "../mw_app_core"
 
+[dependencies.mw_ui_common]
+path = "../mw_ui_common"
+
 [dependencies]
 anyhow = "1.0.86"
 derive_more = "0.99.18"
