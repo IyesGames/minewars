@@ -14,6 +14,9 @@ proprietary = []
 path = "../../common/mw_common"
 features = [ "bevy" ]
 
+[dependencies.mw_engine]
+path = "../mw_engine"
+
 [dependencies.mw_app_core]
 path = "../mw_app_core"
 
@@ -26,6 +29,11 @@ features = [ "derive" ]
 [dependencies.bevy]
 version = "0.14.0"
 default-features = false
+features = [
+    "bevy_sprite",
+    "bevy_ui",
+    "bevy_text",
+]
 
 [dependencies.bevy_asset_loader]
 version = "0.21"

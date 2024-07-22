@@ -42,11 +42,13 @@ members = [
     "lib/srv/mw_host", # FOSS part of Host Server
     "lib/srv/mw_auth", # FOSS part of Auth Server
     # client stuff
+    "lib/app/mw_engine", # Bespoke tech / building blocks
     "lib/app/mw_app_core", # APIs/framework for the game client app
     "lib/app/mw_app_io", # Files, networking, events, etc.
     "lib/app/mw_app", # FOSS part of the game client, sans UI and Graphics
     "lib/app/mw_app_gfx2d", # 2D graphics for MineWars
     "lib/app/mw_app_gfx3d", # 3D graphics for MineWars
+    "lib/app/mw_ui_common", # UI building blocks
     "lib/app/mw_ui_desktop", # Desktop UI of mw_app
     "lib/app/mw_ui_mobile",  # Mobile UI of mw_app
     "lib/app/mw_platform_android", # Android-specific features
@@ -121,6 +123,11 @@ proprietary = [
 ]
 gfx2d = ["mw_app_gfx2d"]
 gfx3d = ["mw_app_gfx3d"]
+mw_ui_desktop = [ "dep:mw_ui_desktop", "dep:mw_ui_common" ]
+mw_ui_mobile = [ "dep:mw_ui_mobile", "dep:mw_ui_common" ]
+
+[dependencies.mw_engine]
+path = "lib/app/mw_engine"
 
 [dependencies.mw_app_core]
 path = "lib/app/mw_app_core"
@@ -140,6 +147,10 @@ optional = true
 
 [dependencies.mw_app_gfx3d]
 path = "lib/app/mw_app_gfx3d"
+optional = true
+
+[dependencies.mw_ui_common]
+path = "lib/app/mw_ui_common"
 optional = true
 
 [dependencies.mw_ui_desktop]

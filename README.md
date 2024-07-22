@@ -175,11 +175,13 @@ Given that this is a multiplayer game, and there are many parts to it
    - `mw_host`: the open-source part of the Host server
    - `mw_auth`: the open-source part of the Auth server
  - `lib/app`: library crates that form the Bevy-based client app:
+   - `mw_engine`: building blocks and bespoke tech
    - `mw_app_core`: foundations and supporting tech of `mw_app`
    - `mw_app`: the open-source part of the game client
      (sans UI and graphics)
    - `mw_app_gfx2d`: 2D graphics
    - `mw_app_gfx3d`: 3D graphics
+   - `mw_ui_common`: UI building blocks
    - `mw_ui_desktop`: the desktop UI
    - `mw_ui_mobile`: the mobile UI
    - `mw_platform_windows`: Windows-specific features

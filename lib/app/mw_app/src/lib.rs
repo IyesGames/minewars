@@ -7,7 +7,7 @@ pub mod prelude {
     pub use bevy_asset_loader::prelude::*;
 }
 
-use mw_app_core::settings_manager::SettingsStore;
+use mw_engine::settings_manager::SettingsStore;
 use settings::EngineSetupSettings;
 
 use crate::prelude::*;
@@ -54,7 +54,7 @@ pub fn plugin(app: &mut App) {
 pub fn setup_bevy_app() -> App {
     let mut app = App::new();
     crate::settings::register_engine_settings(&mut app);
-    mw_app_core::settings_manager::early_load_settings(
+    mw_engine::settings_manager::early_load_settings(
         &mut app, &[SETTINGS_ENGINE]
     );
     app.insert_resource(ClearColor(Color::BLACK));

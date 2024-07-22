@@ -13,6 +13,9 @@ features = [ "bevy" ]
 path = "../../common/mw_game_minesweeper"
 features = [ "bevy" ]
 
+[dependencies.mw_engine]
+path = "../mw_engine"
+
 [dependencies.mw_app_core]
 path = "../mw_app_core"
 

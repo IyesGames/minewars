@@ -48,6 +48,11 @@ proprietary = [
 ]
 gfx2d = ["mw_app_gfx2d"]
 gfx3d = ["mw_app_gfx3d"]
+mw_ui_desktop = [ "dep:mw_ui_desktop", "dep:mw_ui_common" ]
+mw_ui_mobile = [ "dep:mw_ui_mobile", "dep:mw_ui_common" ]
+
+[dependencies.mw_engine]
+path = "../lib/app/mw_engine"
 
 [dependencies.mw_app_core]
 path = "../lib/app/mw_app_core"
@@ -67,6 +72,10 @@ optional = true
 
 [dependencies.mw_app_gfx3d]
 path = "../lib/app/mw_app_gfx3d"
+optional = true
+
+[dependencies.mw_ui_common]
+path = "../lib/app/mw_ui_common"
 optional = true
 
 [dependencies.mw_ui_desktop]

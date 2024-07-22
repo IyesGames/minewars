@@ -21,6 +21,9 @@ path = "../../common/mw_proto_host"
 [dependencies.mw_proto_auth]
 path = "../../common/mw_proto_auth"
 
+[dependencies.mw_engine]
+path = "../mw_engine"
+
 [dependencies.mw_app_core]
 path = "../mw_app_core"
 

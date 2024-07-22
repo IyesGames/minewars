@@ -1,0 +1,18 @@
+[package]
+name = "mw_ui_common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies.mw_engine]
+path = "../mw_engine"
+
+[dependencies]
+
+[dependencies.bevy]
+version = "0.14.0"
+default-features = false
+features = [
+    "bevy_sprite",
+    "bevy_ui",
+    "bevy_text",
+]
