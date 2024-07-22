@@ -35,7 +35,7 @@ pub fn plugin(app: &mut App) {
     )
         .in_set(InStateSet(AppState::InGame))
         .in_set(SetStage::WantChanged(GameOutEventSS))
-        .in_set(SetStage::Provide(TileUpdateSS))
+        .in_set(TileUpdateSet::External)
         .in_set(NeedsGameplaySessionSet)
         .in_set(NeedsMapGovernorSet)
     );
