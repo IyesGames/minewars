@@ -10,7 +10,7 @@ use crate::plid::*;
 pub type CitId = u8;
 
 /// The possibilities of what can be on a given tile
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 #[derive(Enum, FromPrimitive, ToPrimitive, BitfieldSpecifier, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 #[bits = 2]
@@ -23,7 +23,7 @@ pub enum ItemKind {
 }
 
 /// The base variant of a map tile
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 #[derive(Enum, FromPrimitive, ToPrimitive, BitfieldSpecifier, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 #[bits = 3]
@@ -88,7 +88,7 @@ impl TileKind {
 }
 
 /// Is a structure in-production or completed?
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(Enum, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 pub enum ProdState {
@@ -97,7 +97,7 @@ pub enum ProdState {
 }
 
 /// All the various structures that can be built
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 #[derive(Enum, FromPrimitive, ToPrimitive, BitfieldSpecifier, Sequence)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 #[bits = 2]
@@ -110,7 +110,7 @@ pub enum StructureKind {
 }
 
 /// The gameplay actions that a player can perform on a tile
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(Enum, Sequence)]
 pub enum ActionKind {
     // PvP "offense"

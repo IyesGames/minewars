@@ -29,7 +29,7 @@ pub enum GraphicsStyle {
     Gfx3d,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DisplayDigitsMode {
     #[default]
     None,
@@ -37,7 +37,7 @@ pub enum DisplayDigitsMode {
     Preview,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DisplayItemsMode {
     #[default]
     None,

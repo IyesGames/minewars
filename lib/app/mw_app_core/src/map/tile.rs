@@ -90,31 +90,31 @@ pub struct MwMapTile;
 /// Map coordinate of a given tile.
 ///
 /// This uses our own grid coord types (Pos <-> {Hex, Sq}).
-#[derive(Component, Clone)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MwTilePos(pub Pos);
 
-#[derive(Component)]
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
 pub struct TileAlert(pub Timer);
 
 /// Map region (cit association) of a tile
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TileRegion(pub u8);
 
 /// Plid who owns the tile
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TileOwner(pub PlayerId);
 
 /// Any digit that we are told to display.
 ///
 /// This comes from game updates.
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TileDigitGame(pub MwDigit);
 
 /// Any digit that we compute locally based on known item locations.
 ///
 /// This is the "preview" of what digits are
 /// expected to look like for other players.
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TileDigitPreview(pub MwDigit);
 
 /// Any Road connections to neighboring tiles.
@@ -125,11 +125,11 @@ pub struct TileDigitPreview(pub MwDigit);
 /// each adjacent tile that also has a road.
 ///
 /// This representation allows efficiently rendering roads correctly.
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TileRoads(pub u8);
 
 /// Is there any "game entity" on a land tile?
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TileGent {
     /// Tile has nothing on it
     #[default]
@@ -146,13 +146,13 @@ pub enum TileGent {
 }
 
 /// Visibility level of the given tile
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TileVisLevel {
     Fog,
     Visible,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TileExplosion {
     pub e: Entity,
     pub item: Option<ItemKind>,

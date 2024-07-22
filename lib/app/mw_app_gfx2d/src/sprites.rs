@@ -1,4 +1,4 @@
-use mw_app_core::{assets::SpritesAssets, camera::ActiveGameCamera, map::{tile::*, *}, player::{Plid, PlidColor}, session::{NeedsSessionGovernorSet, PlayersIndex, SessionGovernor}, settings::PlidColorSettings};
+use mw_app_core::{assets::SpritesAssets, camera::ActiveGameCamera, graphics::{DisplayDigitsMode, GraphicsGovernor}, map::{tile::*, *}, player::{Plid, PlidColor}, session::{NeedsSessionGovernorSet, PlayersIndex, SessionGovernor}, settings::PlidColorSettings};
 use mw_common::grid::*;
 
 use crate::{misc::*, prelude::*};
@@ -21,6 +21,8 @@ pub fn plugin(app: &mut App) {
     ));
     app.add_systems(Update, (
         update_billboard_sprites,
+        manage_digits_mode
+            .run_if(any_filter::<(Changed<DisplayDigitsMode>, With<GraphicsGovernor>)>),
     )
         .in_set(Gfx2dImplSet::Sprites)
     );
@@ -28,6 +30,11 @@ pub fn plugin(app: &mut App) {
         update_sprite_tile_kind,
         update_sprite_tile_owner
             .in_set(NeedsSessionGovernorSet),
+        (
+            update_sprite_tile_digit_game,
+            update_sprite_tile_digit_preview,
+        )
+            .run_if(any_filter::<(With<DisplayDigitsMode>, With<GraphicsGovernor>)>),
     )
         .in_set(SetStage::WantChanged(TileUpdateSS))
         .in_set(Gfx2dImplSet::Sprites)
@@ -46,11 +53,15 @@ pub fn plugin(app: &mut App) {
 struct SpriteEntities {
     base: Entity,
     base_overlay: Option<Entity>,
-    digit: Option<Entity>,
+    digit_game: Option<Entity>,
+    digit_preview: Option<Entity>,
 }
 
 #[derive(Component)]
 struct TileEntity(Entity);
+
+#[derive(Component)]
+struct BaseSpriteEntity(Entity);
 
 #[derive(Component)]
 struct MapSprite;
@@ -59,20 +70,20 @@ struct MapSprite;
 struct BillboardSprite;
 
 #[derive(Component)]
-pub struct CursorSprite;
+struct CursorSprite;
 #[derive(Component)]
-pub struct BaseSprite;
+struct BaseSprite;
 #[derive(Component)]
-pub struct BaseOverlaySprite;
+struct BaseOverlaySprite;
 #[derive(Component)]
-pub struct DigitSprite;
+struct DigitSprite;
 #[derive(Component)]
-pub struct GentSprite;
+struct GentSprite;
 #[derive(Component)]
-pub struct RegHighlightSprite;
+struct RegHighlightSprite;
 #[derive(Component)]
-pub struct ExplosionSprite {
-    pub timer: Timer,
+struct ExplosionSprite {
+    timer: Timer,
 }
 
 #[derive(Bundle)]
@@ -95,6 +106,25 @@ struct BaseSpriteBundle {
 struct BaseOverlaySpriteBundle {
     mapsprite: MapSpriteBundle,
     marker: BaseOverlaySprite,
+    base: BaseSpriteEntity,
+}
+
+#[derive(Bundle)]
+struct GameDigitSpriteBundle {
+    mapsprite: MapSpriteBundle,
+    marker: DigitSprite,
+    billboard: BillboardSprite,
+    base: BaseSpriteEntity,
+    digit: TileDigitGame,
+}
+
+#[derive(Bundle)]
+struct PreviewDigitSpriteBundle {
+    mapsprite: MapSpriteBundle,
+    marker: DigitSprite,
+    billboard: BillboardSprite,
+    base: BaseSpriteEntity,
+    digit: TileDigitPreview,
 }
 
 #[derive(Bundle)]
@@ -236,7 +266,8 @@ fn setup_tile_entities(
         commands.entity(e_tile).insert(SpriteEntities {
             base: e_spr,
             base_overlay: None,
-            digit: None,
+            digit_game: None,
+            digit_preview: None,
         });
     }
 
@@ -250,9 +281,9 @@ fn setup_tile_entities(
 fn reveal_sprites_onenter_ingame(
     mut q_sprite: Query<&mut Visibility, With<MapSprite>>,
 ) {
-    for mut vis in &mut q_sprite {
+    q_sprite.iter_mut().for_each(|mut vis| {
         *vis = Visibility::Visible;
-    }
+    });
 }
 
 fn update_billboard_sprites(
@@ -270,10 +301,27 @@ fn update_billboard_sprites(
 fn update_sprite_tile_kind(
     mut commands: Commands,
     assets: Res<SpritesAssets>,
-    q_map: Query<(&TileUpdateQueue, &MapDescriptor), With<MapGovernor>>,
-    mut q_tile: Query<(Entity, &MwTilePos, &TileKind, &mut SpriteEntities), With<MwMapTile>>,
-    mut q_sprite: Query<(&mut TextureAtlas, Has<BillboardSprite>), With<BaseSprite>>,
-    mut q_overlay: Query<(&mut TextureAtlas, Has<BillboardSprite>), (With<BaseOverlaySprite>, Without<BaseSprite>)>,
+    q_map: Query<(
+        &TileUpdateQueue,
+        &MapDescriptor,
+    ), With<MapGovernor>>,
+    mut q_tile: Query<(
+        Entity,
+        &MwTilePos,
+        &TileKind,
+        &mut SpriteEntities,
+    ), With<MwMapTile>>,
+    mut q_sprite: Query<(
+        &mut TextureAtlas,
+        Has<BillboardSprite>,
+    ), With<BaseSprite>>,
+    mut q_overlay: Query<(
+        &mut TextureAtlas,
+        Has<BillboardSprite>,
+    ), (
+        With<BaseOverlaySprite>,
+        Without<BaseSprite>,
+    )>,
 ) {
     let (tuq, desc) = q_map.single();
     let i_kind = match desc.topology {
@@ -315,6 +363,7 @@ fn update_sprite_tile_kind(
                 (None, Some(i_overlay)) => {
                     let e = commands.spawn(BaseOverlaySpriteBundle {
                         marker: BaseOverlaySprite,
+                        base: BaseSpriteEntity(e_spr.base),
                         mapsprite: MapSpriteBundle {
                             cleanup: GamePartialCleanup,
                             marker: MapSprite,
@@ -355,7 +404,11 @@ fn update_sprite_tile_kind(
 fn update_sprite_tile_owner(
     settings: Settings,
     q_map: Query<(&TileUpdateQueue,), With<MapGovernor>>,
-    mut q_tile: Query<(&MwTilePos, &TileOwner, &SpriteEntities), With<MwMapTile>>,
+    mut q_tile: Query<(
+        &MwTilePos,
+        &TileOwner,
+        &SpriteEntities,
+    ), With<MwMapTile>>,
     mut q_sprite: Query<&mut Sprite, With<BaseSprite>>,
     q_player: Query<&PlidColor, With<Plid>>,
     q_session: Query<&PlayersIndex, With<SessionGovernor>>,
@@ -371,6 +424,188 @@ fn update_sprite_tile_owner(
             .unwrap_or(color_neutral.into());
         if let Ok(mut sprite) = q_sprite.get_mut(e_spr.base) {
             sprite.color = color;
+        }
+    });
+}
+
+fn manage_digits_mode(
+    q_graphics: Query<Ref<DisplayDigitsMode>, With<GraphicsGovernor>>,
+    mut q_digit: Query<(
+        &mut Visibility,
+        Has<TileDigitGame>,
+        Has<TileDigitPreview>,
+    ), With<DigitSprite>>,
+) {
+    let mode = q_graphics.single();
+    if mode.is_changed() {
+        match *mode {
+            DisplayDigitsMode::None => {
+                q_digit.iter_mut().for_each(|(mut vis, _, _)| {
+                    *vis = Visibility::Hidden;
+                });
+            },
+            DisplayDigitsMode::Game => {
+                q_digit.iter_mut().for_each(|(mut vis, has_game, _)| {
+                    if has_game {
+                        *vis = Visibility::Inherited;
+                    } else {
+                        *vis = Visibility::Hidden;
+                    }
+                });
+            },
+            DisplayDigitsMode::Preview => {
+                q_digit.iter_mut().for_each(|(mut vis, _, has_preview)| {
+                    if has_preview {
+                        *vis = Visibility::Inherited;
+                    } else {
+                        *vis = Visibility::Hidden;
+                    }
+                });
+            },
+        }
+    }
+}
+
+fn update_sprite_tile_digit_game(
+    mut commands: Commands,
+    assets: Res<SpritesAssets>,
+    q_graphics: Query<&DisplayDigitsMode, With<GraphicsGovernor>>,
+    q_map: Query<(&TileUpdateQueue,), With<MapGovernor>>,
+    mut q_tile: Query<(
+        Entity,
+        &MwTilePos,
+        &TileDigitGame,
+        &mut SpriteEntities,
+    ), With<MwMapTile>>,
+    mut q_digit: Query<(
+        &mut TextureAtlas,
+        &mut TileDigitGame,
+    ), (
+        With<DigitSprite>,
+        Without<TileDigitPreview>,
+        Without<MwMapTile>,
+    )>,
+) {
+    let (tuq,) = q_map.single();
+    let mode = q_graphics.single();
+    tuq.for_each(&mut q_tile, |(e_tile, pos, d_game, mut e_spr)| {
+        if d_game.0.digit == 0 {
+            if let Some(e_dig) = e_spr.digit_game {
+                commands.entity(e_dig).despawn_recursive();
+                e_spr.digit_game = None;
+            }
+        } else {
+            let index = if d_game.0.asterisk {
+                sprite::DIGSTAR + d_game.0.digit as usize
+            } else {
+                sprite::DIG + d_game.0.digit as usize
+            };
+            if let Some(e_dig) = e_spr.digit_game {
+                let (mut atlas, mut digit) = q_digit.get_mut(e_dig).unwrap();
+                *digit = *d_game;
+                atlas.index = index;
+            } else {
+                let e = commands.spawn(GameDigitSpriteBundle {
+                    marker: DigitSprite,
+                    digit: *d_game,
+                    base: BaseSpriteEntity(e_spr.base),
+                    billboard: BillboardSprite,
+                    mapsprite: MapSpriteBundle {
+                        cleanup: GamePartialCleanup,
+                        marker: MapSprite,
+                        pos: *pos,
+                        tile: TileEntity(e_tile),
+                        sprite: SpriteBundle {
+                            texture: assets.digits_img.clone(),
+                            transform: Transform::from_xyz(0.0, 0.0, zpos::DIGIT),
+                            visibility: if *mode == DisplayDigitsMode::Game {
+                                Visibility::Inherited
+                            } else {
+                                Visibility::Hidden
+                            },
+                            ..Default::default()
+                        },
+                        atlas: TextureAtlas {
+                            layout: assets.digits_layout.clone(),
+                            index,
+                        },
+                    },
+                }).id();
+                commands.entity(e_spr.base).add_child(e);
+                e_spr.digit_game = Some(e);
+            }
+        }
+    });
+}
+
+fn update_sprite_tile_digit_preview(
+    mut commands: Commands,
+    assets: Res<SpritesAssets>,
+    q_graphics: Query<&DisplayDigitsMode, With<GraphicsGovernor>>,
+    q_map: Query<(&TileUpdateQueue,), With<MapGovernor>>,
+    mut q_tile: Query<(
+        Entity,
+        &MwTilePos,
+        &TileDigitPreview,
+        &mut SpriteEntities,
+    ), With<MwMapTile>>,
+    mut q_digit: Query<(
+        &mut TextureAtlas,
+        &mut TileDigitPreview,
+    ), (
+        With<DigitSprite>,
+        Without<TileDigitGame>,
+        Without<MwMapTile>,
+    )>,
+) {
+    let (tuq,) = q_map.single();
+    let mode = q_graphics.single();
+    tuq.for_each(&mut q_tile, |(e_tile, pos, d_preview, mut e_spr)| {
+        if d_preview.0.digit == 0 {
+            if let Some(e_dig) = e_spr.digit_preview {
+                commands.entity(e_dig).despawn_recursive();
+                e_spr.digit_preview = None;
+            }
+        } else {
+            let index = if d_preview.0.asterisk {
+                sprite::DIGSTAR + d_preview.0.digit as usize
+            } else {
+                sprite::DIG + d_preview.0.digit as usize
+            };
+            if let Some(e_dig) = e_spr.digit_preview {
+                let (mut atlas, mut digit) = q_digit.get_mut(e_dig).unwrap();
+                *digit = *d_preview;
+                atlas.index = index;
+            } else {
+                let e = commands.spawn(PreviewDigitSpriteBundle {
+                    marker: DigitSprite,
+                    digit: *d_preview,
+                    base: BaseSpriteEntity(e_spr.base),
+                    billboard: BillboardSprite,
+                    mapsprite: MapSpriteBundle {
+                        cleanup: GamePartialCleanup,
+                        marker: MapSprite,
+                        pos: *pos,
+                        tile: TileEntity(e_tile),
+                        sprite: SpriteBundle {
+                            texture: assets.digits_img.clone(),
+                            transform: Transform::from_xyz(0.0, 0.0, zpos::DIGIT),
+                            visibility: if *mode == DisplayDigitsMode::Game {
+                                Visibility::Inherited
+                            } else {
+                                Visibility::Hidden
+                            },
+                            ..Default::default()
+                        },
+                        atlas: TextureAtlas {
+                            layout: assets.digits_layout.clone(),
+                            index,
+                        },
+                    },
+                }).id();
+                commands.entity(e_spr.base).add_child(e);
+                e_spr.digit_preview = Some(e);
+            }
         }
     });
 }

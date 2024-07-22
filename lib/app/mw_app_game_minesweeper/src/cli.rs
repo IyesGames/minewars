@@ -53,6 +53,8 @@ fn start_minesweeper_singleplayer(
             marker: GraphicsGovernor,
             style: CurrentGraphicsStyle(s_gfx.game_preferred_style),
         },
+        DisplayDigitsMode::Game,
+        DisplayItemsMode::MyItems,
     )).id();
     if s_gfx.game_enable_both_styles {
         commands.entity(e_gov_gfx).insert((
