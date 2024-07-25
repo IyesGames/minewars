@@ -70,4 +70,5 @@ pub mod sprite {
     pub const ICON_TOWER: usize = ICONS + 9;
     pub const ICON_WALL: usize = ICONS + 10;
     pub const ICON_ROAD: usize = ICONS + 11;
+    pub const ICON_SKULL: usize = ICONS + 15;
 }
