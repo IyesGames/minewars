@@ -1,3 +1,4 @@
+use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool, Task};
 use mw_app_core::{assets::SpritesAssets, camera::ActiveGameCamera, graphics::{DisplayDigitsMode, GraphicsGovernor}, map::{tile::*, *}, player::{Plid, PlidColor}, session::{NeedsSessionGovernorSet, PlayersIndex, SessionGovernor}, settings::PlidColorSettings};
 use mw_common::grid::*;
 
@@ -5,9 +6,13 @@ use crate::{misc::*, prelude::*};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (
-        setup_tile_entities
-            .track_progress()
-            .in_set(SetStage::Provide(TileUpdateSS))
+        (
+            setup_tile_entities
+                .track_progress()
+                .in_set(SetStage::Provide(TileUpdateSS)),
+            setup_water_fancytint
+                .track_progress(),
+        )
             .in_set(Gfx2dImplSet::Sprites)
             .in_set(NeedsMapGovernorSet),
     )
@@ -276,6 +281,83 @@ fn setup_tile_entities(
     debug!("Initialized map graphics using 2D Sprites.");
 
     false.into()
+}
+
+#[derive(Default)]
+enum SetupFancytintState {
+    #[default]
+    NotStarted,
+    AwaitingTask(Task<MapDataPos<f32>>),
+    Done,
+}
+
+fn setup_water_fancytint(
+    q_map: Query<&MapDescriptor, With<MapGovernor>>,
+    q_tile: Query<(&MwTilePos, &TileKind), With<MwMapTile>>,
+    mut q_sprite: Query<(&MwTilePos, &mut Sprite), With<BaseSprite>>,
+    mut state: Local<SetupFancytintState>,
+) -> Progress {
+    let temp = std::mem::replace(&mut *state, SetupFancytintState::NotStarted);
+    let r;
+    *state = match temp {
+        SetupFancytintState::NotStarted => {
+            let (Ok(desc), false, false) = (q_map.get_single(), q_tile.is_empty(), q_sprite.is_empty()) else {
+                return false.into();
+            };
+            r = false.into();
+            let rt = AsyncComputeTaskPool::get();
+            match desc.topology {
+                Topology::Hex => {
+                    let mut map: MapDataC<Hex, TileKind> = MapData::new(desc.size, TileKind::Water);
+                    q_tile.iter().for_each(|(pos, kind)| {
+                        map[pos.0.into()] = *kind;
+                    });
+                    let task = rt.spawn(async move {
+                        let mut r: MapDataPos<f32> = MapData::new(map.size(), 1.0);
+                        r.iter_mut().for_each(|(c, d)| {
+                            if map[c.into()] == TileKind::Water {
+                                *d = fancytint(map.size(), c.into(), |c2| map[c2]);
+                            }
+                        });
+                        r
+                    });
+                    SetupFancytintState::AwaitingTask(task)
+                }
+                Topology::Sq => {
+                    let mut map: MapDataC<Sq, TileKind> = MapData::new(desc.size, TileKind::Water);
+                    q_tile.iter().for_each(|(pos, kind)| {
+                        map[pos.0.into()] = *kind;
+                    });
+                    let task = rt.spawn(async move {
+                        let mut r: MapDataPos<f32> = MapData::new(map.size(), 1.0);
+                        r.iter_mut().for_each(|(c, d)| {
+                            if map[c.into()] == TileKind::Water {
+                                *d = fancytint(map.size(), c.into(), |c2| map[c2]);
+                            }
+                        });
+                        r
+                    });
+                    SetupFancytintState::AwaitingTask(task)
+                }
+            }
+        },
+        SetupFancytintState::AwaitingTask(mut task) => {
+            r = false.into();
+            if let Some(alphas) = block_on(poll_once(&mut task)) {
+                q_sprite.iter_mut().for_each(|(pos, mut spr)| {
+                    spr.color.set_alpha(alphas[pos.0.into()]);
+                });
+                SetupFancytintState::Done
+            } else {
+                SetupFancytintState::AwaitingTask(task)
+            }
+        },
+        SetupFancytintState::Done => {
+            r = true.into();
+            SetupFancytintState::Done
+        }
+    };
+    r
 }
 
 fn reveal_sprites_onenter_ingame(
