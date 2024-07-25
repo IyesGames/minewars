@@ -28,7 +28,11 @@ fn plid_score_by_cits(
         score.0 = 0;
     });
     for owner in &q_cit {
-        let e_plid = players.e_plid[owner.0.i()];
+        let plid = match owner {
+            CitOwner::Plid(plid) => plid,
+            CitOwner::Capturing { old, .. } => old,
+        };
+        let e_plid = players.e_plid[plid.i()];
         if let Ok(mut score) = q_plid.get_mut(e_plid) {
             score.0 += 1;
         }

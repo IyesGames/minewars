@@ -27,16 +27,22 @@ pub struct CitBundle {
     pub economy: CitEconomy,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MwCit;
 
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CitRegion(pub u8);
 
-#[derive(Component)]
-pub struct CitOwner(pub PlayerId);
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CitOwner {
+    Plid(PlayerId),
+    Capturing {
+        old: PlayerId,
+        new: PlayerId,
+    },
+}
 
-#[derive(Component)]
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
 pub struct CitEconomy {
     pub money: u32,
     pub income: u16,
