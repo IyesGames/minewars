@@ -50,7 +50,6 @@ features = [ "derive" ]
 [dependencies.bevy]
 version = "0.14.0"
 default-features = false
-# Bevy should inherit its features via `mw_app_core`
 
 [dependencies.iyes_progress]
 version = "0.12.0"

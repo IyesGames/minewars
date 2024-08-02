@@ -60,16 +60,16 @@ impl Coord for Hex {
     }
 
     fn distance(self, other: Self) -> u16 {
-        let a0 = self.0;
-        let a1 = self.1;
-        let a2 = 0 - self.0 - self.1;
-        let b0 = other.0;
-        let b1 = other.1;
-        let b2 = 0 - other.0 - other.1;
+        let a0 = self.0 as i16;
+        let a1 = self.1 as i16;
+        let a2 = 0 - a0 - a1;
+        let b0 = other.0 as i16;
+        let b1 = other.1 as i16;
+        let b2 = 0 - b0 - b1;
 
-        let d0 = (a0 as i16 - b0 as i16).abs() as u16;
-        let d1 = (a1 as i16 - b1 as i16).abs() as u16;
-        let d2 = (a2 as i16 - b2 as i16).abs() as u16;
+        let d0 = (a0 - b0).abs() as u16;
+        let d1 = (a1 - b1).abs() as u16;
+        let d2 = (a2 - b2).abs() as u16;
 
         (d0 + d1 + d2) / 2
     }

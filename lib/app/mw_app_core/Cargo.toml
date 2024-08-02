@@ -17,7 +17,7 @@ proprietary = []
 
 [dependencies.mw_common]
 path = "../../common/mw_common"
-features = [ "bevy", "net" ]
+features = [ "bevy" ]
 
 [dependencies.mw_dataformat]
 path = "../../common/mw_dataformat"

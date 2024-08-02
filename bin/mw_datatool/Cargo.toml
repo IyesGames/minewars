@@ -5,9 +5,6 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[features]
-proprietary = ["dep:mw_game_minewars"]
-
 [dependencies]
 anyhow = "1.0.86"
 
@@ -20,7 +17,3 @@ path = "../../lib/common/mw_dataformat"
 [dependencies.clap]
 version = "4.5.9"
 features = ["derive"]
-
-[dependencies.mw_game_minewars]
-git = "https://github.com/IyesGames/minewars-proprietary-shim"
-optional = true

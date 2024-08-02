@@ -9,13 +9,9 @@ pub mod prelude {
     pub use bevy::utils::{HashMap, HashSet};
     #[cfg(not(feature = "bevy"))]
     pub use hashbrown::{HashMap, HashSet};
-    #[cfg(all(feature = "bevy", not(feature = "net")))]
+    #[cfg(feature = "bevy")]
     pub use bevy::utils::{Duration, Instant};
-    #[cfg(all(not(feature = "bevy"), feature = "net"))]
-    pub use tokio::time::{Duration, Instant};
-    #[cfg(all(not(feature = "bevy"), not(feature = "net")))]
-    pub use std::time::{Duration, Instant};
-    #[cfg(all(feature = "bevy", feature = "net"))]
+    #[cfg(not(feature = "bevy"))]
     pub use std::time::{Duration, Instant};
     pub use num_traits;
     pub use num;
@@ -32,25 +28,13 @@ pub mod prelude {
     pub use std::fmt::{Display, Debug};
     pub use std::marker::PhantomData;
     pub use thiserror::Error;
-    pub use tracing::{debug, error, info, trace, warn};
     pub use noise;
     pub use interpolation;
-    #[cfg(feature = "net")]
-    pub use tokio;
-    #[cfg(feature = "net")]
-    pub use rustls;
-    #[cfg(feature = "net")]
-    pub use quinn;
-    #[cfg(feature = "net")]
-    pub use crate::net::prelude::*;
     pub use crate::data::*;
     pub use crate::grid::*;
     pub use crate::plid::*;
     pub use crate::game::*;
 }
-
-#[cfg(feature = "net")]
-pub mod net;
 
 pub mod algo;
 pub mod driver;

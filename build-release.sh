@@ -2,8 +2,8 @@
 
 RELDIR="release"
 
-EXE_MAIN="minewars"
-EXE_EXTRA="mw_hostsrv mw_authsrv mw_hostrpc mw_certgen mw_datatool"
+EXE_MAIN="minewars_foss"
+EXE_EXTRA="mw_certgen mw_datatool"
 
 MYOS="$(uname)"
 

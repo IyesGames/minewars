@@ -7,7 +7,7 @@ pub mod prelude {
 
 pub mod cli;
 pub mod offline_host;
-pub mod net;
+// pub mod net;
 pub mod mwfile;
 
 pub mod settings;
@@ -18,6 +18,6 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         crate::cli::plugin,
         crate::settings::plugin,
-        crate::net::plugin,
+        // crate::net::plugin,
     ));
 }

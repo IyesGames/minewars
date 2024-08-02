@@ -1,6 +1,42 @@
-# Open-Source Builds
+# Game Longevity and Our Promise to the Community
 
-MineWars is a partially-open-source project.
+We live in an era where people's beloved games are increasingly made unplayable
+and inaccessible, when the developers decide to abandon them, thanks to online-only
+gameplay and DRM. We are firmly against such practices. We believe that the fans
+of a game should be able to enjoy it forever.
+
+As such, MineWars will always provide support for LAN gameplay and community servers.
+
+## While We Officially Support the Game
+
+We intend to keep running official servers and to keep developing and updating
+the game for as long as possible, given enough funding.
+
+However, official servers are not the only way to play the game.
+
+Every game install will come with a dedicated server binary, allowing anyone
+to host their own unofficial servers. Though, this version of the server
+may differ from the one we use for official game servers. It may have a
+different feature set (missing some features we'd like to only support on
+official servers, but also adding some extra features to facilitate community
+server operation).
+
+## When We No Longer Officially Support the Game
+
+Should we go out of business or decide to abandon MineWars for any reason,
+here is the plan:
+
+We will fully open-source *everything*: client and servers. We may have to
+delete some parts, if they contain secrets or other sensitive information,
+but other than that, everything will be open-sourced.
+
+## Open-Source Client Repository
+
+Even while the game is officially supported, MineWars is a
+partially-open-source project. A large part of the game client (written in
+the Bevy game engine) is open-source, because we'd like the Bevy game dev
+community to be able to benefit from our work: learn from how we did things
+and be able to copy some of the tech we developed for MineWars.
 
 All official game releases are proprietary. The full source code for the
 official builds of the game (as distributed through official channels) is *not*
@@ -11,47 +47,23 @@ However, a somewhat cut-down version of the game can be built from the public
 in that repository is dual-licensed as MIT/Apache2, and so is completely free
 (as in freedom) for anyone to do whatever they want with it.
 
-## What is included in the open-source version?
+### What is included in the open-source repository?
 
-The open-source version actually includes most of the technology in MineWars.
-The majority of the game client, and the foundations of the game servers are
-open-source.
+It includes the majority of the game client, which is where most of the
+interesting technology in MineWars is.
 
 However, the following features are **not** included:
- - The ability to play or host the main MineWars multiplayer game mode
-   - This includes networked play, offline play, and the tutorial
+ - The ability to play or host the main MineWars game modes.
  - Procedurally-generated MineWars maps (for any game mode, editor, etc.)
- - Any form of anti-cheat
- - Access to official multiplayer servers
+ - Networked multiplayer
  - Anything related to integration with 3rd-party services like Steam and Discord
 
 Notably, you **can** do the following:
- - Play other game modes (such as the Minesweeper-like multiplayer and singleplayer modes)
- - Connect to and play on unofficial servers that host games in other game modes
-   - Even if they use the proprietary version of the server
- - Host your own game servers for other game modes, using custom maps
- - Spectate matches and watch replays of the main MineWars multiplayer game mode
- - Use the scenario editor to create custom maps (random map generation is disabled)
+ - Play Minesweeper (not MineWars) offline
+ - Watch replays of MineWars games
+ - Use the scenario editor to create custom maps
 
-Basically, it provides a great starting point for developing your own
-alternative game modes, if you wish to do so. Make your own modded servers with
-your own custom game modes and configs, custom maps (or procedural generation
-algo), etc. Learn from the code. Copypaste our code into your own gamedev
-projects. Whatever. Go wild. Go nuts.
-
-However, if you want to host unofficial servers for the main MineWars game mode,
-you need the official proprietary server build, included with the official game
-release. If you want to play MineWars on community servers, you need the
-official game client.
-
-The proprietary server is still decently flexible, though. It is designed to
-allow the community to create unofficial infrastructure and services around it,
-if you want to create your own multiplayer matchmaking platform or whatever.
-You can control it via a RPC interface, to set up MineWars sessions, meaning you
-could develop your own management / launcher / frontend / authentication / etc.
-You can also integrate a custom anti-cheat solution.
-
-## Contributing
+### Contributing
 
 The code in the GitHub repo *is* what is actually used for official builds. It
 is not a separate stripped-down code dump.

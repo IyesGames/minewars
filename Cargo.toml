@@ -1,23 +1,10 @@
 [package]
-name = "minewars"
+name = "minewars_foss"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 publish = false
-
-# UNCOMMENT for my machine / local development
-[patch."https://github.com/IyesGames/iyes_bevy_extras"]
-iyes_bevy_extras = { path = "../../engine/iyes_bevy_extras" }
-[patch."https://github.com/IyesGames/iyes_cli"]
-iyes_cli = { path = "../../engine/iyes_cli" }
-
-# PROPRIETARY BUILDS
-[patch."https://github.com/IyesGames/minewars-proprietary-shim"]
-mw_app_proprietary = { path = "../minewars-proprietary/lib/mw_app_proprietary" }
-mw_host_proprietary = { path = "../minewars-proprietary/lib/mw_host_proprietary" }
-mw_auth_proprietary = { path = "../minewars-proprietary/lib/mw_auth_proprietary" }
-mw_game_minewars = { path = "../minewars-proprietary/lib/mw_game_minewars"}
 
 [workspace]
 resolver = "2"
@@ -25,22 +12,14 @@ members = [
     # binaries:
     # (self) # desktop client app
     "mobile", # mobile client app
-    "bin/mw_authsrv", # Auth Server
-    "bin/mw_hostsrv", # Host Server
+    # "bin/mw_authsrv", # Auth Server
+    # "bin/mw_hostsrv", # Host Server
     "bin/mw_certgen", # Cert Mgmt CLI
     "bin/mw_datatool", # CLI for mw_dataformat
-    "bin/mw_hostrpc", # CLI for controlling Host
+    # "bin/mw_hostrpc", # CLI for controlling Host
     # foundational
     "lib/common/mw_common", # Common code for everything
     "lib/common/mw_dataformat", # Dataformat codec
-    # protocols
-    "lib/common/mw_proto_auth", # Client <> Auth
-    "lib/common/mw_proto_host", # Client <> Host
-    "lib/common/mw_proto_hostrpc", # HostRPC <> Host
-    "lib/common/mw_proto_hostauth", # Host <> Auth
-    # server stuff
-    "lib/srv/mw_host", # FOSS part of Host Server
-    "lib/srv/mw_auth", # FOSS part of Auth Server
     # client stuff
     "lib/app/mw_engine", # Bespoke tech / building blocks
     "lib/app/mw_app_core", # APIs/framework for the game client app
@@ -78,20 +57,14 @@ debug = false
 incremental = false
 
 [features]
-default = [
-    "gfx2d",
-    "gfx3d",
-    "mw_ui_desktop",
-    "mw_ui_mobile",
-]
 dev = [
     "mw_app_core/dev",
     "mw_app_io/dev",
     "mw_app/dev",
-    "mw_app_gfx2d?/dev",
-    "mw_app_gfx3d?/dev",
-    "mw_ui_desktop?/dev",
-    "mw_ui_mobile?/dev",
+    "mw_app_gfx2d/dev",
+    "mw_app_gfx3d/dev",
+    "mw_ui_desktop/dev",
+    "mw_ui_mobile/dev",
     "mw_platform_windows/dev",
     "mw_platform_macos/dev",
     "mw_platform_linux/dev",
@@ -100,31 +73,14 @@ release = [
     "mw_app_core/release",
     "mw_app_io/release",
     "mw_app/release",
-    "mw_app_gfx2d?/release",
-    "mw_app_gfx3d?/release",
-    "mw_ui_desktop?/release",
-    "mw_ui_mobile?/release",
+    "mw_app_gfx2d/release",
+    "mw_app_gfx3d/release",
+    "mw_ui_desktop/release",
+    "mw_ui_mobile/release",
     "mw_platform_windows/release",
     "mw_platform_macos/release",
     "mw_platform_linux/release",
 ]
-proprietary = [
-    "dep:mw_app_proprietary",
-    "mw_app_core/proprietary",
-    "mw_app_io/proprietary",
-    "mw_app/proprietary",
-    "mw_app_gfx2d?/proprietary",
-    "mw_app_gfx3d?/proprietary",
-    "mw_ui_desktop?/proprietary",
-    "mw_ui_mobile?/proprietary",
-    "mw_platform_windows/proprietary",
-    "mw_platform_macos/proprietary",
-    "mw_platform_linux/proprietary",
-]
-gfx2d = ["mw_app_gfx2d"]
-gfx3d = ["mw_app_gfx3d"]
-mw_ui_desktop = [ "dep:mw_ui_desktop", "dep:mw_ui_common" ]
-mw_ui_mobile = [ "dep:mw_ui_mobile", "dep:mw_ui_common" ]
 
 [dependencies.mw_engine]
 path = "lib/app/mw_engine"
@@ -143,23 +99,18 @@ path = "lib/app/mw_app_game_minesweeper"
 
 [dependencies.mw_app_gfx2d]
 path = "lib/app/mw_app_gfx2d"
-optional = true
 
 [dependencies.mw_app_gfx3d]
 path = "lib/app/mw_app_gfx3d"
-optional = true
 
 [dependencies.mw_ui_common]
 path = "lib/app/mw_ui_common"
-optional = true
 
 [dependencies.mw_ui_desktop]
 path = "lib/app/mw_ui_desktop"
-optional = true
 
 [dependencies.mw_ui_mobile]
 path = "lib/app/mw_ui_mobile"
-optional = true
 
 [target.'cfg(target_os = "windows")'.dependencies.mw_platform_windows]
 path = "lib/app/mw_platform_windows"
@@ -169,10 +120,6 @@ path = "lib/app/mw_platform_macos"
 
 [target.'cfg(target_os = "linux")'.dependencies.mw_platform_linux]
 path = "lib/app/mw_platform_linux"
-
-[dependencies.mw_app_proprietary]
-git = "https://github.com/IyesGames/minewars-proprietary-shim"
-optional = true
 
 [dependencies]
 iyes_perf_ui = "0.3.0"
