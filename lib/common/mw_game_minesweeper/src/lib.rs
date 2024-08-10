@@ -124,36 +124,36 @@ impl<C: Coord> Game for GameMinesweeper<C> {
     fn init<H: Host<Self>>(&mut self, host: &mut H, _initdata: Box<Self::InitData>) {
         // schedule an event for "game over by running out of time"
         if self.settings.time_limit_secs != 0 {
-            host.msg(Plids::all(true), MwEv::Player {
+            host.msg((Plids::all(true), MwEv::Player {
                 plid: PlayerId::Neutral,
                 subplid: None,
                 ev: PlayerEv::MatchTimeRemain {
                     secs: self.settings.time_limit_secs,
                 },
-            });
+            }).into());
             host.sched(
                 Instant::now() + Duration::from_secs(self.settings.time_limit_secs as u64),
                 MinesweeperSchedEvent::GameOverOutOfTime
             );
         }
     }
-    fn input<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction) {
-        if u8::from(plid) > self.settings.n_plids || plid == PlayerId::Neutral {
+    fn input<H: Host<Self>>(&mut self, host: &mut H, input: GameInput<Self>) {
+        if u8::from(input.plid) > self.settings.n_plids || input.plid == PlayerId::Neutral {
             return;
         }
-        if let Some(playerdata) = self.playerdata.get(plid.i()-1) {
+        if let Some(playerdata) = self.playerdata.get(input.plid.i()-1) {
             if playerdata.n_lives == 0 {
                 return;
             }
         } else {
             return;
         }
-        match action {
+        match input.input {
             MinesweeperInputAction::ExploreTile { pos } => {
-                self.explore_tile(host, plid, pos.into());
+                self.explore_tile(host, input.plid, pos.into());
             }
             MinesweeperInputAction::ToggleFlag { pos } => {
-                self.flag(host, plid, pos.into());
+                self.flag(host, input.plid, pos.into());
             }
         }
     }
@@ -162,11 +162,11 @@ impl<C: Coord> Game for GameMinesweeper<C> {
             MinesweeperSchedEvent::GameOverOutOfTime => {
                 for (i, playerdata) in self.playerdata.iter().enumerate() {
                     if playerdata.n_lives > 0 {
-                        host.msg(Plids::all(true), MwEv::Player {
+                        host.msg((Plids::all(true), MwEv::Player {
                             plid: PlayerId::from(i as u8 + 1),
                             subplid: None,
                             ev: PlayerEv::Eliminated,
-                        });
+                        }).into());
                     }
                 }
                 host.game_over();
@@ -186,15 +186,15 @@ impl<C: Coord> GameMinesweeper<C> {
         if self.mapdata[c].flag() == 0 {
             if c.iter_n1().any(|c2| self.mapdata[c2].owner() == u8::from(plid)) {
                 self.mapdata[c].set_flag(u8::from(plid));
-                host.msg(Plids::all(true), MwEv::Flag {
+                host.msg((Plids::all(true), MwEv::Flag {
                     plid, pos: c.into()
-                });
+                }).into());
             }
         } else if self.mapdata[c].flag() == u8::from(plid) {
             self.mapdata[c].set_flag(0);
-            host.msg(Plids::all(true), MwEv::Flag {
+            host.msg((Plids::all(true), MwEv::Flag {
                 plid: PlayerId::Neutral, pos: c.into()
-            });
+            }).into());
         }
     }
     fn explore_tile<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
@@ -267,29 +267,29 @@ impl<C: Coord> GameMinesweeper<C> {
             self.mapdata[c].set_owner(u8::from(plid));
             if self.mapdata[c].flag() != 0 {
                 self.mapdata[c].set_flag(0);
-                host.msg(Plids::all(true), MwEv::Flag {
+                host.msg((Plids::all(true), MwEv::Flag {
                     plid: PlayerId::Neutral, pos: c.into()
-                });
+                }).into());
             }
-            host.msg(Plids::all(true), MwEv::TileOwner {
+            host.msg((Plids::all(true), MwEv::TileOwner {
                 plid, pos: c.into()
-            });
+            }).into());
             let digit = self.compute_send_digit(host, plid, c);
             for c2 in c.iter_n1() {
                 let kind = self.mapdata[c2].kind();
                 if kind.is_rescluster() {
                     self.mapdata[c2].set_owner(u8::from(plid));
-                    host.msg(Plids::all(true), MwEv::TileOwner {
+                    host.msg((Plids::all(true), MwEv::TileOwner {
                         plid, pos: c2.into()
-                    });
+                    }).into());
                     self.floodq.clear();
                     self.floodq.push_back(c2.into());
                     flood(&mut self.floodq, |c3, _| {
                         if self.mapdata[c3].kind() == kind && self.mapdata[c3].owner() != u8::from(plid) {
                             self.mapdata[c3].set_owner(u8::from(plid));
-                            host.msg(Plids::all(true), MwEv::TileOwner {
+                            host.msg((Plids::all(true), MwEv::TileOwner {
                                 plid, pos: c3.into()
-                            });
+                            }).into());
                             FloodSelect::Yes
                         } else {
                             FloodSelect::No
@@ -320,54 +320,54 @@ impl<C: Coord> GameMinesweeper<C> {
             ItemKind::Decoy | ItemKind::Trap => {
                 if self.mapdata[c].flag() != 0 {
                     self.mapdata[c].set_flag(0);
-                    host.msg(Plids::all(true), MwEv::Flag {
+                    host.msg((Plids::all(true), MwEv::Flag {
                         plid: PlayerId::Neutral, pos: c.into(),
-                    });
+                    }).into());
                 }
-                host.msg(Plids::all(true), MwEv::RevealItem {
+                host.msg((Plids::all(true), MwEv::RevealItem {
                     item: ItemKind::Decoy, pos: c.into(),
-                });
-                host.msg(Plids::all(true), MwEv::Explode {
+                }).into());
+                host.msg((Plids::all(true), MwEv::Explode {
                     pos: c.into(),
-                });
+                }).into());
             },
             ItemKind::Mine => {
                 // we now have an extra safe/explorable tile
                 self.n_unexplored_tiles += 1;
                 if self.mapdata[c].flag() != 0 {
                     self.mapdata[c].set_flag(0);
-                    host.msg(Plids::all(true), MwEv::Flag {
+                    host.msg((Plids::all(true), MwEv::Flag {
                         plid: PlayerId::Neutral, pos: c.into(),
-                    });
+                    }).into());
                 }
-                host.msg(Plids::all(true), MwEv::RevealItem {
+                host.msg((Plids::all(true), MwEv::RevealItem {
                     item: ItemKind::Mine, pos: c.into(),
-                });
-                host.msg(Plids::all(true), MwEv::Explode {
+                }).into());
+                host.msg((Plids::all(true), MwEv::Explode {
                     pos: c.into(),
-                });
-                host.msg(Plids::all(true), MwEv::TileKind {
+                }).into());
+                host.msg((Plids::all(true), MwEv::TileKind {
                     kind: TileKind::Destroyed, pos: c.into(),
-                });
+                }).into());
                 if let Some(playerdata) = self.playerdata.get_mut(plid.i()-1) {
                     if playerdata.n_lives > 0 {
                         playerdata.n_lives -= 1;
                     }
                     if playerdata.n_lives == 0 {
-                        host.msg(Plids::all(true), MwEv::Player {
+                        host.msg((Plids::all(true), MwEv::Player {
                             plid,
                             subplid: None,
                             ev: PlayerEv::Eliminated,
-                        });
+                        }).into());
                         capture = false;
                     }
-                    host.msg(Plids::all(true), MwEv::Player {
+                    host.msg((Plids::all(true), MwEv::Player {
                         plid,
                         subplid: None,
                         ev: PlayerEv::LivesRemain {
                             lives: playerdata.n_lives,
                         },
-                    });
+                    }).into());
                     if self.playerdata.iter().all(|p| p.n_lives == 0) {
                         host.game_over();
                     }
@@ -408,11 +408,11 @@ impl<C: Coord> GameMinesweeper<C> {
     }
     fn compute_send_digit<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) -> (u8, bool) {
         let (digit, asterisk) = self.compute_digit(plid, c);
-        host.msg(Plids::from(plid), MwEv::DigitCapture {
+        host.msg((Plids::from(plid), MwEv::DigitCapture {
             pos: c.into(), digit: MwDigit {
                 digit, asterisk,
             },
-        });
+        }).into());
         (digit, asterisk)
     }
 }

@@ -1,9 +1,9 @@
-use std::{collections::BTreeMap, mem::discriminant};
+use std::collections::BTreeMap;
 
 use async_channel::{Receiver, Sender, TryRecvError};
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool, Task};
 use mw_app_core::{driver::{DriverGovernor, GameOutEventSS, NeedsDriverGovernorSet}, session::{NeedsSessionGovernorSet, PlidPlayingAs, SessionGovernor}};
-use mw_common::driver::{Game, Host};
+use mw_common::driver::*;
 
 use crate::prelude::*;
 
@@ -82,10 +82,7 @@ enum TaskIn<G: Game> {
 }
 
 enum TaskOut<G: Game> {
-    GameOutput {
-        plids: Plids,
-        event: G::OutEvent,
-    },
+    GameOutput(GameOutput<G>),
     NextSched(Instant),
     NoSchedsRemain,
     GameOver,
@@ -176,8 +173,8 @@ where
             loop {
                 match rx.try_recv() {
                     Ok(out) => match out {
-                        TaskOut::GameOutput { plids, event } => {
-                            evw_out.send((plids, event).into());
+                        TaskOut::GameOutput(out) => {
+                            evw_out.send((out.plids, out.output).into());
                         }
                         TaskOut::NoSchedsRemain => {
                             next_sched = None;
@@ -226,7 +223,7 @@ where
 }
 
 struct HostState<G: Game> {
-    events: Vec<(Plids, G::OutEvent)>,
+    events: Vec<GameOutput<G>>,
     scheds: BTreeMap<Instant, G::SchedEvent>,
     cancel: HashSet<G::SchedEvent>,
     game_over: bool,
@@ -244,8 +241,8 @@ impl<G: Game> Default for HostState<G> {
 }
 
 impl<G: Game> Host<G> for HostState<G> {
-    fn msg(&mut self, plids: Plids, event: G::OutEvent) {
-        self.events.push((plids, event));
+    fn msg(&mut self, output: GameOutput<G>) {
+        self.events.push(output);
     }
     fn sched(&mut self, time: Instant, event: G::SchedEvent) {
         self.scheds.insert(time, event);
@@ -288,8 +285,8 @@ async fn task_host_game<G: Game>(
                 std::mem::swap(&mut split, &mut host.scheds);
                 for ev in split.into_values() {
                     game.unsched(&mut host, ev);
-                    for (plids, event) in host.events.drain(..) {
-                        let Ok(_) = tx.send(TaskOut::GameOutput { plids, event }).await else {
+                    for out in host.events.drain(..) {
+                        let Ok(_) = tx.send(TaskOut::GameOutput(out)).await else {
                             break 'main;
                         };
                     }
@@ -306,9 +303,14 @@ async fn task_host_game<G: Game>(
                 };
             }
             TaskIn::GameInput { plid, event }  => {
-                game.input(&mut host, plid, event);
-                for (plids, event) in host.events.drain(..) {
-                    let Ok(_) = tx.send(TaskOut::GameOutput { plids, event }).await else {
+                let input = GameInput {
+                    plid,
+                    subplid: 0, // FIXME
+                    input: event,
+                };
+                game.input(&mut host, input);
+                for out in host.events.drain(..) {
+                    let Ok(_) = tx.send(TaskOut::GameOutput(out)).await else {
                         break 'main;
                     };
                 }
@@ -324,8 +326,8 @@ async fn task_host_game<G: Game>(
                 }
             }
             TaskIn::Maintain => {
-                for (plids, event) in host.events.drain(..) {
-                    let Ok(_) = tx.send(TaskOut::GameOutput { plids, event }).await else {
+                for out in host.events.drain(..) {
+                    let Ok(_) = tx.send(TaskOut::GameOutput (out)).await else {
                         break 'main;
                     };
                 }

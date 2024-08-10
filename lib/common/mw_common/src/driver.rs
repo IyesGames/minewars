@@ -1,5 +1,22 @@
 use crate::{prelude::*, plid::{PlayerId, Plids}};
 
+pub struct GameInput<G: Game> {
+    pub plid: PlayerId,
+    pub subplid: u8,
+    pub input: G::InputAction,
+}
+
+pub struct GameOutput<G: Game> {
+    pub plids: Plids,
+    pub output: G::OutEvent,
+}
+
+impl<G: Game> From<(Plids, G::OutEvent)> for GameOutput<G> {
+    fn from((plids, output): (Plids, G::OutEvent)) -> Self {
+        Self { plids, output }
+    }
+}
+
 /// Abstract interface through which the Game communicates with the Host
 ///
 /// The "Host" is the implementation of the game session. For example:
@@ -8,7 +25,7 @@ use crate::{prelude::*, plid::{PlayerId, Plids}};
 /// implement this trait using its respective timers, events, etc.
 pub trait Host<G: Game>: Sized + Send + Sync + 'static {
     /// Notify the Host about something that happened in the game world
-    fn msg(&mut self, plids: Plids, event: G::OutEvent);
+    fn msg(&mut self, output: GameOutput<G>);
     /// Request an action to occur at a specific future time
     fn sched(&mut self, time: std::time::Instant, event: G::SchedEvent);
     /// Cancel scheduled events equal to the value given
@@ -54,7 +71,7 @@ pub trait Game: Sized + Send + Sync + 'static {
     fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent);
 
     /// Process a player input
-    fn input<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, action: Self::InputAction);
+    fn input<H: Host<Self>>(&mut self, host: &mut H, input: GameInput<Self>);
 
     /// Query the game for data / status updates to put in an unreliable datagram
     fn unreliable<H: Host<Self>>(&mut self, _host: &mut H) {}
