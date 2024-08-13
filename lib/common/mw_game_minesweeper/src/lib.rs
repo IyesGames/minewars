@@ -4,31 +4,33 @@ use mw_common::driver::*;
 
 use modular_bitfield::prelude::*;
 
+pub mod minegen;
+
+pub mod builder;
+
 /// Settings that can be configured for a session of the Minesweeper game mode
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(Reflect))]
+#[serde(default)]
 pub struct MinesweeperSettings {
     /// Each plid will get eliminated from the game when they step on a mine this many times.
     pub n_lives: u8,
-    /// 1 for singleplayer or co-op. >1 for PvP, Duos, etc.
-    pub n_plids: u8,
     /// If nonzero, limit the maximum time allowed for the game.
     pub time_limit_secs: u16,
-    /// Probability of a mine appearing on a tile.
-    pub mine_density: u8,
-    /// Probability a mine being replaced by a decoy instead.
-    pub prob_decoy: u8,
 }
 
 impl Default for MinesweeperSettings {
     fn default() -> Self {
         Self {
             n_lives: 1,
-            n_plids: 1,
             time_limit_secs: 0,
-            mine_density: 96,
-            prob_decoy: 48,
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct MinesweeperInitData {
+    pub minegen: minegen::MineGenSettings,
 }
 
 #[derive(Debug, Clone)]
@@ -53,56 +55,58 @@ pub enum MinesweeperSchedEvent {
     GameOverOutOfTime,
 }
 
-pub struct GameMinesweeper<C: Coord> {
+type MyRng = rand_pcg::Pcg64Mcg;
+
+pub struct MinesweeperIo;
+
+impl GameIo for MinesweeperIo {
+    type InputAction = MinesweeperInputAction;
+    type OutEvent = MwEv;
+    type SchedEvent = MinesweeperSchedEvent;
+}
+
+pub enum GameMinesweeper {
+    Hex(GameMinesweeperTopo<Hex>),
+    Sq(GameMinesweeperTopo<Sq>),
+}
+
+impl Game for GameMinesweeper {
+    type Io = MinesweeperIo;
+    type InitData = MinesweeperInitData;
+
+    fn init<H: Host<MinesweeperIo>>(&mut self, host: &mut H, initdata: Box<Self::InitData>) {
+        match self {
+            GameMinesweeper::Hex(game) => game.init(host, initdata),
+            GameMinesweeper::Sq(game) => game.init(host, initdata),
+        }
+    }
+    fn input<H: Host<MinesweeperIo>>(&mut self, host: &mut H, input: GameInput<MinesweeperIo>) {
+        match self {
+            GameMinesweeper::Hex(game) => game.input(host, input),
+            GameMinesweeper::Sq(game) => game.input(host, input),
+        }
+    }
+    fn unsched<H: Host<MinesweeperIo>>(&mut self, host: &mut H, event: MinesweeperSchedEvent) {
+        match self {
+            GameMinesweeper::Hex(game) => game.unsched(host, event),
+            GameMinesweeper::Sq(game) => game.unsched(host, event),
+        }
+    }
+    fn unreliable<H: Host<MinesweeperIo>>(&mut self, host: &mut H) {
+        match self {
+            GameMinesweeper::Hex(game) => game.unreliable(host),
+            GameMinesweeper::Sq(game) => game.unreliable(host),
+        }
+    }
+}
+
+pub struct GameMinesweeperTopo<C: Coord> {
     settings: MinesweeperSettings,
     mapdata: MapDataC<C, TileData>,
     playerdata: Vec<PlayerData>,
     n_unexplored_tiles: u16,
     floodq: FloodQ,
-}
-
-impl<C: Coord> GameMinesweeper<C> {
-    pub fn new<D>(mut settings: MinesweeperSettings, map_src: &MapDataC<C, D>, f_tilekind: impl Fn(&D) -> TileKind) -> Self {
-        let mut n_unexplored_tiles = 0;
-        settings.n_lives = settings.n_lives.max(1);
-        settings.n_plids = settings.n_plids.max(1);
-        let playerdata = vec![PlayerData {
-            n_owned: 0,
-            n_lives: settings.n_lives,
-        }; settings.n_plids as usize];
-        let mut rng = thread_rng();
-        let mapdata = map_src.convert(|_, d| {
-            let mut tile = TileData::default();
-            tile.set_owner(0);
-            tile.set_flag(0);
-            let tilekind = f_tilekind(&d);
-            tile.set_kind(tilekind);
-            if tilekind.is_land() {
-                let item = if rng.gen_bool(settings.mine_density as f64 / 255.0) {
-                    if rng.gen_bool(settings.prob_decoy as f64 / 255.0) {
-                        n_unexplored_tiles += 1;
-                        ItemKind::Decoy
-                    } else {
-                        ItemKind::Mine
-                    }
-                } else {
-                    n_unexplored_tiles += 1;
-                    ItemKind::Safe
-                };
-                tile.set_item(item);
-            } else {
-                tile.set_item(ItemKind::Safe);
-            }
-            tile
-        });
-        Self {
-            settings,
-            mapdata,
-            playerdata,
-            n_unexplored_tiles,
-            floodq: Default::default(),
-        }
-    }
+    rng: MyRng,
 }
 
 #[bitfield]
@@ -115,13 +119,18 @@ struct TileData {
     #[skip] __: B3,
 }
 
-impl<C: Coord> Game for GameMinesweeper<C> {
-    type InitData = ();
-    type InputAction = MinesweeperInputAction;
-    type OutEvent = MwEv;
-    type SchedEvent = MinesweeperSchedEvent;
+impl<C: Coord> Game for GameMinesweeperTopo<C> {
+    type Io = MinesweeperIo;
+    type InitData = MinesweeperInitData;
 
-    fn init<H: Host<Self>>(&mut self, host: &mut H, _initdata: Box<Self::InitData>) {
+    fn init<H: Host<MinesweeperIo>>(&mut self, host: &mut H, initdata: Box<MinesweeperInitData>) {
+        minegen::gen_mines(
+            &initdata.minegen,
+            &mut self.mapdata,
+            &mut self.rng,
+            |d| d.kind(),
+            |d, i| d.set_item(i),
+        );
         // schedule an event for "game over by running out of time"
         if self.settings.time_limit_secs != 0 {
             host.msg((Plids::all(true), MwEv::Player {
@@ -137,8 +146,8 @@ impl<C: Coord> Game for GameMinesweeper<C> {
             );
         }
     }
-    fn input<H: Host<Self>>(&mut self, host: &mut H, input: GameInput<Self>) {
-        if u8::from(input.plid) > self.settings.n_plids || input.plid == PlayerId::Neutral {
+    fn input<H: Host<MinesweeperIo>>(&mut self, host: &mut H, input: GameInput<MinesweeperIo>) {
+        if u8::from(input.plid) > self.playerdata.len() as u8 || input.plid == PlayerId::Neutral {
             return;
         }
         if let Some(playerdata) = self.playerdata.get(input.plid.i()-1) {
@@ -157,7 +166,7 @@ impl<C: Coord> Game for GameMinesweeper<C> {
             }
         }
     }
-    fn unsched<H: Host<Self>>(&mut self, host: &mut H, event: Self::SchedEvent) {
+    fn unsched<H: Host<MinesweeperIo>>(&mut self, host: &mut H, event: MinesweeperSchedEvent) {
         match event {
             MinesweeperSchedEvent::GameOverOutOfTime => {
                 for (i, playerdata) in self.playerdata.iter().enumerate() {
@@ -175,8 +184,8 @@ impl<C: Coord> Game for GameMinesweeper<C> {
     }
 }
 
-impl<C: Coord> GameMinesweeper<C> {
-    fn flag<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
+impl<C: Coord> GameMinesweeperTopo<C> {
+    fn flag<H: Host<MinesweeperIo>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
         if c.ring() > self.mapdata.size() {
             return;
         }
@@ -197,7 +206,7 @@ impl<C: Coord> GameMinesweeper<C> {
             }).into());
         }
     }
-    fn explore_tile<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
+    fn explore_tile<H: Host<MinesweeperIo>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
         if c.ring() > self.mapdata.size() {
             return;
         }
@@ -254,7 +263,7 @@ impl<C: Coord> GameMinesweeper<C> {
             }
         }
     }
-    fn capture_tile<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, mut c: C, recurse: bool) {
+    fn capture_tile<H: Host<MinesweeperIo>>(&mut self, host: &mut H, plid: PlayerId, mut c: C, recurse: bool) {
         let mut q = vec![];
         loop {
             if !self.mapdata[c].kind().is_land() {
@@ -310,7 +319,7 @@ impl<C: Coord> GameMinesweeper<C> {
             host.game_over();
         }
     }
-    fn explode_player<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
+    fn explode_player<H: Host<MinesweeperIo>>(&mut self, host: &mut H, plid: PlayerId, c: C) {
         let mut capture = true;
         match self.mapdata[c].item() {
             ItemKind::Safe => {
@@ -406,7 +415,7 @@ impl<C: Coord> GameMinesweeper<C> {
         }
         (digit, asterisk)
     }
-    fn compute_send_digit<H: Host<Self>>(&mut self, host: &mut H, plid: PlayerId, c: C) -> (u8, bool) {
+    fn compute_send_digit<H: Host<MinesweeperIo>>(&mut self, host: &mut H, plid: PlayerId, c: C) -> (u8, bool) {
         let (digit, asterisk) = self.compute_digit(plid, c);
         host.msg((Plids::from(plid), MwEv::DigitCapture {
             pos: c.into(), digit: MwDigit {

@@ -12,7 +12,7 @@ use std::ops::{Add, AddAssign, Sub, SubAssign, Not};
 use crate::prelude::*;
 
 pub const MAX_PLIDS: u8 = 15;
-pub const MAX_SUBPLIDS: u8 = 16;
+pub const MAX_SUBPLIDS: u8 = 15;
 
 /// Player ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

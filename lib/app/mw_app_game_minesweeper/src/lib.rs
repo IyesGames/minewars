@@ -13,12 +13,12 @@ use crate::prelude::*;
 pub fn plugin(app: &mut App) {
     app.add_plugins((
         mw_app_io::offline_host::OfflineHostPlugin::<
-            mw_game_minesweeper::GameMinesweeper<Hex>,
+            mw_game_minesweeper::GameMinesweeperTopo<Hex>,
             mw_game_minesweeper::MinesweeperInputAction,
             mw_common::game::GameEvent,
         >::new(),
         mw_app_io::offline_host::OfflineHostPlugin::<
-            mw_game_minesweeper::GameMinesweeper<Sq>,
+            mw_game_minesweeper::GameMinesweeperTopo<Sq>,
             mw_game_minesweeper::MinesweeperInputAction,
             mw_common::game::GameEvent,
         >::new(),

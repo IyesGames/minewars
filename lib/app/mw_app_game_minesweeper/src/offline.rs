@@ -1,7 +1,7 @@
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool, Task};
 use mw_app_core::{driver::{DriverGovernor, NeedsDriverGovernorSet}, map::{MapDataOrig, MapDescriptor, MapGovernor, MapTileDataOrig}, session::NeedsSessionGovernorSet};
 use mw_app_io::offline_host::OfflineHost;
-use mw_game_minesweeper::{GameMinesweeper, MinesweeperSettings};
+use mw_game_minesweeper::{GameMinesweeperTopo, MinesweeperSettings};
 
 use crate::prelude::*;
 
@@ -25,8 +25,8 @@ pub struct SetupOfflineGame {
 enum SetupState {
     #[default]
     NotStarted,
-    AwaitingHex(Task<Box<GameMinesweeper<Hex>>>),
-    AwaitingSq(Task<Box<GameMinesweeper<Sq>>>),
+    AwaitingHex(Task<Box<GameMinesweeperTopo<Hex>>>),
+    AwaitingSq(Task<Box<GameMinesweeperTopo<Sq>>>),
     Done,
 }
 
@@ -48,7 +48,7 @@ fn setup_offline_game(
                     let settings = setup.settings.clone();
                     let mapdata = mapdata.map.clone();
                     let task = rt.spawn(async move {
-                        let game = GameMinesweeper::<Hex>::new(
+                        let game = GameMinesweeperTopo::<Hex>::new(
                             settings, &mapdata.rekey(),
                             |c: &MapTileDataOrig| c.kind()
                         );
@@ -60,7 +60,7 @@ fn setup_offline_game(
                     let settings = setup.settings.clone();
                     let mapdata = mapdata.map.clone();
                     let task = rt.spawn(async move {
-                        let game = GameMinesweeper::<Sq>::new(
+                        let game = GameMinesweeperTopo::<Sq>::new(
                             settings, &mapdata.rekey(),
                             |c: &MapTileDataOrig| c.kind()
                         );
