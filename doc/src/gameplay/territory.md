@@ -9,20 +9,19 @@ Areas away from the player's territory are covered by "fog of war". The
 player can see **3** tiles away from tiles they own.
 
 The entire map's geography is shown to all players at all times, there are no
-areas that are completely "black". Fog of war simply means that the player does
-not know the ownership (which player controls the tile).
+areas that are completely "black".
 
 Mountain tiles are always treated as a cluster. If you can see one tile of
 the cluster, you see them all.
 
 Within fog-of-war tiles, the player sees:
  - Current tile kind (if changed due to harvesting, explosions, etc.)
- - Completed Structures (incl Roads)
  - Explosions
  - Skulls
 
 Within visible tiles, the player also sees:
- - The ownership of the tile (displayed using the owner's color)
+ - The ownership of the tile
+ - Completed Structures (incl Roads)
  - Smokes
 
 On a player's own territory, the player also sees:
@@ -32,7 +31,7 @@ On a player's own territory, the player also sees:
 ## Ownership of Territory
 
 Each tile on the map can have an owner: one of the players in the game. The
-owner is indicated by the tile's color. Every player has a color. For
+owner is indicated by a color highlight on the tile. Every player has a color. For
 accessibility reasons, the colors should be customizable client-side. Players do
 not get to pick the exact colors displayed to others.
 

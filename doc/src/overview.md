@@ -13,6 +13,6 @@ the player owns, which the player can spend to deploy items, build infrastructur
 or perform offensive attacks.
 
 A good MineWars player knows how to strategically build their empire: manage
-their economy and build infrastructure to set themselves up for success. They
-can make good use of the map's varied geography. They can also out-Minesweeper
+their economy and build structures to set themselves up for success. They can
+make good use of the map's varied geography. They can also out-Minesweeper
 their opponents in the raw fight for territory.

@@ -35,13 +35,13 @@ and dictionary data. The `lz4_flex` Rust crate is perfect. :)
 ## Initialization Sequence
 
 When a connected player is successfully authenticated and ready to begin
-the game, it will receive in **initialization sequence**, which includes
+the game, it will receive an **initialization sequence**, which includes
 metadata about the game session, and the map data.
 
 ### Header
 
 It begins with a header:
- - (`u8`,`u8`,`u8`,`u8`): protocol version (must be `(0, 1, 0, 0)`)
+ - (`u8`,`u8`,`u8`,`u8`): protocol version
  - `u8`: flags
  - `u8`: map size (radius)
  - `u8`: `max_plid` (bits 0-3), `max_sub_plid` (bits 4-7)
@@ -70,8 +70,8 @@ First, the map data is encoded as one byte per tile:
 
 |Bits      |Meaning                     |
 |----------|----------------------------|
-|`-----xxx`| Tile Kind                  |
-|`-xxx----`| Item Kind                  |
+|`----xxxx`| Tile Kind                  |
+|`xxxx----`| Item Kind                  |
 
 Tile Kind: same encoding as the "Tile Kind Update" message below.
 Item Kind: same encoding as the "Reveal Item" message below.
@@ -137,67 +137,37 @@ by magic bits in that first byte (similar to opcodes in CPU instruction set
 encodings). The first byte may also have bit-fields embedding data into it,
 for some message types.
 
-### Message Classes
-
-This affects how messages should be sent over the network transport protocol.
-It is valid (though suboptimal) to play the game over a single TCP stream
-(reliable, ordered delivery of all messages). However, for optimal performance,
-a protocol like QUIC, that allows more granular control of ordering and
-reliability, should be used.
-
-There are five classes of messages: PvP, Notification, Personal, Background, Unreliable.
-Messages can be freely "upgraded" to a higher class; that is, if there is a queue/buffer
-of messages to send, which contains messages from multiple different classes, they can
-all be bundled together and sent over the highest-class stream.
-
-PvP messages are all game updates that are part of a player's interaction with
-the game world and other players. Reliable, ordered, elevated (highest)
-priority.
-
-Notification messages inform the client about important events, but are not
-directly part of moment-to-moment gameplay. Reliable, ordered, medium priority.
-
-Personal messages are all game updates that are part of game mechanics internal
-within a player's own territory. Things that only directly affect them.
-Reliable, ordered, lower priority.
-
-Background messages are things that are not an interactive part of gameplay.
-Reliable, unordered, lowest priority.
-
-Unreliable messages are realtime updates that are fine to miss. Can be sent as
-datagrams. They can also be omitted from replay files / spectation.
-
 ### Opcode Summary
 
 Quick table summarizing the opcodes of all the message types. A few are left
 unused, reserved for future use.
 
-|Bits      |Message Kind         |Class                           |
-|----------|---------------------|--------------------------------|
-|`00000000`| Player Update       | *                              |
-|`00000001`| Tremor              | Background                     |
-|`00000010`| Smoke Start         | PvP                            |
-|`00000011`| Smoke End           | PvP                            |
-|`00000100`| City MoneyInfo      | Unreliable                     |
-|`00000101`| City Transaction    | Personal                       |
-|`00000110`| City ResInfo        | Personal                       |
-|`00000111`| City TradeInfo      | Personal                       |
-|`000010--`| --                  |                                |
-|`0000110-`| --                  |                                |
-|`00001110`| Debug               | Background                     |
-|`00001111`| Flag State          | PvP                            |
-|`0001----`| Reveal Item         | PvP (foreign), Personal (own)  |
-|`00100000`| Structure Gone      | PvP, Personal (cancel pending) |
-|`0010----`| Structure HP        | PvP                            |
-|`0011----`| Explosions          | PvP                            |
-|`0100----`| Construction Queued | Personal                       |
-|`01001111`| Construction Update | Unreliable                     |
-|`0101----`| Reveal Structure    | PvP                            |
-|`01011111`| --                  |                                |
-|`0110----`| Digits (single)     | PvP                            |
-|`0111----`| Tile Kind Update    | PvP                            |
-|`1000----`| Digits (multi)      | PvP                            |
-|`1-------`| Ownership Updates   | PvP                            |
+|Bits      |Message Kind         |
+|----------|---------------------|
+|`00000000`| Player Update       |
+|`00000001`| Tremor              |
+|`00000010`| Smoke Start         |
+|`00000011`| Smoke End           |
+|`00000100`| City MoneyInfo      |
+|`00000101`| City Transaction    |
+|`00000110`| City ResInfo        |
+|`00000111`| City TradeInfo      |
+|`000010--`| --                  |
+|`0000110-`| --                  |
+|`00001110`| Debug               |
+|`00001111`| Flag State          |
+|`0001----`| Reveal Item         |
+|`00100000`| Structure Gone      |
+|`0010----`| Structure HP        |
+|`0011----`| Explosions          |
+|`0100----`| Construction Queued |
+|`01001111`| Construction Update |
+|`0101----`| Reveal Structure    |
+|`01011111`| --                  |
+|`0110----`| Digits (single)     |
+|`0111----`| Tile Kind Update    |
+|`1000----`| Digits (multi)      |
+|`1-------`| Ownership Updates   |
 
 The patterns must be checked in the correct order, so that more specific
 bit sequences are matched first.
@@ -241,29 +211,32 @@ the PlayerSubId field must be all-ones.
 
 The next byte specifies the message kind (what happened):
 
-|Bits      |Meaning         |Granularity|Assembly             |Class        |
-|----------|----------------|-----------|---------------------|-------------|
-|`00000000`| Joined         |PlayerSubId|`JOIN name`          |Notification |
-|`00000001`| Ping/RTT Info  |PlayerSubId|`RTT millis`         |Unreliable   |
-|`00000010`| Timeout        |Either     |`TIMEOUT millis`     |Notification |
-|`00000011`| TimeoutDone    |Either     |`RESUME`             |Notification |
-|`00000100`| Exploded       |Either     |`EXPLODE y,x killer` |Notification |
-|`00000101`| LivesRemain    |Either     |`LIVES n`            |Notification |
-|`00000110`| Protected      |PlayerId   |`PROTECT`            |Notification |
-|`00000111`| Un-Protected   |PlayerId   |`UNPROTECT`          |Notification |
-|`00001000`| Eliminated     |PlayerId   |`ELIMINATE`          |Notification |
-|`00001001`| Surrendered    |PlayerId   |`SURRENDER`          |Notification |
-|`00001010`| Disconnected   |PlayerSubId|`LEAVE`              |Notification |
-|`00001011`| Kicked         |PlayerSubId|`KICK`               |Notification |
-|`00001100`| Vote No        |PlayerSubId|`VOTE id N`          |Background   |
-|`00001101`| Vote Yes       |PlayerSubId|`VOTE id Y`          |Background   |
-|`00001110`| Vote Failed    |PlayerSubId|`VOTEFAIL id`        |Background   |
-|`00001111`| Vote Success   |PlayerSubId|`VOTEPASS id`        |Background   |
-|`00010000`| Chat (All)     |PlayerSubId|`CHATALL string`     |Background   |
-|`00010001`| Chat (Friendly)|PlayerSubId|`CHAT string`        |Background   |
-|`00010010`| MatchTimeRemain|Either     |`TIMELIMIT secs`     |Notification |
-|`00010011`| Initiate Vote  |PlayerSubId|`VOTENEW id string`  |Background   |
-| ...      | (reserved)     |           |                     |             |
+|Bits      |Meaning         |Granularity|Assembly                    |Class        |
+|----------|----------------|-----------|----------------------------|-------------|
+|`00000000`| Joined         |PlayerSubId|`JOIN name`                 |Notification |
+|`00000001`| Ping/RTT Info  |PlayerSubId|`RTT millis`                |Unreliable   |
+|`00000010`| Timeout        |Either     |`TIMEOUT millis`            |Notification |
+|`00000011`| TimeoutDone    |Either     |`RESUME`                    |Notification |
+|`00000100`| Exploded       |Either     |`EXPLODE y,x killer`        |Notification |
+|`00000101`| LivesRemain    |Either     |`LIVES n`                   |Notification |
+|`00000110`| Protected      |PlayerId   |`PROTECT`                   |Notification |
+|`00000111`| Un-Protected   |PlayerId   |`UNPROTECT`                 |Notification |
+|`00001000`| Eliminated     |PlayerId   |`ELIMINATE`                 |Notification |
+|`00001001`| Surrendered    |PlayerId   |`SURRENDER`                 |Notification |
+|`00001010`| Disconnected   |PlayerSubId|`LEAVE`                     |Notification |
+|`00001011`| Kicked         |PlayerSubId|`KICK`                      |Notification |
+|`00001100`| Vote No        |PlayerSubId|`VOTE id N`                 |Background   |
+|`00001101`| Vote Yes       |PlayerSubId|`VOTE id Y`                 |Background   |
+|`00001110`| Vote Failed    |PlayerSubId|`VOTEFAIL id`               |Background   |
+|`00001111`| Vote Success   |PlayerSubId|`VOTEPASS id`               |Background   |
+|`00010000`| Chat (All)     |PlayerSubId|`CHATALL string`            |Background   |
+|`00010001`| Chat (Friendly)|PlayerSubId|`CHAT string`               |Background   |
+|`00010010`| MatchTimeRemain|Either     |`TIMELIMIT secs`            |Notification |
+|`00010011`| Initiate Vote  |PlayerSubId|`VOTENEW id string`         |Background   |
+|`10001000`| Capturing City |Either     |`CITCAPTING citid millis`   |PvP          |
+|`10001001`| Capture City   |Either     |`CITCAPTURE citid`          |PvP          |
+|`10001010`| Contested City |Either     |`CITCONTEST citid`          |PvP          |
+| ...      | (reserved)     |           |                            |             |
 
 Then follows the data payload for the given message kind.
 

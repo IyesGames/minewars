@@ -1,7 +1,7 @@
 # Game Longevity and Our Promise to the Community
 
 We live in an era where people's beloved games are increasingly made unplayable
-and inaccessible, when the developers decide to abandon them, thanks to online-only
+and inaccessible when the developers decide to abandon them, thanks to online-only
 gameplay and DRM. We are firmly against such practices. We believe that the fans
 of a game should be able to enjoy it forever.
 
@@ -66,10 +66,9 @@ Notably, you **can** do the following:
 ### Contributing
 
 The code in the GitHub repo *is* what is actually used for official builds. It
-is not a separate stripped-down code dump.
-
-For official builds, we simply replace the `minewars-proprietary-stub` Rust dependency
-with code from our private repos, to add in the additional functionality.
+is not a separate stripped-down code dump. The official proprietary version
+of the game depends on the code in the public repo and extends it with
+additional stuff.
 
 If you make contributions to our open-source repo, your contributions will be
 included in future official updates for the game, too. :) You will be credited

@@ -1,7 +1,7 @@
 # Summary
 
 - [Overview](./overview.md)
- - [Open-Source Builds](./foss.md)
+ - [Game Longevity and Open-Source Plans](./foss.md)
 - [Game Design](./game-design.md)
   - [Target Audience](./audience.md)
   - [Gameplay and Rules](./gameplay.md)
@@ -19,6 +19,13 @@
   - [Game Settings](./mgmt/settings.md)
   - [Achievement Ideas](./achievements.md)
   - [Notes / Philosophy](./mgmt/philosophy.md)
+- [Server Admin Handbook](./server/index.md)
+  - [Introduction](./server/intro.md)
+  - [Hardware Requirements](./server/hardware.md)
+  - [Tutorial and Examples](./server/examples.md)
+  - [Session Configuration](./server/sessions.md)
+  - [Security](./server/security.md)
+  - [Runtime Management](./server/management.md)
 - [Technical Documentation](./tech.md)
   - [Player Stream Format](./tech/dataformat-player.md)
   - [Spectator/Replay Stream Format](./tech/dataformat-spectator.md)
