@@ -1,136 +1,7 @@
-# Player Stream Format
+# Game Update Messages
 
-This page describes all the encodings used for data sent from the server to
-the client.
-
-This message format is also used inside of the [spectator/replay
-message](./dataformat-spectator.md) format (which encapsulates multiple streams of
-this player message format).
-
----
-
-## Prerequisites for Implementation
-
-This is a custom purpose-built compact binary format.
-
-All multi-byte values are encoded as **big endian** and unaligned.
-
-All **coordinates** are encoded as `(row: u8, col: u8)` (note (Y,X) order).
-In places where a sequence of multiple coordinates is listed, it is recommended
-to encode them in sorted order. This helps compression.
-
-All **time durations** are encoded as:
-
-|Bits      |Meaning                  |
-|----------|-------------------------|
-|`0xxxxxxx`| `x` milliseconds        |
-|`10xxxxxx`| (`x` + 13) centiseconds |
-|`11xxxxxx`| (`x` + 8) deciseconds   |
-
-**PlayerId**: a value between 1-15 inclusive.
-
-You will also need to bring a LZ4 implementation supporting **raw blocks**
-and dictionary data. The `lz4_flex` Rust crate is perfect. :)
-
-## Initialization Sequence
-
-When a connected player is successfully authenticated and ready to begin
-the game, it will receive an **initialization sequence**, which includes
-metadata about the game session, and the map data.
-
-### Header
-
-It begins with a header:
- - (`u8`,`u8`,`u8`,`u8`): protocol version
- - `u8`: flags
- - `u8`: map size (radius)
- - `u8`: `max_plid` (bits 0-3), `max_sub_plid` (bits 4-7)
- - `u8`: number of cities/regions
- - `u32`: length of compressed map data in bytes
- - `u16`: length of the Rules data
- - `u16`: length of the Cits names data
-
-The `flags` field is encoded as follows:
-
-|Bits      |Meaning                     |
-|----------|----------------------------|
-|`----0---`| Game uses a hexagonal grid |
-|`----1---`| Game uses a square grid    |
-|`xxx--xxx`|(reserved bits)             |
-
-#### Map Data
-
-Then follows the map data.
-
-If compressed length < uncompressed length, the data is LZ4 compressed.
-
-If compressed length == uncompressed length, the data is raw/uncompressed.
-
-First, the map data is encoded as one byte per tile:
-
-|Bits      |Meaning                     |
-|----------|----------------------------|
-|`----xxxx`| Tile Kind                  |
-|`xxxx----`| Item Kind                  |
-
-Tile Kind: same encoding as the "Tile Kind Update" message below.
-Item Kind: same encoding as the "Reveal Item" message below.
-
-The Item Kind is only used for spectator streams and replay files, so that they
-don't need to start with a long sequence of "Reveal Item" messages at tick 0
-for all the initial items on the map. In player streams, this field should be 0.
-
-If any starting Structures must be encoded (say for a custom game mode / scenario),
-initialize them using regular gameplay messages at tick 0.
-
-The tiles are encoded in concentric-ring order, starting from the center of
-the map. The map data ends when all rings up until the map radius specified in
-the header have been encoded.
-
-Each ring starts from the lowest (Y,X) coordinate and follows the +X direction first:
-
-Square example:
-```
-654
-7.3
-012
-```
-
-Hex example:
-```
- 4 3
-5 . 2
- 0 1
-```
-
-(`0` is the starting position, assuming +X points right and +Y points up)
-
-After the map data, regions are encoded the same way: one byte per tile, in
-concentric ring order. The byte is the city/region ID for that tile.
-
-### City Info
-
-First, locations for each city on the map:
- - `(u8, u8)`: (y, x) location
-
-Then, names for each city on the map:
- - `u8`: length in bytes
- - …: phonemes
-
-The name uses a special Phoneme encoding (undocumented, see source code),
-which can be rendered/localized based on client language.
-
-### Game Parameters / Rules
-
-Then follow the parameters used for the game rules, in this game.
-
-// TODO
-
-## Gameplay Messages
-
-Updates for the player are encoded as a raw uncompressed block of data
-consisting of any number of **messages** concatenated together. Each message
-is a variable-length byte sequence.
+Updates for the players are encoded as any number of **messages** concatenated
+together. Each message is a variable-length byte sequence.
 
 Each message is at least one byte long. The type of the message is determined
 by magic bits in that first byte (similar to opcodes in CPU instruction set
@@ -213,7 +84,7 @@ The next byte specifies the message kind (what happened):
 
 |Bits      |Meaning         |Granularity|Assembly                    |Class        |
 |----------|----------------|-----------|----------------------------|-------------|
-|`00000000`| Joined         |PlayerSubId|`JOIN name`                 |Notification |
+|`00000000`| Joined         |PlayerSubId|`JOIN`                      |Notification |
 |`00000001`| Ping/RTT Info  |PlayerSubId|`RTT millis`                |Unreliable   |
 |`00000010`| Timeout        |Either     |`TIMEOUT millis`            |Notification |
 |`00000011`| TimeoutDone    |Either     |`RESUME`                    |Notification |
@@ -225,14 +96,7 @@ The next byte specifies the message kind (what happened):
 |`00001001`| Surrendered    |PlayerId   |`SURRENDER`                 |Notification |
 |`00001010`| Disconnected   |PlayerSubId|`LEAVE`                     |Notification |
 |`00001011`| Kicked         |PlayerSubId|`KICK`                      |Notification |
-|`00001100`| Vote No        |PlayerSubId|`VOTE id N`                 |Background   |
-|`00001101`| Vote Yes       |PlayerSubId|`VOTE id Y`                 |Background   |
-|`00001110`| Vote Failed    |PlayerSubId|`VOTEFAIL id`               |Background   |
-|`00001111`| Vote Success   |PlayerSubId|`VOTEPASS id`               |Background   |
-|`00010000`| Chat (All)     |PlayerSubId|`CHATALL string`            |Background   |
-|`00010001`| Chat (Friendly)|PlayerSubId|`CHAT string`               |Background   |
 |`00010010`| MatchTimeRemain|Either     |`TIMELIMIT secs`            |Notification |
-|`00010011`| Initiate Vote  |PlayerSubId|`VOTENEW id string`         |Background   |
 |`10001000`| Capturing City |Either     |`CITCAPTING citid millis`   |PvP          |
 |`10001001`| Capture City   |Either     |`CITCAPTURE citid`          |PvP          |
 |`10001010`| Contested City |Either     |`CITCONTEST citid`          |PvP          |
