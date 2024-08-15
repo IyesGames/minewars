@@ -19,19 +19,19 @@ impl GameMinesweeperBuilder {
         self,
         map_size: u8,
         f_kind: impl Fn(Hex) -> TileKind,
-    ) -> GameMinesweeper {
-        GameMinesweeper::Hex(
+    ) -> Box<GameMinesweeper> {
+        Box::new(GameMinesweeper::Hex(
             self.with_mapdata_inner(map_size, f_kind)
-        )
+        ))
     }
     pub fn with_mapdata_sq(
         self,
         map_size: u8,
         f_kind: impl Fn(Sq) -> TileKind,
-    ) -> GameMinesweeper {
-        GameMinesweeper::Sq(
+    ) -> Box<GameMinesweeper> {
+        Box::new(GameMinesweeper::Sq(
             self.with_mapdata_inner(map_size, f_kind)
-        )
+        ))
     }
     fn with_mapdata_inner<C: Coord>(
         self,

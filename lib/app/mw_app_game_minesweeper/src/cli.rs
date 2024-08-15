@@ -1,7 +1,7 @@
 use mw_app_core::{driver::*, graphics::*, player::*, session::*, settings::{GraphicsStyleSettings, PlidColorSettings}, user::*};
 use mw_game_minesweeper::MinesweeperSettings;
 
-use crate::{map::SimpleMapGenerator, offline::SetupOfflineGame, prelude::*, settings::SimpleMapSettings};
+use crate::{map::SimpleMapGenerator, offline::SetupOfflineGame, prelude::*, settings::{OfflineMinesweeperSettings, SimpleMapSettings}};
 
 pub fn plugin(app: &mut App) {
     app.register_clicommand_noargs(
@@ -19,6 +19,7 @@ fn start_minesweeper_singleplayer(
     let s_mapgen = settings.get::<SimpleMapSettings>().unwrap();
     let s_colors = settings.get::<PlidColorSettings>().unwrap();
     let s_gfx = settings.get::<GraphicsStyleSettings>().unwrap();
+    let s_offline = settings.get::<OfflineMinesweeperSettings>().unwrap();
 
     let e_subplid = commands.spawn((
         SubPlidBundle::new(0, &q_user.single().0),
@@ -42,10 +43,8 @@ fn start_minesweeper_singleplayer(
             size: s_mapgen.size,
         },
         SetupOfflineGame {
-            settings: MinesweeperSettings {
-                n_plids: 1,
-                ..Default::default()
-            },
+            settings: s_offline.game.clone(),
+            minegen: s_offline.minegen.clone(),
         },
     ));
     let e_gov_gfx = commands.spawn((

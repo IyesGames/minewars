@@ -1,7 +1,7 @@
 use bevy::tasks::{block_on, poll_once, AsyncComputeTaskPool, Task};
-use mw_app_core::{driver::{DriverGovernor, NeedsDriverGovernorSet}, map::{MapDataOrig, MapDescriptor, MapGovernor, MapTileDataOrig}, session::NeedsSessionGovernorSet};
+use mw_app_core::{driver::{DriverGovernor, NeedsDriverGovernorSet}, map::{MapDataOrig, MapDescriptor, MapGovernor, MapTileDataOrig}, session::{NeedsSessionGovernorSet, PlayersIndex, SessionGovernor}};
 use mw_app_io::offline_host::OfflineHost;
-use mw_game_minesweeper::{GameMinesweeperTopo, MinesweeperSettings};
+use mw_game_minesweeper::{builder::GameMinesweeperBuilder, minegen::MineGenSettings, GameMinesweeper, MinesweeperInitData, MinesweeperSettings};
 
 use crate::prelude::*;
 
@@ -19,19 +19,20 @@ pub fn plugin(app: &mut App) {
 #[derive(Component)]
 pub struct SetupOfflineGame {
     pub settings: MinesweeperSettings,
+    pub minegen: MineGenSettings,
 }
 
 #[derive(Default)]
 enum SetupState {
     #[default]
     NotStarted,
-    AwaitingHex(Task<Box<GameMinesweeperTopo<Hex>>>),
-    AwaitingSq(Task<Box<GameMinesweeperTopo<Sq>>>),
+    Awaiting(Task<Box<GameMinesweeper>>),
     Done,
 }
 
 fn setup_offline_game(
     mut commands: Commands,
+    q_session: Query<&PlayersIndex, With<SessionGovernor>>,
     q_driver: Query<(Entity, &SetupOfflineGame), With<DriverGovernor>>,
     q_map: Query<(&MapDescriptor, &MapDataOrig), With<MapGovernor>>,
     mut state: Local<SetupState>,
@@ -41,6 +42,7 @@ fn setup_offline_game(
             let Ok((mapdesc, mapdata)) = q_map.get_single() else {
                 return false.into();
             };
+            let n_plids = q_session.single().e_plid.len() - 1;
             let (_, setup) = q_driver.single();
             let rt = AsyncComputeTaskPool::get();
             match mapdesc.topology {
@@ -48,46 +50,30 @@ fn setup_offline_game(
                     let settings = setup.settings.clone();
                     let mapdata = mapdata.map.clone();
                     let task = rt.spawn(async move {
-                        let game = GameMinesweeperTopo::<Hex>::new(
-                            settings, &mapdata.rekey(),
-                            |c: &MapTileDataOrig| c.kind()
-                        );
-                        Box::new(game)
+                        GameMinesweeperBuilder::new(settings, n_plids as u8)
+                            .with_mapdata_hex(mapdata.size(), |c| mapdata[c.into()].kind())
                     });
-                    *state = SetupState::AwaitingHex(task);
+                    *state = SetupState::Awaiting(task);
                 }
                 Topology::Sq => {
                     let settings = setup.settings.clone();
                     let mapdata = mapdata.map.clone();
                     let task = rt.spawn(async move {
-                        let game = GameMinesweeperTopo::<Sq>::new(
-                            settings, &mapdata.rekey(),
-                            |c: &MapTileDataOrig| c.kind()
-                        );
-                        Box::new(game)
+                        GameMinesweeperBuilder::new(settings, n_plids as u8)
+                            .with_mapdata_sq(mapdata.size(), |c| mapdata[c.into()].kind())
                     });
-                    *state = SetupState::AwaitingSq(task);
+                    *state = SetupState::Awaiting(task);
                 }
             }
             false.into()
         }
-        SetupState::AwaitingHex(task) => {
+        SetupState::Awaiting(task) => {
             if let Some(game) = block_on(poll_once(task)) {
-                let (e_driver, _) = q_driver.single();
+                let (e_driver, setup) = q_driver.single();
                 commands.entity(e_driver).insert((
-                    OfflineHost::new(game, None),
-                ));
-                *state = SetupState::Done;
-                true.into()
-            } else {
-                false.into()
-            }
-        }
-        SetupState::AwaitingSq(task) => {
-            if let Some(game) = block_on(poll_once(task)) {
-                let (e_driver, _) = q_driver.single();
-                commands.entity(e_driver).insert((
-                    OfflineHost::new(game, None),
+                    OfflineHost::new(game, Box::new(MinesweeperInitData {
+                        minegen: setup.minegen.clone()
+                    })),
                 ));
                 *state = SetupState::Done;
                 true.into()

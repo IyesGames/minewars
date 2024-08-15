@@ -70,30 +70,30 @@ pub enum GameMinesweeper {
     Sq(GameMinesweeperTopo<Sq>),
 }
 
-impl Game for GameMinesweeper {
+impl Game for Box<GameMinesweeper> {
     type Io = MinesweeperIo;
     type InitData = MinesweeperInitData;
 
     fn init<H: Host<MinesweeperIo>>(&mut self, host: &mut H, initdata: Box<Self::InitData>) {
-        match self {
+        match self.as_mut() {
             GameMinesweeper::Hex(game) => game.init(host, initdata),
             GameMinesweeper::Sq(game) => game.init(host, initdata),
         }
     }
     fn input<H: Host<MinesweeperIo>>(&mut self, host: &mut H, input: GameInput<MinesweeperIo>) {
-        match self {
+        match self.as_mut() {
             GameMinesweeper::Hex(game) => game.input(host, input),
             GameMinesweeper::Sq(game) => game.input(host, input),
         }
     }
     fn unsched<H: Host<MinesweeperIo>>(&mut self, host: &mut H, event: MinesweeperSchedEvent) {
-        match self {
+        match self.as_mut() {
             GameMinesweeper::Hex(game) => game.unsched(host, event),
             GameMinesweeper::Sq(game) => game.unsched(host, event),
         }
     }
     fn unreliable<H: Host<MinesweeperIo>>(&mut self, host: &mut H) {
-        match self {
+        match self.as_mut() {
             GameMinesweeper::Hex(game) => game.unreliable(host),
             GameMinesweeper::Sq(game) => game.unreliable(host),
         }

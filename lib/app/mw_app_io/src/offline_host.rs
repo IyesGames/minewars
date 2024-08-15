@@ -13,8 +13,8 @@ pub struct OfflineHostPlugin<G: Game, EIn, EOut> {
 
 impl<G: Game, EIn, EOut> OfflineHostPlugin<G, EIn, EOut>
 where
-    EIn: Event + Clone + Into<G::InputAction>,
-    EOut: Event + From<(Plids, G::OutEvent)>,
+    EIn: Event + Clone + Into<<G::Io as GameIo>::InputAction>,
+    EOut: Event + From<(Plids, <G::Io as GameIo>::OutEvent)>,
 {
     pub fn new() -> Self {
         Self {
@@ -25,8 +25,8 @@ where
 
 impl<G: Game, EIn, EOut> Plugin for OfflineHostPlugin<G, EIn, EOut>
 where
-    EIn: Event + Clone + Into<G::InputAction>,
-    EOut: Event + From<(Plids, G::OutEvent)>,
+    EIn: Event + Clone + Into<<G::Io as GameIo>::InputAction>,
+    EOut: Event + From<(Plids, <G::Io as GameIo>::OutEvent)>,
 {
     fn build(&self, app: &mut App) {
         app.add_systems(Update,
@@ -53,14 +53,14 @@ pub struct OfflineHost<G: Game>(OfflineHostState<G>);
 
 enum OfflineHostState<G: Game> {
     NotInitialized {
-        game: Box<G>,
-        init_data: Option<Box<G::InitData>>,
+        game: G,
+        init_data: Box<G::InitData>,
     },
     Initializing {
-        task: Task<(Box<G>, HostState<G>)>,
+        task: Task<(G, HostState<G>)>,
     },
     Initialized {
-        game: Box<G>,
+        game: G,
         host: HostState<G>,
     },
     Running {
@@ -75,21 +75,21 @@ enum OfflineHostState<G: Game> {
 enum TaskIn<G: Game> {
     GameInput {
         plid: PlayerId,
-        event: G::InputAction,
+        event: <G::Io as GameIo>::InputAction,
     },
     SchedTrigger(Instant),
     Maintain,
 }
 
 enum TaskOut<G: Game> {
-    GameOutput(GameOutput<G>),
+    GameOutput(GameOutput<G::Io>),
     NextSched(Instant),
     NoSchedsRemain,
     GameOver,
 }
 
 impl<G: Game> OfflineHost<G> {
-    pub fn new(game: Box<G>, init_data: Option<Box<G::InitData>>) -> Self {
+    pub fn new(game: G, init_data: Box<G::InitData>) -> Self {
         Self(OfflineHostState::NotInitialized { game, init_data })
     }
 }
@@ -102,22 +102,15 @@ fn init_offline_game<G: Game>(
     let r;
     *state = match temp {
         OfflineHostState::NotInitialized { mut game, init_data } => {
-            if let Some(init_data) = init_data {
-                let rt = AsyncComputeTaskPool::get();
-                let mut host = HostState::<G>::default();
-                let task = rt.spawn(async move {
-                    game.init(&mut host, init_data);
-                    (game, host)
-                });
-                info!("Offline game initializing.");
-                r = false.into();
-                OfflineHostState::Initializing { task }
-            } else {
-                let host = HostState::<G>::default();
-                info!("Offline game initialized.");
-                r = true.into();
-                OfflineHostState::Initialized { game, host }
-            }
+            let rt = AsyncComputeTaskPool::get();
+            let mut host = HostState::<G>::default();
+            let task = rt.spawn(async move {
+                game.init(&mut host, init_data);
+                (game, host)
+            });
+            info!("Offline game initializing.");
+            r = false.into();
+            OfflineHostState::Initializing { task }
         }
         OfflineHostState::Initializing { mut task } => {
             if let Some((game, host)) = block_on(poll_once(&mut task)) {
@@ -144,8 +137,8 @@ fn update_offline_game<G: Game, EIn, EOut>(
     mut evw_out: EventWriter<EOut>,
 )
 where
-    EIn: Event + Clone + Into<G::InputAction>,
-    EOut: Event + From<(Plids, G::OutEvent)>,
+    EIn: Event + Clone + Into<<G::Io as GameIo>::InputAction>,
+    EOut: Event + From<(Plids, <G::Io as GameIo>::OutEvent)>,
 {
     let plid = q_session.single().0;
     let state = &mut q_driver.single_mut().0;
@@ -223,9 +216,9 @@ where
 }
 
 struct HostState<G: Game> {
-    events: Vec<GameOutput<G>>,
-    scheds: BTreeMap<Instant, G::SchedEvent>,
-    cancel: HashSet<G::SchedEvent>,
+    events: Vec<GameOutput<G::Io>>,
+    scheds: BTreeMap<Instant, <G::Io as GameIo>::SchedEvent>,
+    cancel: HashSet<<G::Io as GameIo>::SchedEvent>,
     game_over: bool,
 }
 
@@ -240,14 +233,14 @@ impl<G: Game> Default for HostState<G> {
     }
 }
 
-impl<G: Game> Host<G> for HostState<G> {
-    fn msg(&mut self, output: GameOutput<G>) {
+impl<G: Game> Host<G::Io> for HostState<G> {
+    fn msg(&mut self, output: GameOutput<G::Io>) {
         self.events.push(output);
     }
-    fn sched(&mut self, time: Instant, event: G::SchedEvent) {
+    fn sched(&mut self, time: Instant, event: <G::Io as GameIo>::SchedEvent) {
         self.scheds.insert(time, event);
     }
-    fn desched_all(&mut self, event: G::SchedEvent) {
+    fn desched_all(&mut self, event: <G::Io as GameIo>::SchedEvent) {
         self.cancel.insert(event);
     }
     fn game_over(&mut self) {
@@ -272,7 +265,7 @@ impl<G: Game> HostState<G> {
 }
 
 async fn task_host_game<G: Game>(
-    mut game: Box<G>,
+    mut game: G,
     mut host: HostState<G>,
     rx: Receiver<TaskIn<G>>,
     tx: Sender<TaskOut<G>>,
