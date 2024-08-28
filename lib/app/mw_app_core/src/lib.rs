@@ -35,6 +35,17 @@ pub mod settings;
 
 use crate::prelude::*;
 
+/// Access to our Tokio Runtime, for things that need to run in tokio.
+///
+/// Currently this is the proprietary netcode, but there may also be
+/// FOSS uses in the future, which is why this is defined here.
+///
+/// The tokio runtime is set up by `mw_app` along with its setup of
+/// Bevy's runtime. It will insert this resource before running the
+/// Bevy App. It can be assumed to always be available.
+#[derive(Resource)]
+pub struct TokioRuntime(pub tokio::runtime::Runtime);
+
 pub fn plugin(app: &mut App) {
     // external plugins
     app.add_plugins((

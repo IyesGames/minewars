@@ -7,13 +7,13 @@ pub mod prelude {
     pub use bevy_asset_loader::prelude::*;
 }
 
+use mw_app_core::TokioRuntime;
 use mw_engine::settings_manager::SettingsStore;
 use settings::EngineSetupSettings;
 
 use crate::prelude::*;
 
 mod settings;
-mod net;
 mod user;
 
 mod camera;
@@ -42,7 +42,6 @@ pub fn plugin(app: &mut App) {
         crate::map::plugin,
         crate::cit::plugin,
         crate::player::plugin,
-        crate::net::plugin,
         crate::settings::plugin,
         crate::splash::plugin,
         crate::ui::plugin,
@@ -64,6 +63,13 @@ pub fn setup_bevy_app() -> App {
     app.insert_resource(ClearColor(Color::BLACK));
     let setup_settings = app.world().resource::<SettingsStore>()
         .get::<EngineSetupSettings>().cloned().unwrap();
+    let tokio_rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(setup_settings.cpu_threads_net)
+        .thread_name("minewars-net")
+        .enable_all()
+        .build()
+        .expect("Could not set up tokio runtime.");
+    app.insert_resource(TokioRuntime(tokio_rt));
     let bevy_plugins = DefaultPlugins;
     let bevy_plugins = bevy_plugins.set(WindowPlugin {
         primary_window: Some(Window {

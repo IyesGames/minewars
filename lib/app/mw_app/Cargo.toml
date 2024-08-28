@@ -76,3 +76,9 @@ branch = "minewars"
 [dependencies.iyes_cli]
 git = "https://github.com/IyesGames/iyes_cli"
 branch = "minewars"
+
+[dependencies.tokio]
+version = "1.38.0"
+features = [
+    "full",
+]
