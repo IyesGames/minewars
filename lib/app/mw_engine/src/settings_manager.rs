@@ -222,6 +222,8 @@ impl SettingsStore {
             bail!("Don't know where config files should be saved!");
         };
         let path = dir.join(collection);
+        std::fs::create_dir_all(dir)
+            .with_context(|| format!("Cannot create settings dir at {:?}", dir))?;
 
         let mut output: Vec<u8> = vec![];
         writeln!(&mut output, "// This file is not meant to be edited by hand! If you mistype anything,").ok();
